@@ -11,7 +11,7 @@
 -- nguyen_lieu_nha_cung_cap.ma_ncc           -> nha_cung_cap.ma_ncc
 -- nguyen_lieu_nha_cung_cap.ma_nguyen_lieu   -> ton_kho_nguyen_lieu.ma_nguyen_lieu
 -- don_mua_nguyen_lieu.ma_ncc                -> nha_cung_cap.ma_ncc
--- don_mua_nguyen_lieu.nguoi_tao             -> tai_khoan.ten_dang_nhap
+-- don_mua_nguyen_lieu.nguoi_tao -> tai_khoan.ma_tai_khoan
 -- chi_tiet_don_mua.ma_don_mua               -> don_mua_nguyen_lieu.ma_don_mua
 -- chi_tiet_don_mua.ma_nguyen_lieu           -> ton_kho_nguyen_lieu.ma_nguyen_lieu
 -- chi_tiet_lich_su_du_bao.ma_lich_su_du_bao -> lich_su_du_bao.ma_lich_su_du_bao
@@ -20,27 +20,168 @@
 
 BEGIN;
 
+
+-- Bộ đếm tạo mã tài khoản
+-- Bộ đếm riêng cho từng vai trò
+CREATE SEQUENCE gs_tai_khoan_seq START WITH 1;
+CREATE SEQUENCE nvkhsx_tai_khoan_seq START WITH 1;
+CREATE SEQUENCE nvk_tai_khoan_seq START WITH 1;
+CREATE SEQUENCE nvmh_tai_khoan_seq START WITH 1;
+CREATE SEQUENCE ql_tai_khoan_seq START WITH 1;
+
+
+CREATE SEQUENCE nhat_ky_hoat_dong_seq
+    START WITH 1
+    INCREMENT BY 1;
+
+
 -- Tài khoản
 CREATE TABLE tai_khoan (
-    ten_dang_nhap VARCHAR(50) PRIMARY KEY,
+    ma_tai_khoan VARCHAR(20) PRIMARY KEY,
+
     mat_khau VARCHAR(255) NOT NULL,
     ho_ten VARCHAR(100) NOT NULL,
     vai_tro VARCHAR(50) NOT NULL,
-    trang_thai VARCHAR(30) NOT NULL DEFAULT 'DANG_HOAT_DONG'
+
+    trang_thai VARCHAR(30) NOT NULL
+        DEFAULT 'HOAT_DONG',
+
+    CONSTRAINT ck_tai_khoan_vai_tro
+        CHECK (
+            vai_tro IN (
+                'ADMIN',
+                'GIAM_SAT_BAN_HANG',
+                'NHAN_VIEN_KE_HOACH_SAN_XUAT',
+                'NHAN_VIEN_KHO',
+                'NHAN_VIEN_MUA_HANG',
+                'QUAN_LY'
+            )
+        ),
+
+    CONSTRAINT ck_tai_khoan_trang_thai
+        CHECK (
+            trang_thai IN (
+                'HOAT_DONG',
+                'NGUNG_HOAT_DONG'
+            )
+        )
+);
+-- Tự sinh mã tài khoản dựa vào vai trò
+CREATE OR REPLACE FUNCTION tao_ma_tai_khoan()
+RETURNS TRIGGER
+AS $$
+BEGIN
+    -- Nếu đã truyền mã thì giữ nguyên
+    IF NEW.ma_tai_khoan IS NOT NULL THEN
+        RETURN NEW;
+    END IF;
+
+    CASE NEW.vai_tro
+        WHEN 'ADMIN' THEN
+            NEW.ma_tai_khoan := 'admin';
+
+        WHEN 'GIAM_SAT_BAN_HANG' THEN
+            NEW.ma_tai_khoan :=
+                'GS' ||
+                LPAD(
+                    nextval('gs_tai_khoan_seq')::TEXT,
+                    3,
+                    '0'
+                );
+
+        WHEN 'NHAN_VIEN_KE_HOACH_SAN_XUAT' THEN
+            NEW.ma_tai_khoan :=
+                'NVKHSX' ||
+                LPAD(
+                    nextval('nvkhsx_tai_khoan_seq')::TEXT,
+                    3,
+                    '0'
+                );
+
+        WHEN 'NHAN_VIEN_KHO' THEN
+            NEW.ma_tai_khoan :=
+                'NVK' ||
+                LPAD(
+                    nextval('nvk_tai_khoan_seq')::TEXT,
+                    3,
+                    '0'
+                );
+
+        WHEN 'NHAN_VIEN_MUA_HANG' THEN
+            NEW.ma_tai_khoan :=
+                'NVMH' ||
+                LPAD(
+                    nextval('nvmh_tai_khoan_seq')::TEXT,
+                    3,
+                    '0'
+                );
+
+        WHEN 'QUAN_LY' THEN
+            NEW.ma_tai_khoan :=
+                'QL' ||
+                LPAD(
+                    nextval('ql_tai_khoan_seq')::TEXT,
+                    3,
+                    '0'
+                );
+
+        ELSE
+            RAISE EXCEPTION 'Vai trò không hợp lệ: %', NEW.vai_tro;
+    END CASE;
+
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER trg_tao_ma_tai_khoan
+BEFORE INSERT ON tai_khoan
+FOR EACH ROW
+EXECUTE FUNCTION tao_ma_tai_khoan();
+
+-- Nhật ký hoạt động
+CREATE TABLE nhat_ky_hoat_dong (
+    ma_nhat_ky VARCHAR(20) PRIMARY KEY
+        DEFAULT (
+            'NKHD' ||
+            LPAD(
+                nextval('nhat_ky_hoat_dong_seq')::TEXT,
+                6,
+                '0'
+            )
+        ),
+
+    ma_tai_khoan VARCHAR(20),
+
+    hanh_dong VARCHAR(50) NOT NULL,
+
+    ket_qua VARCHAR(30) NOT NULL
+        DEFAULT 'THANH_CONG',
+
+    thoi_gian TIMESTAMP WITH TIME ZONE NOT NULL
+        DEFAULT CURRENT_TIMESTAMP,
+
+    mo_ta TEXT,
+
+    CONSTRAINT fk_nhat_ky_tai_khoan
+        FOREIGN KEY (ma_tai_khoan)
+        REFERENCES tai_khoan(ma_tai_khoan)
+        ON DELETE SET NULL
 );
 
 -- Sản phẩm
 CREATE TABLE san_pham (
     ma_san_pham VARCHAR(20) PRIMARY KEY,
     ten_san_pham VARCHAR(150) NOT NULL,
+
     don_gia NUMERIC(15,2)
-        CHECK (don_gia >= 0)
+        CHECK (don_gia >= 0),
+
     khoi_luong_kg NUMERIC(10,3) NOT NULL
         CHECK (khoi_luong_kg > 0),
+
     quy_cach VARCHAR(50),
     nhom_san_pham VARCHAR(100),
-    trang_thai VARCHAR(30) NOT NULL,
-    
+    trang_thai VARCHAR(30) NOT NULL
 );
 
 -- Tồn kho nguyên liệu
@@ -211,7 +352,7 @@ CREATE TABLE nguyen_lieu_nha_cung_cap (
 CREATE TABLE don_mua_nguyen_lieu (
     ma_don_mua VARCHAR(20) PRIMARY KEY,
     ma_ncc VARCHAR(20) NOT NULL, -- FK -> nha_cung_cap
-    nguoi_tao VARCHAR(50) NOT NULL, -- FK -> tai_khoan
+    nguoi_tao VARCHAR(20) NOT NULL, -- FK -> tai_khoan
     ngay_dat_hang DATE NOT NULL,
     ngay_du_kien_giao DATE NOT NULL,
     ngay_giao_thuc_te DATE,
@@ -225,7 +366,7 @@ CREATE TABLE don_mua_nguyen_lieu (
 
     CONSTRAINT fk_don_mua_tai_khoan
         FOREIGN KEY (nguoi_tao)
-        REFERENCES tai_khoan(ten_dang_nhap),
+        REFERENCES tai_khoan(ma_tai_khoan),
 
     CHECK (ngay_du_kien_giao >= ngay_dat_hang),
     CHECK (
