@@ -1,7 +1,7 @@
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from src.models.tai_khoan import TaiKhoan
+from src.models.user_model import User
 
 
 class AuthRepository:
@@ -9,12 +9,12 @@ class AuthRepository:
         self,
         db: Session,
         account_id: str,
-    ) -> TaiKhoan | None:
+    ) -> User | None:
         if not account_id:
             return None
 
-        statement = select(TaiKhoan).where(
-            TaiKhoan.ma_tai_khoan == account_id
+        statement = select(User).where(
+            User.ma_nguoi_dung == account_id
         )
 
         return db.scalar(statement)

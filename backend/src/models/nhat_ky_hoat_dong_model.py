@@ -1,6 +1,7 @@
 from sqlalchemy import (
     Column,
     DateTime,
+    FetchedValue,
     ForeignKey,
     String,
     Text,
@@ -16,23 +17,22 @@ class NhatKyHoatDong(Base):
     ma_nhat_ky = Column(
         String(20),
         primary_key=True,
-        server_default=text(
-            "'NKHD' || LPAD("
-            "nextval('nhat_ky_hoat_dong_seq')::TEXT, 6, '0'"
-            ")"
-        ),
+        server_default=FetchedValue(),
     )
 
-    ma_tai_khoan = Column(
+    ma_nguoi_dung = Column(
         String(20),
         ForeignKey(
-            "tai_khoan.ma_tai_khoan",
+            "users.ma_nguoi_dung",
             ondelete="SET NULL",
         ),
         nullable=True,
     )
 
-    hanh_dong = Column(String(50), nullable=False)
+    hanh_dong = Column(
+        String(50),
+        nullable=False,
+    )
 
     ket_qua = Column(
         String(30),
@@ -47,4 +47,7 @@ class NhatKyHoatDong(Base):
         server_default=text("CURRENT_TIMESTAMP"),
     )
 
-    mo_ta = Column(Text, nullable=True)
+    mo_ta = Column(
+        Text,
+        nullable=True,
+    )

@@ -24,7 +24,6 @@ app = FastAPI(
 )
 
 
-# Cho phép frontend gọi API
 app.add_middleware(
     CORSMiddleware,
     allow_origins=settings.cors_origins,
@@ -34,7 +33,6 @@ app.add_middleware(
 )
 
 
-# Đăng ký các API với tiền tố /api/v1
 app.include_router(api_router)
 
 
@@ -43,16 +41,21 @@ def root():
     return {
         "message": "Milano Coffee API đang hoạt động",
         "docs": "/docs",
-        "health": "/api/v1/health",
+        "health": "/api/health",
     }
 
 
-@app.get("/api/v1/health", tags=["System"])
+@app.get(
+    "/api/health",
+    tags=["System"],
+)
 def healthcheck(
     db: Session = Depends(get_db),
 ):
     try:
-        db.execute(text("SELECT 1"))
+        db.execute(
+            text("SELECT 1")
+        )
 
         return {
             "status": "healthy",

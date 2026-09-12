@@ -6,9 +6,13 @@ from src.core.security import (
     create_access_token,
     verify_password,
 )
-from src.models.tai_khoan import TaiKhoan
-from src.repositories.auth_repository import AuthRepository
-from src.repositories.nhat_ky_repository import NhatKyRepository
+from src.models.user_model import User
+from src.repositories.auth_repository import (
+    AuthRepository,
+)
+from src.repositories.nhat_ky_repository import (
+    NhatKyRepository,
+)
 from src.schemas.auth_schema import (
     LoginRequest,
     TokenResponse,
@@ -28,35 +32,33 @@ class AuthService:
     ) -> TokenResponse:
         user = self.auth_repository.get_by_account_id(
             db=db,
-            account_id=payload.ma_tai_khoan,
+            account_id=payload.ma_nguoi_dung,
         )
 
-        # Không tìm thấy mã tài khoản
         if user is None:
             self._write_log(
                 db=db,
                 account_id=None,
                 action="DANG_NHAP",
                 result="THAT_BAI",
-                description="Mã tài khoản không tồn tại.",
+                description="Mã người dùng không tồn tại.",
             )
 
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
                 detail=(
-                    "Mã tài khoản hoặc mật khẩu "
+                    "Mã người dùng hoặc mật khẩu "
                     "không chính xác."
                 ),
             )
 
-        # Sai mật khẩu
         if not verify_password(
             payload.mat_khau,
             user.mat_khau,
         ):
             self._write_log(
                 db=db,
-                account_id=user.ma_tai_khoan,
+                account_id=user.ma_nguoi_dung,
                 action="DANG_NHAP",
                 result="THAT_BAI",
                 description="Sai mật khẩu.",
@@ -65,36 +67,37 @@ class AuthService:
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
                 detail=(
-                    "Mã tài khoản hoặc mật khẩu "
+                    "Mã người dùng hoặc mật khẩu "
                     "không chính xác."
                 ),
             )
 
-        # Tài khoản đã ngừng hoạt động
         if user.trang_thai != "HOAT_DONG":
             self._write_log(
                 db=db,
-                account_id=user.ma_tai_khoan,
+                account_id=user.ma_nguoi_dung,
                 action="DANG_NHAP",
                 result="THAT_BAI",
-                description="Tài khoản đã ngừng hoạt động.",
+                description=(
+                    "Tài khoản đã ngừng hoạt động."
+                ),
             )
 
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
-                detail="Tài khoản đã ngừng hoạt động.",
+                detail=(
+                    "Tài khoản đã ngừng hoạt động."
+                ),
             )
 
-        # Tạo JWT
         access_token = create_access_token(
-            sub=user.ma_tai_khoan,
+            sub=user.ma_nguoi_dung,
             role=user.vai_tro,
         )
 
-        # Ghi nhật ký đăng nhập thành công
         self._write_log(
             db=db,
-            account_id=user.ma_tai_khoan,
+            account_id=user.ma_nguoi_dung,
             action="DANG_NHAP",
             result="THANH_CONG",
             description="Đăng nhập thành công.",
@@ -104,19 +107,20 @@ class AuthService:
             access_token=access_token,
             token_type="bearer",
             expires_in=(
-                settings.ACCESS_TOKEN_EXPIRE_MINUTES * 60
+                settings.ACCESS_TOKEN_EXPIRE_MINUTES
+                * 60
             ),
             user=UserResponse.model_validate(user),
         )
 
     def logout(
         self,
-        current_user: TaiKhoan,
+        current_user: User,
         db: Session,
     ) -> None:
         self._write_log(
             db=db,
-            account_id=current_user.ma_tai_khoan,
+            account_id=current_user.ma_nguoi_dung,
             action="DANG_XUAT",
             result="THANH_CONG",
             description="Đăng xuất thành công.",
@@ -135,7 +139,7 @@ class AuthService:
 
         self.log_repository.log_action(
             db=db,
-            ma_tai_khoan=account_id,
+            ma_nguoi_dung=account_id,
             hanh_dong=action,
             ket_qua=result,
             mo_ta=description,

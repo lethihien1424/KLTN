@@ -14,10 +14,24 @@ class Base(DeclarativeBase):
     pass
 
 
+database_url = settings.database_url
+
+# Project đang dùng psycopg2-binary.
+# Nếu config đang trả về postgresql+psycopg://
+# thì chuyển sang driver psycopg2.
+if database_url.startswith("postgresql+psycopg://"):
+    database_url = database_url.replace(
+        "postgresql+psycopg://",
+        "postgresql+psycopg2://",
+        1,
+    )
+
+
 engine = create_engine(
-    settings.database_url,
+    database_url,
     pool_pre_ping=True,
 )
+
 
 SessionLocal = sessionmaker(
     bind=engine,

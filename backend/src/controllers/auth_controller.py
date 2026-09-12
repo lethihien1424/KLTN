@@ -1,6 +1,6 @@
 from sqlalchemy.orm import Session
 
-from src.models.tai_khoan import TaiKhoan
+from src.models.user_model import User
 from src.schemas.auth_schema import (
     LoginRequest,
     LogoutResponse,
@@ -23,7 +23,7 @@ class AuthController:
 
     @staticmethod
     def me(
-        current_user: TaiKhoan,
+        current_user: User,
     ) -> MeResponse:
         return MeResponse.model_validate(
             current_user
@@ -31,7 +31,7 @@ class AuthController:
 
     @staticmethod
     def logout(
-        current_user: TaiKhoan,
+        current_user: User,
         db: Session,
     ) -> LogoutResponse:
         AuthService().logout(

@@ -1,9 +1,13 @@
 import uuid
-from datetime import datetime, timedelta, timezone
+from datetime import (
+    datetime,
+    timedelta,
+    timezone,
+)
 from typing import Any
 
 import bcrypt
-import jwt
+from jose import jwt
 
 from src.core.config import settings
 
@@ -50,7 +54,9 @@ def create_access_token(
     now = datetime.now(timezone.utc)
 
     expires_at = now + timedelta(
-        minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES
+        minutes=(
+            settings.ACCESS_TOKEN_EXPIRE_MINUTES
+        )
     )
 
     payload = {
@@ -76,6 +82,6 @@ def decode_access_token(
         token,
         settings.JWT_SECRET_KEY,
         algorithms=[
-            settings.JWT_ALGORITHM
+            settings.JWT_ALGORITHM,
         ],
     )
