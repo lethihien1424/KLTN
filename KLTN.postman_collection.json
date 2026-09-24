@@ -1,0 +1,365 @@
+{
+  "info": {
+    "_postman_id": "31f5a909-9f44-4146-867a-1d6bb2857896",
+    "name": "KLTN",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "_exporter_id": "47850877",
+    "_collection_link": "https://go.postman.co/collection/47850877-31f5a909-9f44-4146-867a-1d6bb2857896?source=collection_link"
+  },
+  "item": [
+    {
+      "name": "auth",
+      "item": [
+        {
+          "name": "kiểm tra",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "http://localhost:8000/api/v1/health",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "8000",
+              "path": [
+                "api",
+                "v1",
+                "health"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Đăng nhập",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n  \"ma_nguoi_dung\": \"admin\",\r\n  \"mat_khau\": \"123456\"\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "http://localhost:8000/api/auth/login",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "8000",
+              "path": [
+                "api",
+                "auth",
+                "login"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Đăng xuất",
+          "request": {
+            "method": "POST",
+            "header": []
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Import",
+      "item": [
+        {
+          "name": "sanpham",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{json_web_token_0b1c}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "file",
+                  "type": "file",
+                  "src": [
+                    "/C:/Users/Admin/Downloads/01_san_pham_Milano_thuc_te.xlsx"
+                  ]
+                }
+              ]
+            },
+            "url": {
+              "raw": "http://localhost:8000/api/imports/san-pham",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "8000",
+              "path": [
+                "api",
+                "imports",
+                "san-pham"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "nguyenlieu",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": ""
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "ncc",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": ""
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "nguyenlieu-ncc",
+          "request": {
+            "auth": {
+              "type": "jwt",
+              "jwt": [
+                {
+                  "key": "algorithm",
+                  "value": "HS256",
+                  "type": "string"
+                },
+                {
+                  "key": "isSecretBase64Encoded",
+                  "value": false,
+                  "type": "boolean"
+                },
+                {
+                  "key": "payload",
+                  "value": "{}",
+                  "type": "string"
+                },
+                {
+                  "key": "addTokenTo",
+                  "value": "header",
+                  "type": "string"
+                },
+                {
+                  "key": "headerPrefix",
+                  "value": "Bearer",
+                  "type": "string"
+                },
+                {
+                  "key": "queryParamKey",
+                  "value": "token",
+                  "type": "string"
+                },
+                {
+                  "key": "header",
+                  "value": "{}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "http://localhost:8000/api/imports/nguyen-lieu-nha-cung-cap",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "8000",
+              "path": [
+                "api",
+                "imports",
+                "nguyen-lieu-nha-cung-cap"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "ngayle",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": ""
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "congthuc&ctct",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": ""
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "tonkho",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": ""
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "lichsutieuthu_khsx",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{json_web_token_08ym}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "file",
+                  "type": "file",
+                  "src": [
+                    "/D:/KLTN/KLTN/backend/data/Don_hang_2025_2026_import_du_bao_SeasonalNaive.xlsx"
+                  ]
+                }
+              ]
+            },
+            "url": {
+              "raw": "http://localhost:8000/api/imports/don-hang",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "8000",
+              "path": [
+                "api",
+                "imports",
+                "don-hang"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Dự báo",
+      "item": [
+        {
+          "name": "dự bóa nhu cầu sp",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{json_web_token_15ec}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n  \"so_tuan_du_bao\": 4\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "http://localhost:8000/api/du-bao/nhu-cau",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "8000",
+              "path": [
+                "api",
+                "du-bao",
+                "nhu-cau"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    }
+  ],
+  "variable": [
+    {
+      "key": "json_web_token_0b1c",
+      "secret": true
+    },
+    {
+      "key": "supabase_service_role_api_key_0k44",
+      "secret": true
+    },
+    {
+      "key": "json_web_token_022j",
+      "secret": true
+    },
+    {
+      "key": "supabase_service_role_api_key_16h7",
+      "secret": true
+    },
+    {
+      "key": "supabase_service_role_api_key_0b1c",
+      "secret": true
+    },
+    {
+      "key": "json_web_token_15ec",
+      "secret": true
+    },
+    {
+      "key": "json_web_token_0508",
+      "secret": true
+    },
+    {
+      "key": "json_web_token_08ym",
+      "secret": true
+    },
+    {
+      "key": "json_web_token_06b3",
+      "secret": true
+    }
+  ]
+}
