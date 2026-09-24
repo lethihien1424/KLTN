@@ -527,7 +527,99 @@ CREATE TABLE ke_hoach_san_xuat (
         ma_san_pham
     )
 );
+-- ============================================================
+-- BẢNG ĐÁNH GIÁ MÔ HÌNH DỰ BÁO
+-- ============================================================
 
+CREATE SEQUENCE IF NOT EXISTS seq_danh_gia_mo_hinh
+    START WITH 1
+    INCREMENT BY 1;
+
+
+CREATE TABLE danh_gia_mo_hinh (
+    ma_danh_gia VARCHAR(20) PRIMARY KEY
+        DEFAULT (
+            'DGMH'
+            || LPAD(
+                nextval('seq_danh_gia_mo_hinh')::TEXT,
+                4,
+                '0'
+            )
+        ),
+
+    ma_lich_su_du_bao VARCHAR(20) NOT NULL,
+
+    ma_san_pham VARCHAR(20) NOT NULL,
+
+    mo_hinh VARCHAR(30) NOT NULL
+        CHECK (
+            mo_hinh IN (
+                'PROPHET',
+                'SEASONAL_NAIVE'
+            )
+        ),
+
+    horizon INTEGER NOT NULL
+        CHECK (
+            horizon IN (4, 8)
+        ),
+
+    so_fold INTEGER NOT NULL
+        CHECK (
+            so_fold > 0
+        ),
+
+    so_diem_danh_gia INTEGER NOT NULL
+        CHECK (
+            so_diem_danh_gia > 0
+        ),
+
+    chu_ky INTEGER,
+
+    mae NUMERIC(14,4) NOT NULL
+        CHECK (mae >= 0),
+
+    rmse NUMERIC(14,4) NOT NULL
+        CHECK (rmse >= 0),
+
+    wape NUMERIC(14,4)
+        CHECK (
+            wape IS NULL
+            OR wape >= 0
+        ),
+
+    smape NUMERIC(14,4) NOT NULL
+        CHECK (smape >= 0),
+
+    thoi_gian_tao TIMESTAMPTZ
+        NOT NULL
+        DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT fk_danh_gia_lich_su
+        FOREIGN KEY (
+            ma_lich_su_du_bao
+        )
+        REFERENCES lich_su_du_bao(
+            ma_lich_su_du_bao
+        )
+        ON DELETE CASCADE,
+
+    CONSTRAINT fk_danh_gia_san_pham
+        FOREIGN KEY (
+            ma_san_pham
+        )
+        REFERENCES san_pham(
+            ma_san_pham
+        ),
+
+    CONSTRAINT uq_danh_gia_mo_hinh
+        UNIQUE (
+            ma_lich_su_du_bao,
+            ma_san_pham,
+            mo_hinh,
+            horizon
+        )
+);
 
 -- =====================================================
 -- LỊCH SỬ DỰ BÁO
@@ -549,7 +641,7 @@ CREATE TABLE lich_su_du_bao (
 
     so_tuan_du_bao INTEGER NOT NULL
         CHECK (
-            so_tuan_du_bao IN (4, 8)
+            so_tuan_du_bao BETWEEN 4 AND 8
         ),
 
     cau_hinh_mo_hinh VARCHAR(50) NOT NULL,
@@ -559,20 +651,29 @@ CREATE TABLE lich_su_du_bao (
 
     tham_so JSONB,
 
-    trang_thai VARCHAR(30) NOT NULL,
+    trang_thai VARCHAR(30) NOT NULL
+    DEFAULT 'THANH_CONG'
+    CHECK (
+        trang_thai IN (
+            'THANH_CONG',
+            'THAT_BAI'
+        )
+    ),
 
     nguoi_thuc_hien VARCHAR(20),
 
     thoi_gian_tao TIMESTAMPTZ NOT NULL
         DEFAULT CURRENT_TIMESTAMP,
 
-
     CHECK (
         ngay_ket_thuc_huan_luyen
         >= ngay_bat_dau_huan_luyen
-    )
-);
+    ),
 
+    FOREIGN KEY (nguoi_thuc_hien)
+        REFERENCES users(ma_nguoi_dung)
+        ON DELETE SET NULL
+);
 
 -- =====================================================
 -- CHI TIẾT LỊCH SỬ DỰ BÁO
@@ -582,7 +683,9 @@ CREATE TABLE chi_tiet_lich_su_du_bao (
     ma_chi_tiet VARCHAR(20) PRIMARY KEY
         DEFAULT (
             'CTDB' || LPAD(
-                nextval('chi_tiet_lich_su_du_bao_seq')::TEXT,
+                nextval(
+                    'chi_tiet_lich_su_du_bao_seq'
+                )::TEXT,
                 4,
                 '0'
             )
@@ -592,9 +695,33 @@ CREATE TABLE chi_tiet_lich_su_du_bao (
 
     ma_san_pham VARCHAR(20) NOT NULL,
 
+    -- Dùng ở bước quy đổi nhu cầu nguyên liệu.
+    -- Hiện tại dự báo sản phẩm nên cho phép NULL.
     ma_nguyen_lieu VARCHAR(20),
 
-    so_luong_du_bao_kg NUMERIC(14,2) NOT NULL
+    -- Khoảng thời gian của tuần dự báo.
+    tu_ngay DATE NOT NULL,
+    den_ngay DATE NOT NULL,
+
+    -- Kết quả dự báo nhu cầu sản phẩm.
+    so_luong_du_bao INTEGER NOT NULL
+        CHECK (
+            so_luong_du_bao >= 0
+        ),
+
+    can_duoi INTEGER
+        CHECK (
+            can_duoi >= 0
+        ),
+
+    can_tren INTEGER
+        CHECK (
+            can_tren >= 0
+        ),
+
+    -- Chỉ có giá trị sau khi quy đổi
+    -- nhu cầu sản phẩm sang nguyên liệu.
+    so_luong_du_bao_kg NUMERIC(14,2)
         CHECK (
             so_luong_du_bao_kg >= 0
         ),
@@ -619,8 +746,20 @@ CREATE TABLE chi_tiet_lich_su_du_bao (
             smape >= 0
         ),
 
+    CHECK (
+        den_ngay >= tu_ngay
+    ),
+
+    CHECK (
+        can_duoi IS NULL
+        OR can_tren IS NULL
+        OR can_tren >= can_duoi
+    ),
+
     FOREIGN KEY (ma_lich_su_du_bao)
-        REFERENCES lich_su_du_bao(ma_lich_su_du_bao)
+        REFERENCES lich_su_du_bao(
+            ma_lich_su_du_bao
+        )
         ON DELETE CASCADE,
 
     FOREIGN KEY (ma_san_pham)
@@ -630,7 +769,6 @@ CREATE TABLE chi_tiet_lich_su_du_bao (
         REFERENCES nguyen_lieu(ma_nguyen_lieu)
         ON DELETE SET NULL
 );
-
 
 CREATE SEQUENCE de_xuat_nhap_hang_seq START 1;
 CREATE SEQUENCE chi_tiet_de_xuat_nhap_hang_seq START 1;
@@ -810,5 +948,8 @@ CREATE TABLE chi_tiet_don_mua (
         so_luong_thuc_nhan <= so_luong_mua
     )
 );
+
+ALTER DATABASE milano_coffee
+SET timezone TO 'Asia/Ho_Chi_Minh';
 
 COMMIT;

@@ -31,6 +31,18 @@ from src.models.ke_hoach_san_xuat_model import (
     KeHoachSanXuat,
 )
 
+from src.models.lich_su_du_bao import (
+    LichSuDuBao,
+)
+
+from src.models.chi_tiet_lich_su_du_bao import (
+    ChiTietLichSuDuBao,
+)
+
+from src.models.danh_gia_mo_hinh import (
+    DanhGiaMoHinh,
+)
+
 
 __all__ = [
     "User",
@@ -45,4 +57,7 @@ __all__ = [
     "ChiTietCongThuc",
     "LichSuTieuThu",
     "KeHoachSanXuat",
+    "LichSuDuBao",
+    "ChiTietLichSuDuBao",
+    "DanhGiaMoHinh",
 ]

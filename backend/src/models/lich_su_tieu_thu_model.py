@@ -1,3 +1,4 @@
+###D:\KLTN\KLTN\backend\src\models\lich_su_tieu_thu_model.py
 from sqlalchemy import (
     Boolean,
     Column,

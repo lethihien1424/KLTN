@@ -1,3 +1,4 @@
+###D:\KLTN\KLTN\backend\src\models\ke_hoach_san_xuat_model.py
 from sqlalchemy import (
     Column,
     Date,

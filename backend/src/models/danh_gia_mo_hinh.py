@@ -1,20 +1,21 @@
 from sqlalchemy import (
     Column,
-    Date,
+    DateTime,
     FetchedValue,
     ForeignKey,
     Integer,
     Numeric,
     String,
+    text,
 )
 
 from src.core.database import Base
 
 
-class ChiTietLichSuDuBao(Base):
-    __tablename__ = "chi_tiet_lich_su_du_bao"
+class DanhGiaMoHinh(Base):
+    __tablename__ = "danh_gia_mo_hinh"
 
-    ma_chi_tiet = Column(
+    ma_danh_gia = Column(
         String(20),
         primary_key=True,
         server_default=FetchedValue(),
@@ -37,41 +38,55 @@ class ChiTietLichSuDuBao(Base):
         nullable=False,
     )
 
-    ma_nguyen_lieu = Column(
-        String(20),
-        ForeignKey(
-            "nguyen_lieu.ma_nguyen_lieu",
-            ondelete="SET NULL",
+    mo_hinh = Column(
+        String(30),
+        nullable=False,
+    )
+
+    horizon = Column(
+        Integer,
+        nullable=False,
+    )
+
+    so_fold = Column(
+        Integer,
+        nullable=False,
+    )
+
+    so_diem_danh_gia = Column(
+        Integer,
+        nullable=False,
+    )
+
+    chu_ky = Column(
+        Integer,
+        nullable=True,
+    )
+
+    mae = Column(
+        Numeric(14, 4),
+        nullable=False,
+    )
+
+    rmse = Column(
+        Numeric(14, 4),
+        nullable=False,
+    )
+
+    wape = Column(
+        Numeric(14, 4),
+        nullable=True,
+    )
+
+    smape = Column(
+        Numeric(14, 4),
+        nullable=False,
+    )
+
+    thoi_gian_tao = Column(
+        DateTime(timezone=True),
+        nullable=False,
+        server_default=text(
+            "CURRENT_TIMESTAMP"
         ),
-        nullable=True,
-    )
-
-    tu_ngay = Column(
-        Date,
-        nullable=False,
-    )
-
-    den_ngay = Column(
-        Date,
-        nullable=False,
-    )
-
-    so_luong_du_bao = Column(
-        Integer,
-        nullable=False,
-    )
-
-    can_duoi = Column(
-        Integer,
-        nullable=True,
-    )
-
-    can_tren = Column(
-        Integer,
-        nullable=True,
-    )
-
-    so_luong_du_bao_kg = Column(
-        Numeric(14, 2),
-        nullable=True,
     )

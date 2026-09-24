@@ -1,3 +1,4 @@
+###D:\KLTN\KLTN\backend\src\models\san_pham_model.py
 from sqlalchemy import (
     Column,
     DateTime,

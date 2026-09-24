@@ -10,3 +10,6 @@ passlib[bcrypt]
 python-multipart
 pandas
 openpyxl
+prophet
+numpy
+scikit-learn
