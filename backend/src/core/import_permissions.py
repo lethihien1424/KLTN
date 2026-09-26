@@ -13,12 +13,9 @@ IMPORT_PERMISSIONS = {
 
     "QUAN_LY": {
         "san_pham",
-        "nguyen_lieu",
         "nha_cung_cap",
         "nguyen_lieu_nha_cung_cap",
-        "ton_kho_nguyen_lieu",
         "ngay_le",
-        "cong_thuc",
         "don_hang",
     },
 
@@ -32,12 +29,13 @@ IMPORT_PERMISSIONS = {
 
     "NHAN_VIEN_KHO": {
         "nguyen_lieu",
-        "nha_cung_cap",
         "nguyen_lieu_nha_cung_cap",
         "ton_kho_nguyen_lieu",
     },
 
-    "NHAN_VIEN_MUA_HANG": set(),
+    "NHAN_VIEN_MUA_HANG": {
+        "nha_cung_cap",
+    },
 }
 
 

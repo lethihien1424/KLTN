@@ -223,7 +223,13 @@ CREATE TABLE nha_cung_cap (
         CHECK (
             diem_dieu_kien_thuong_mai
             BETWEEN 0 AND 100
-        )
+        ),
+
+    ty_le_giao_dung_han_thuc_te NUMERIC(5,2)
+        CHECK (ty_le_giao_dung_han_thuc_te BETWEEN 0 AND 100),
+
+    ty_le_giao_du_thuc_te NUMERIC(5,2)
+        CHECK (ty_le_giao_du_thuc_te BETWEEN 0 AND 100)
 );
 
 -- =========================
@@ -654,7 +660,42 @@ CREATE TABLE de_xuat_nhap_hang (
     ngay_tao_de_xuat TIMESTAMPTZ NOT NULL
         DEFAULT CURRENT_TIMESTAMP,
 
-    ghi_chu TEXT
+    ghi_chu TEXT,
+
+    trang_thai VARCHAR(30) NOT NULL
+        DEFAULT 'CHO_DUYET',
+
+    nguoi_tao VARCHAR(20),
+    nguoi_duyet VARCHAR(20),
+    thoi_gian_duyet TIMESTAMPTZ,
+    ly_do_tu_choi TEXT,
+
+    CONSTRAINT fk_de_xuat_nhap_hang_nguoi_tao
+        FOREIGN KEY (nguoi_tao)
+        REFERENCES users(ma_nguoi_dung),
+
+    CONSTRAINT fk_de_xuat_nhap_hang_nguoi_duyet
+        FOREIGN KEY (nguoi_duyet)
+        REFERENCES users(ma_nguoi_dung),
+
+    CONSTRAINT ck_de_xuat_nhap_hang_workflow CHECK (
+        (
+            trang_thai = 'CHO_DUYET'
+            AND nguoi_duyet IS NULL
+            AND thoi_gian_duyet IS NULL
+            AND ly_do_tu_choi IS NULL
+        ) OR (
+            trang_thai = 'DA_DUYET'
+            AND nguoi_duyet IS NOT NULL
+            AND thoi_gian_duyet IS NOT NULL
+            AND ly_do_tu_choi IS NULL
+        ) OR (
+            trang_thai = 'TU_CHOI'
+            AND nguoi_duyet IS NOT NULL
+            AND thoi_gian_duyet IS NOT NULL
+            AND NULLIF(BTRIM(ly_do_tu_choi), '') IS NOT NULL
+        )
+    )
 );
 
 
@@ -749,12 +790,42 @@ CREATE TABLE don_mua_nguyen_lieu (
         )
     ),
 
+    nguoi_duyet VARCHAR(20),
+    thoi_gian_duyet TIMESTAMPTZ,
+    ly_do_tu_choi TEXT,
+
     FOREIGN KEY (ma_ncc)
         REFERENCES nha_cung_cap(ma_ncc),
     FOREIGN KEY (ma_de_xuat)
     REFERENCES de_xuat_nhap_hang(ma_de_xuat),
     FOREIGN KEY (nguoi_tao)
         REFERENCES users(ma_nguoi_dung),
+    CONSTRAINT fk_don_mua_nguoi_duyet
+        FOREIGN KEY (nguoi_duyet)
+        REFERENCES users(ma_nguoi_dung),
+
+    CONSTRAINT uq_don_mua_de_xuat_ncc
+        UNIQUE (ma_de_xuat, ma_ncc),
+
+    CONSTRAINT ck_don_mua_workflow CHECK (
+        trang_thai = 'DA_NHAN_HANG'
+        OR (
+            trang_thai = 'CHUA_DUYET'
+            AND nguoi_duyet IS NULL
+            AND thoi_gian_duyet IS NULL
+            AND ly_do_tu_choi IS NULL
+        ) OR (
+            trang_thai = 'DA_DUYET'
+            AND nguoi_duyet IS NOT NULL
+            AND thoi_gian_duyet IS NOT NULL
+            AND ly_do_tu_choi IS NULL
+        ) OR (
+            trang_thai = 'TU_CHOI'
+            AND nguoi_duyet IS NOT NULL
+            AND thoi_gian_duyet IS NOT NULL
+            AND NULLIF(BTRIM(ly_do_tu_choi), '') IS NOT NULL
+        )
+    ),
 
     CHECK (
         ngay_du_kien_giao >= ngay_dat_hang
