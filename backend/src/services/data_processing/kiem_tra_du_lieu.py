@@ -1,18 +1,12 @@
-from datetime import (
-    date,
-    datetime,
-)
-from decimal import (
-    Decimal,
-    InvalidOperation,
-)
+### backend/src/services/data_processing/kiem_tra_du_lieu.py
+import re
+from datetime import date, datetime
+from decimal import Decimal, InvalidOperation
 
 import pandas as pd
 
 
-def is_empty(
-    value,
-) -> bool:
+def is_empty(value) -> bool:
     if value is None:
         return True
 
@@ -22,13 +16,7 @@ def is_empty(
     except (TypeError, ValueError):
         pass
 
-    if (
-        isinstance(value, str)
-        and not value.strip()
-    ):
-        return True
-
-    return False
+    return isinstance(value, str) and not value.strip()
 
 
 def to_string(
@@ -40,18 +28,11 @@ def to_string(
     if is_empty(value):
         if required:
             raise ValueError(
-                f"Dòng {row_number}: "
-                f"cột '{column}' "
-                "không được để trống."
+                f"Dòng {row_number}: cột '{column}' không được để trống."
             )
-
         return None
 
-    value = str(
-        value
-    ).strip()
-
-    return value
+    return str(value).strip()
 
 
 def to_decimal(
@@ -63,38 +44,40 @@ def to_decimal(
     if is_empty(value):
         if required:
             raise ValueError(
-                f"Dòng {row_number}: "
-                f"cột '{column}' "
-                "không được để trống."
+                f"Dòng {row_number}: cột '{column}' không được để trống."
             )
-
         return None
 
     try:
-        if isinstance(
-            value,
-            str,
-        ):
-            value = (
-                value
-                .strip()
-                .replace(",", "")
+        if isinstance(value, bool):
+            raise ValueError("Boolean không phải số.")
+
+        if isinstance(value, str):
+            raw = value.strip()
+
+            # Chấp nhận 1234.50 hoặc 1,234.50.
+            # Không đoán định dạng như 1.234,50.
+            pattern = (
+                r"[+-]?"
+                r"(?:\d+|\d{1,3}(?:,\d{3})+)"
+                r"(?:\.\d+)?"
             )
 
-        return Decimal(
-            str(value)
-        )
+            if not re.fullmatch(pattern, raw):
+                raise ValueError("Định dạng số không hợp lệ.")
 
-    except (
-        InvalidOperation,
-        ValueError,
-        TypeError,
-    ) as exc:
+            value = raw.replace(",", "")
+
+        result = Decimal(str(value))
+
+        if not result.is_finite():
+            raise ValueError("Số không hữu hạn.")
+
+        return result
+
+    except (InvalidOperation, ValueError, TypeError) as exc:
         raise ValueError(
-            f"Dòng {row_number}: "
-            f"cột '{column}' "
-            "phải là số. "
-            f"Giá trị hiện tại: {value}"
+            f"Dòng {row_number}: cột '{column}' phải là số hợp lệ."
         ) from exc
 
 
@@ -103,32 +86,18 @@ def to_integer(
     column: str,
     row_number: int,
 ) -> int:
-    decimal_value = to_decimal(
+    result = to_decimal(
         value=value,
         column=column,
         row_number=row_number,
     )
 
-    if decimal_value is None:
+    if result != result.to_integral_value():
         raise ValueError(
-            f"Dòng {row_number}: "
-            f"cột '{column}' "
-            "không được để trống."
+            f"Dòng {row_number}: cột '{column}' phải là số nguyên."
         )
 
-    if (
-        decimal_value
-        != decimal_value.to_integral_value()
-    ):
-        raise ValueError(
-            f"Dòng {row_number}: "
-            f"cột '{column}' "
-            "phải là số nguyên."
-        )
-
-    return int(
-        decimal_value
-    )
+    return int(result)
 
 
 def to_date(
@@ -138,38 +107,32 @@ def to_date(
 ) -> date:
     if is_empty(value):
         raise ValueError(
-            f"Dòng {row_number}: "
-            f"cột '{column}' "
-            "không được để trống."
+            f"Dòng {row_number}: cột '{column}' không được để trống."
         )
 
-    if isinstance(
-        value,
-        datetime,
-    ):
+    # Excel thường được pandas đọc thành date hoặc datetime.
+    if isinstance(value, datetime):
         return value.date()
 
-    if isinstance(
-        value,
-        date,
-    ):
+    if isinstance(value, date):
         return value
 
-    try:
-        parsed = pd.to_datetime(
-            value,
-            dayfirst=True,
-            errors="raise",
-        )
+    if isinstance(value, str):
+        raw = value.strip()
 
-        return parsed.date()
+        for date_format in ("%d/%m/%Y", "%d-%m-%Y"):
+            try:
+                return datetime.strptime(
+                    raw,
+                    date_format,
+                ).date()
+            except ValueError:
+                continue
 
-    except Exception as exc:
-        raise ValueError(
-            f"Dòng {row_number}: "
-            f"cột '{column}' "
-            "không đúng định dạng ngày."
-        ) from exc
+    raise ValueError(
+        f"Dòng {row_number}: cột '{column}' phải theo định dạng "
+        "DD/MM/YYYY hoặc DD-MM-YYYY."
+    )
 
 
 def to_boolean(
@@ -177,52 +140,25 @@ def to_boolean(
     column: str,
     row_number: int,
 ) -> bool:
-    if isinstance(
-        value,
-        bool,
-    ):
+    if isinstance(value, bool):
         return value
 
     if is_empty(value):
         raise ValueError(
-            f"Dòng {row_number}: "
-            f"cột '{column}' "
-            "không được để trống."
+            f"Dòng {row_number}: cột '{column}' không được để trống."
         )
 
-    normalized = str(
-        value
-    ).strip().lower()
+    normalized = str(value).strip().lower()
 
-    true_values = {
-        "true",
-        "1",
-        "có",
-        "co",
-        "yes",
-        "y",
-    }
-
-    false_values = {
-        "false",
-        "0",
-        "không",
-        "khong",
-        "no",
-        "n",
-    }
-
-    if normalized in true_values:
+    if normalized in {"true", "1", "có", "co", "yes", "y"}:
         return True
 
-    if normalized in false_values:
+    if normalized in {"false", "0", "không", "khong", "no", "n"}:
         return False
 
     raise ValueError(
-        f"Dòng {row_number}: "
-        f"cột '{column}' "
-        "phải là TRUE/FALSE "
-        "hoặc Có/Không."
+        f"Dòng {row_number}: cột '{column}' "
+        "phải là TRUE/FALSE hoặc Có/Không."
     )
 
 
@@ -233,17 +169,11 @@ def validate_choice(
     row_number: int,
 ) -> str:
     if value not in allowed_values:
+        choices = ", ".join(sorted(allowed_values))
+
         raise ValueError(
-            f"Dòng {row_number}: "
-            f"cột '{column}' "
-            f"có giá trị '{value}' "
-            "không hợp lệ. "
-            "Giá trị được phép: "
-            + ", ".join(
-                sorted(
-                    allowed_values
-                )
-            )
+            f"Dòng {row_number}: cột '{column}' không hợp lệ; "
+            f"chọn một trong {choices}."
         )
 
     return value

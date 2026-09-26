@@ -1,3 +1,4 @@
+###D:\KLTN\KLTN\backend\src\routes\du_bao_routes.py
 from fastapi import (
     APIRouter,
     Depends,

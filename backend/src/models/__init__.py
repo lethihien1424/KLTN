@@ -1,3 +1,4 @@
+###D:\KLTN\KLTN\backend\src\models\__init__.py
 from src.models.user_model import User
 from src.models.nhat_ky_hoat_dong_model import (
     NhatKyHoatDong,

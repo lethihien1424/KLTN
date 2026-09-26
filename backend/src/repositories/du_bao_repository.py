@@ -1,3 +1,4 @@
+##D:\KLTN\KLTN\backend\src\repositories\du_bao_repository.py
 from sqlalchemy.orm import Session
 
 from src.models.chi_tiet_lich_su_du_bao import (

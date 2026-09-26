@@ -1,3 +1,4 @@
+###D:\KLTN\KLTN\backend\src\repositories\danh_gia_mo_hinh_repository.py
 from sqlalchemy.orm import Session
 
 from src.models.danh_gia_mo_hinh import (

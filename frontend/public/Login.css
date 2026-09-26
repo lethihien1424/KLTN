@@ -1,0 +1,141 @@
+* {
+    box-sizing: border-box;
+}
+
+body {
+    margin: 0;
+    font-family: "Segoe UI", Arial, sans-serif;
+}
+
+.login-page {
+    min-height: 100vh;
+    display: grid;
+    place-items: center;
+    padding: 24px;
+    background: radial-gradient(circle at 18% 30%, #dcecff, transparent 38%), radial-gradient(circle at 88% 85%, #e8eaff, transparent 39%), #f5faff;
+}
+
+.login-card {
+    width: min(100%, 390px);
+    padding: 28px;
+    border-radius: 20px;
+    background: white;
+    box-shadow: 0 18px 44px #607eaa1a;
+}
+
+.login-logo {
+    display: grid;
+    place-items: center;
+    width: 55px;
+    height: 55px;
+    margin: 0 auto 9px;
+    border-radius: 50%;
+    background: linear-gradient(145deg, #64a8ff, #2463e9);
+    box-shadow: 0 5px 12px #2c69ed44;
+    color: white;
+}
+
+.login-card h1 {
+    margin: 0;
+    text-align: center;
+    font-size: 22px;
+    letter-spacing: 1.3px;
+    color: #17243b;
+}
+
+.login-subtitle {
+    margin: 8px 0 25px;
+    text-align: center;
+    font-size: 11px;
+    color: #8291aa;
+}
+
+.login-card form>label {
+    display: block;
+    margin: 14px 0 6px;
+    color: #263955;
+    font-size: 12px;
+    font-weight: 700;
+}
+
+.login-card form>input {
+    width: 100%;
+    height: 38px;
+    padding: 0 12px;
+    border: 1px solid #dce5ef;
+    border-radius: 9px;
+    background: #f7f9fc;
+    font-size: 13px;
+    outline: none;
+}
+
+.login-card form>input:focus {
+    border-color: #3d7cf0;
+}
+
+.login-options {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin: 15px 0 17px;
+    font-size: 11px;
+}
+
+.login-remember {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    color: #7587a3;
+}
+
+.login-remember input {
+    margin: 0;
+    accent-color: #2864e8;
+}
+
+.login-forgot {
+    color: #2864e8;
+    font-weight: 700;
+}
+
+.login-error {
+    margin: 0 0 12px;
+    color: #bb3030;
+    font-size: 12px;
+}
+
+.login-button {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 12px;
+    width: 100%;
+    min-height: 42px;
+    border: 0;
+    border-radius: 9px;
+    background: #2864e8;
+    box-shadow: 0 6px 13px #2864e84d;
+    color: white;
+    font-family: "Segoe UI", Arial, sans-serif;
+    font-size: 14px;
+    font-weight: 600;
+    letter-spacing: 0.2px;
+    cursor: pointer;
+}
+
+.login-button:disabled {
+    opacity: 0.7;
+    cursor: wait;
+}
+
+.login-button span {
+    font-size: 19px;
+    font-weight: 400;
+}
+
+.login-footer {
+    margin: 22px 0 0;
+    text-align: center;
+    color: #a5b2c7;
+    font-size: 10px;
+}

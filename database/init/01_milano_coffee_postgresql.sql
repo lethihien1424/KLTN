@@ -531,6 +531,62 @@ CREATE TABLE ke_hoach_san_xuat (
 -- BẢNG ĐÁNH GIÁ MÔ HÌNH DỰ BÁO
 -- ============================================================
 
+
+-- =====================================================
+-- LỊCH SỬ DỰ BÁO
+-- =====================================================
+
+CREATE TABLE lich_su_du_bao (
+    ma_lich_su_du_bao VARCHAR(20) PRIMARY KEY
+        DEFAULT (
+            'LSDB' || LPAD(
+                nextval('lich_su_du_bao_seq')::TEXT,
+                4,
+                '0'
+            )
+        ),
+
+    ngay_bat_dau_huan_luyen DATE NOT NULL,
+
+    ngay_ket_thuc_huan_luyen DATE NOT NULL,
+
+    so_tuan_du_bao INTEGER NOT NULL
+        CHECK (
+            so_tuan_du_bao BETWEEN 4 AND 8
+        ),
+
+    cau_hinh_mo_hinh VARCHAR(50) NOT NULL,
+
+    thoi_gian_chay TIMESTAMPTZ NOT NULL
+        DEFAULT CURRENT_TIMESTAMP,
+
+    tham_so JSONB,
+
+    trang_thai VARCHAR(30) NOT NULL
+    DEFAULT 'THANH_CONG'
+    CHECK (
+        trang_thai IN (
+            'THANH_CONG',
+            'THAT_BAI'
+        )
+    ),
+
+    nguoi_thuc_hien VARCHAR(20),
+
+    thoi_gian_tao TIMESTAMPTZ NOT NULL
+        DEFAULT CURRENT_TIMESTAMP,
+
+    CHECK (
+        ngay_ket_thuc_huan_luyen
+        >= ngay_bat_dau_huan_luyen
+    ),
+
+    FOREIGN KEY (nguoi_thuc_hien)
+        REFERENCES users(ma_nguoi_dung)
+        ON DELETE SET NULL
+);
+
+
 CREATE SEQUENCE IF NOT EXISTS seq_danh_gia_mo_hinh
     START WITH 1
     INCREMENT BY 1;
@@ -620,61 +676,6 @@ CREATE TABLE danh_gia_mo_hinh (
             horizon
         )
 );
-
--- =====================================================
--- LỊCH SỬ DỰ BÁO
--- =====================================================
-
-CREATE TABLE lich_su_du_bao (
-    ma_lich_su_du_bao VARCHAR(20) PRIMARY KEY
-        DEFAULT (
-            'LSDB' || LPAD(
-                nextval('lich_su_du_bao_seq')::TEXT,
-                4,
-                '0'
-            )
-        ),
-
-    ngay_bat_dau_huan_luyen DATE NOT NULL,
-
-    ngay_ket_thuc_huan_luyen DATE NOT NULL,
-
-    so_tuan_du_bao INTEGER NOT NULL
-        CHECK (
-            so_tuan_du_bao BETWEEN 4 AND 8
-        ),
-
-    cau_hinh_mo_hinh VARCHAR(50) NOT NULL,
-
-    thoi_gian_chay TIMESTAMPTZ NOT NULL
-        DEFAULT CURRENT_TIMESTAMP,
-
-    tham_so JSONB,
-
-    trang_thai VARCHAR(30) NOT NULL
-    DEFAULT 'THANH_CONG'
-    CHECK (
-        trang_thai IN (
-            'THANH_CONG',
-            'THAT_BAI'
-        )
-    ),
-
-    nguoi_thuc_hien VARCHAR(20),
-
-    thoi_gian_tao TIMESTAMPTZ NOT NULL
-        DEFAULT CURRENT_TIMESTAMP,
-
-    CHECK (
-        ngay_ket_thuc_huan_luyen
-        >= ngay_bat_dau_huan_luyen
-    ),
-
-    FOREIGN KEY (nguoi_thuc_hien)
-        REFERENCES users(ma_nguoi_dung)
-        ON DELETE SET NULL
-);
-
 -- =====================================================
 -- CHI TIẾT LỊCH SỬ DỰ BÁO
 -- =====================================================
@@ -726,25 +727,6 @@ CREATE TABLE chi_tiet_lich_su_du_bao (
             so_luong_du_bao_kg >= 0
         ),
 
-    mae NUMERIC(14,4)
-        CHECK (
-            mae >= 0
-        ),
-
-    rmse NUMERIC(14,4)
-        CHECK (
-            rmse >= 0
-        ),
-
-    wape NUMERIC(10,6)
-        CHECK (
-            wape >= 0
-        ),
-
-    smape NUMERIC(10,6)
-        CHECK (
-            smape >= 0
-        ),
 
     CHECK (
         den_ngay >= tu_ngay
@@ -949,7 +931,8 @@ CREATE TABLE chi_tiet_don_mua (
     )
 );
 
-ALTER DATABASE milano_coffee
-SET timezone TO 'Asia/Ho_Chi_Minh';
 
 COMMIT;
+
+ALTER DATABASE milano_coffee
+SET timezone TO 'Asia/Ho_Chi_Minh';

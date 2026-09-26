@@ -1,3 +1,4 @@
+###D:\KLTN\KLTN\backend\src\models\chi_tiet_lich_su_du_bao.py
 from sqlalchemy import (
     Column,
     Date,

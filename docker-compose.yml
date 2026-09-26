@@ -72,6 +72,27 @@ services:
     networks:
       - milano_network
 
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+
+    container_name: milano_frontend
+    restart: unless-stopped
+
+    depends_on:
+      backend:
+        condition: service_healthy
+
+    ports:
+      - "${FRONTEND_PORT:-5173}:5173"
+
+    environment:
+      VITE_API_URL: http://localhost:8000
+
+    networks:
+      - milano_network
+
 volumes:
   postgres_data:
 

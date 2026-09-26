@@ -1,3 +1,4 @@
+### backend/src/controllers/auth_controller.py
 from sqlalchemy.orm import Session
 
 from src.models.user_model import User
