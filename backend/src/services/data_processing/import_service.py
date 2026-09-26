@@ -1,3 +1,10 @@
+from src.schemas.cong_thuc_schema import CongThucCreate
+from src.schemas.ton_kho_schema import TonKhoCreate
+from src.schemas.nha_cung_cap_schema import NhaCungCapCreate
+from src.services.cong_thuc_service import CongThucService
+from src.services.ton_kho_service import TonKhoService
+from src.services.nha_cung_cap_service import NhaCungCapService
+
 from fastapi import (
     HTTPException,
     UploadFile,
@@ -14,12 +21,6 @@ from src.core.import_permissions import (
     can_import,
 )
 
-from src.models.chi_tiet_cong_thuc_model import (
-    ChiTietCongThuc,
-)
-from src.models.cong_thuc_model import (
-    CongThuc,
-)
 from src.models.ke_hoach_san_xuat_model import (
     KeHoachSanXuat,
 )
@@ -35,18 +36,14 @@ from src.models.nguyen_lieu_model import (
 from src.models.nguyen_lieu_nha_cung_cap_model import (
     NguyenLieuNhaCungCap,
 )
-from src.models.nha_cung_cap_model import (
-    NhaCungCap,
-)
 from src.models.san_pham_model import (
     SanPham,
-)
-from src.models.ton_kho_nguyen_lieu_model import (
-    TonKhoNguyenLieu,
 )
 from src.models.user_model import (
     User,
 )
+
+from src.repositories.nguyen_lieu_repository import NguyenLieuRepository
 
 from src.repositories.import_repository import (
     ImportRepository,
@@ -525,9 +522,13 @@ class ImportService:
                 ),
             )
 
-            self.import_repository.add(
+            NguyenLieuRepository.add_imported(
                 db=db,
-                model=model,
+                values={
+                    "ten_nguyen_lieu": model.ten_nguyen_lieu,
+                    "don_vi_do_luong": model.don_vi_do_luong,
+                    "trang_thai": model.trang_thai,
+                },
             )
 
             count += 1
@@ -544,14 +545,9 @@ class ImportService:
             "trang_thai",
         }
 
-        optional = {
-            "diem_dieu_kien_thuong_mai",
-        }
-
         validate_columns(
             dataframe=dataframe,
             required_columns=required,
-            optional_columns=optional,
         )
 
         count = 0
@@ -561,16 +557,7 @@ class ImportService:
                 row["_row_number"]
             )
 
-            score = to_decimal(
-                row.get(
-                    "diem_dieu_kien_thuong_mai"
-                ),
-                "diem_dieu_kien_thuong_mai",
-                row_number,
-                required=False,
-            )
-
-            model = NhaCungCap(
+            payload = NhaCungCapCreate(
                 ten_ncc=to_string(
                     row["ten_ncc"],
                     "ten_ncc",
@@ -581,15 +568,13 @@ class ImportService:
                     "trang_thai",
                     row_number,
                 ),
-                diem_dieu_kien_thuong_mai=score,
             )
 
-            self.import_repository.add(
-                db=db,
-                model=model,
-            )
+            NhaCungCapService().create_in_transaction(db, payload)
 
             count += 1
+
+        NhaCungCapService().recalculate_all_in_transaction(db)
 
         return count
 
@@ -683,13 +668,13 @@ class ImportService:
 
             count += 1
 
+        # Lead-time normalization is global, so a new mapping can change every
+        # supplier's relative score.
+        NhaCungCapService().recalculate_all_in_transaction(db)
+
         return count
 
-    def _import_ton_kho(
-        self,
-        dataframe,
-        db: Session,
-    ) -> int:
+    def _import_ton_kho(self, dataframe, db: Session) -> int:
         required = {
             "ma_nguyen_lieu",
             "ngay_ghi_nhan",
@@ -705,59 +690,20 @@ class ImportService:
             required_columns=required,
         )
 
-        count = 0
-
+        service = TonKhoService()
         for _, row in dataframe.iterrows():
-            row_number = int(
-                row["_row_number"]
+            row_number = int(row["_row_number"])
+            payload = TonKhoCreate(
+                ma_nguyen_lieu=to_string(row["ma_nguyen_lieu"], "ma_nguyen_lieu", row_number),
+                ngay_ghi_nhan=to_date(row["ngay_ghi_nhan"], "ngay_ghi_nhan", row_number),
+                ton_kho_thuc_te=to_decimal(row["ton_kho_thuc_te"], "ton_kho_thuc_te", row_number),
+                so_luong_book=to_decimal(row["so_luong_book"], "so_luong_book", row_number),
+                ton_kho_an_toan=to_decimal(row["ton_kho_an_toan"], "ton_kho_an_toan", row_number),
+                ton_kho_toi_da=to_decimal(row["ton_kho_toi_da"], "ton_kho_toi_da", row_number),
+                trang_thai=to_string(row["trang_thai"], "trang_thai", row_number),
             )
-
-            model = TonKhoNguyenLieu(
-                ma_nguyen_lieu=to_string(
-                    row["ma_nguyen_lieu"],
-                    "ma_nguyen_lieu",
-                    row_number,
-                ),
-                ngay_ghi_nhan=to_date(
-                    row["ngay_ghi_nhan"],
-                    "ngay_ghi_nhan",
-                    row_number,
-                ),
-                ton_kho_thuc_te=to_decimal(
-                    row["ton_kho_thuc_te"],
-                    "ton_kho_thuc_te",
-                    row_number,
-                ),
-                so_luong_book=to_decimal(
-                    row["so_luong_book"],
-                    "so_luong_book",
-                    row_number,
-                ),
-                ton_kho_an_toan=to_decimal(
-                    row["ton_kho_an_toan"],
-                    "ton_kho_an_toan",
-                    row_number,
-                ),
-                ton_kho_toi_da=to_decimal(
-                    row["ton_kho_toi_da"],
-                    "ton_kho_toi_da",
-                    row_number,
-                ),
-                trang_thai=to_string(
-                    row["trang_thai"],
-                    "trang_thai",
-                    row_number,
-                ),
-            )
-
-            self.import_repository.add(
-                db=db,
-                model=model,
-            )
-
-            count += 1
-
-        return count
+            service.create_in_transaction(db, payload)
+        return len(dataframe)
 
     def _import_ngay_le(
         self,
@@ -826,128 +772,35 @@ class ImportService:
 
         return count
 
-    def _import_cong_thuc(
-        self,
-        dataframe,
-        db: Session,
-    ) -> int:
-        required = {
-            "ten_cong_thuc",
-            "ma_san_pham",
-            "he_so_thu_hoi",
-            "ty_le_hao_hut",
-            "trang_thai",
-            "ma_nguyen_lieu",
-            "ty_le_phoi_tron",
-        }
-
-        optional = {
-            "ma_cong_thuc",
-            "ma_chi_tiet_cong_thuc",
-        }
-
+    def _import_cong_thuc(self, dataframe, db: Session) -> int:
+        formula_columns = [
+            "ten_cong_thuc", "ma_san_pham", "he_so_thu_hoi",
+            "ty_le_hao_hut", "trang_thai",
+        ]
         validate_columns(
             dataframe=dataframe,
-            required_columns=required,
-            optional_columns=optional,
+            required_columns=set(formula_columns) | {"ma_nguyen_lieu", "ty_le_phoi_tron"},
+            optional_columns={"ma_cong_thuc", "ma_chi_tiet_cong_thuc"},
         )
-
-        formula_columns = [
-            "ten_cong_thuc",
-            "ma_san_pham",
-            "he_so_thu_hoi",
-            "ty_le_hao_hut",
-            "trang_thai",
-        ]
-
-        grouped = dataframe.groupby(
-            formula_columns,
-            dropna=False,
-            sort=False,
-        )
-
+        # Keep the existing template/grouping and database-generated identifiers.
+        grouped = dataframe.groupby(formula_columns, dropna=False, sort=False)
         imported_details = 0
-
         for group_values, group in grouped:
-            (
-                ten_cong_thuc,
-                ma_san_pham,
-                he_so_thu_hoi,
-                ty_le_hao_hut,
-                trang_thai,
-            ) = group_values
-
-            first_row = group.iloc[0]
-
-            first_row_number = int(
-                first_row["_row_number"]
+            row_number = int(group.iloc[0]["_row_number"])
+            values = dict(zip(formula_columns, group_values))
+            payload = CongThucCreate(
+                **{key: to_string(values[key], key, row_number)
+                   for key in ("ten_cong_thuc", "ma_san_pham", "trang_thai")},
+                **{key: to_decimal(values[key], key, row_number)
+                   for key in ("he_so_thu_hoi", "ty_le_hao_hut")},
+                chi_tiet=[{
+                    "ma_nguyen_lieu": to_string(row["ma_nguyen_lieu"], "ma_nguyen_lieu", int(row["_row_number"])),
+                    "ty_le_phoi_tron": to_decimal(row["ty_le_phoi_tron"], "ty_le_phoi_tron", int(row["_row_number"])),
+                } for _, row in group.iterrows()],
             )
-
-            formula = CongThuc(
-                ten_cong_thuc=to_string(
-                    ten_cong_thuc,
-                    "ten_cong_thuc",
-                    first_row_number,
-                ),
-                ma_san_pham=to_string(
-                    ma_san_pham,
-                    "ma_san_pham",
-                    first_row_number,
-                ),
-                he_so_thu_hoi=to_decimal(
-                    he_so_thu_hoi,
-                    "he_so_thu_hoi",
-                    first_row_number,
-                ),
-                ty_le_hao_hut=to_decimal(
-                    ty_le_hao_hut,
-                    "ty_le_hao_hut",
-                    first_row_number,
-                ),
-                trang_thai=to_string(
-                    trang_thai,
-                    "trang_thai",
-                    first_row_number,
-                ),
-            )
-
-            self.import_repository.add(
-                db=db,
-                model=formula,
-            )
-
-            self.import_repository.flush(
-                db=db
-            )
-
-            for _, row in group.iterrows():
-                row_number = int(
-                    row["_row_number"]
-                )
-
-                detail = ChiTietCongThuc(
-                    ma_cong_thuc=(
-                        formula.ma_cong_thuc
-                    ),
-                    ma_nguyen_lieu=to_string(
-                        row["ma_nguyen_lieu"],
-                        "ma_nguyen_lieu",
-                        row_number,
-                    ),
-                    ty_le_phoi_tron=to_decimal(
-                        row["ty_le_phoi_tron"],
-                        "ty_le_phoi_tron",
-                        row_number,
-                    ),
-                )
-
-                self.import_repository.add(
-                    db=db,
-                    model=detail,
-                )
-
-                imported_details += 1
-
+            # No per-formula commit: ImportService commits the entire file once.
+            CongThucService().create_in_transaction(db, payload)
+            imported_details += len(payload.chi_tiet)
         return imported_details
 
     def _import_don_hang(

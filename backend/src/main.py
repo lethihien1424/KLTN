@@ -41,12 +41,13 @@ def root():
     return {
         "message": "Milano Coffee API đang hoạt động",
         "docs": "/docs",
-        "health": "/api/health",
+        "health": "/api/v1/health",
     }
 
 
+@app.get("/api/health", tags=["System"], include_in_schema=False)
 @app.get(
-    "/api/health",
+    "/api/v1/health",
     tags=["System"],
 )
 def healthcheck(
