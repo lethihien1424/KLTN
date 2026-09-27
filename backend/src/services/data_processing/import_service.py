@@ -394,8 +394,13 @@ class ImportService:
                 ),
             )
             self.import_repository.add(
+
                 db=db,
-                model=model,
+                values={
+                    "ten_nguyen_lieu": model.ten_nguyen_lieu,
+                    "don_vi_do_luong": model.don_vi_do_luong,
+                    "trang_thai": model.trang_thai,
+                },
             )
             count += 1
 
@@ -410,19 +415,21 @@ class ImportService:
             "ten_ncc",
             "trang_thai",
         }
+
         optional = {
             "diem_dieu_kien_thuong_mai",
         }
 
+
         validate_columns(
             dataframe=dataframe,
             required_columns=required,
-            optional_columns=optional,
         )
 
         count = 0
 
         for _, row in dataframe.iterrows():
+
             row_number = int(row["_row_number"])
             score = to_decimal(
                 row.get("diem_dieu_kien_thuong_mai"),
@@ -432,6 +439,7 @@ class ImportService:
             )
 
             model = NhaCungCap(
+
                 ten_ncc=to_string(
                     row["ten_ncc"],
                     "ten_ncc",
@@ -442,13 +450,16 @@ class ImportService:
                     "trang_thai",
                     row_number,
                 ),
-                diem_dieu_kien_thuong_mai=score,
             )
+
             self.import_repository.add(
                 db=db,
                 model=model,
             )
+
             count += 1
+
+        NhaCungCapService().recalculate_all_in_transaction(db)
 
         return count
 
@@ -537,13 +548,13 @@ class ImportService:
             )
             count += 1
 
+        # Lead-time normalization is global, so a new mapping can change every
+        # supplier's relative score.
+        NhaCungCapService().recalculate_all_in_transaction(db)
+
         return count
 
-    def _import_ton_kho(
-        self,
-        dataframe,
-        db: Session,
-    ) -> int:
+    def _import_ton_kho(self, dataframe, db: Session) -> int:
         required = {
             "ma_nguyen_lieu",
             "ngay_ghi_nhan",
@@ -558,10 +569,10 @@ class ImportService:
             required_columns=required,
         )
 
-        count = 0
-
+        service = TonKhoService()
         for _, row in dataframe.iterrows():
             row_number = int(row["_row_number"])
+
 
             model = TonKhoNguyenLieu(
                 ma_nguyen_lieu=to_string(
@@ -607,6 +618,7 @@ class ImportService:
             count += 1
 
         return count
+
 
     def _import_ngay_le(
         self,
@@ -667,6 +679,7 @@ class ImportService:
 
         return count
 
+
     def _import_cong_thuc(
         self,
         dataframe,
@@ -685,11 +698,13 @@ class ImportService:
             "ma_cong_thuc",
             "ma_chi_tiet_cong_thuc",
         }
+
         validate_columns(
             dataframe=dataframe,
-            required_columns=required,
-            optional_columns=optional,
+            required_columns=set(formula_columns) | {"ma_nguyen_lieu", "ty_le_phoi_tron"},
+            optional_columns={"ma_cong_thuc", "ma_chi_tiet_cong_thuc"},
         )
+
 
         formula_columns = [
             "ten_cong_thuc",
@@ -703,9 +718,10 @@ class ImportService:
             dropna=False,
             sort=False,
         )
-        imported_details = 0
 
+        imported_details = 0
         for group_values, group in grouped:
+
             (
                 ten_cong_thuc,
                 ma_san_pham,
@@ -771,6 +787,7 @@ class ImportService:
                     model=detail,
                 )
                 imported_details += 1
+
 
         return imported_details
 

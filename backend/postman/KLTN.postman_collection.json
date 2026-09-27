@@ -1,0 +1,1685 @@
+{
+  "info": {
+    "_postman_id": "5595143f-49e9-4c32-8d7c-c75af9f8b365",
+    "name": "KLTN",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "_exporter_id": "51935690",
+    "_collection_link": "https://go.postman.co/collection/51935690-5595143f-49e9-4c32-8d7c-c75af9f8b365?source=collection_link"
+  },
+  "item": [
+    {
+      "name": "auth",
+      "item": [
+        {
+          "name": "kiểm tra",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "http://localhost:8000/api/v1/health",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "8000",
+              "path": [
+                "api",
+                "v1",
+                "health"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Đăng nhập",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n  \"ma_tai_khoan\": \"admin\",\r\n  \"mat_khau\": \"123456\"\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "http://localhost:8000/api/v1/auth/login",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "8000",
+              "path": [
+                "api",
+                "v1",
+                "auth",
+                "login"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Đăng xuất",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": ""
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Import",
+      "item": [
+        {
+          "name": "sanpham",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{json_web_token_0b1c}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "file",
+                  "type": "file",
+                  "src": "/C:/Users/Admin/Downloads/01_san_pham_Milano_thuc_te.xlsx"
+                }
+              ]
+            },
+            "url": {
+              "raw": "http://localhost:8000/api/imports/san-pham",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "8000",
+              "path": [
+                "api",
+                "imports",
+                "san-pham"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "nguyenlieu",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": ""
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "ncc",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": ""
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "nguyenlieu-ncc",
+          "request": {
+            "auth": {
+              "type": "jwt",
+              "jwt": [
+                {
+                  "key": "algorithm",
+                  "value": "HS256",
+                  "type": "string"
+                },
+                {
+                  "key": "isSecretBase64Encoded",
+                  "value": false,
+                  "type": "boolean"
+                },
+                {
+                  "key": "payload",
+                  "value": "{}",
+                  "type": "string"
+                },
+                {
+                  "key": "addTokenTo",
+                  "value": "header",
+                  "type": "string"
+                },
+                {
+                  "key": "headerPrefix",
+                  "value": "Bearer",
+                  "type": "string"
+                },
+                {
+                  "key": "queryParamKey",
+                  "value": "token",
+                  "type": "string"
+                },
+                {
+                  "key": "header",
+                  "value": "{}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "http://localhost:8000/api/imports/nguyen-lieu-nha-cung-cap",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "8000",
+              "path": [
+                "api",
+                "imports",
+                "nguyen-lieu-nha-cung-cap"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "ngayle",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": ""
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "congthuc&ctct",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": ""
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "tonkho",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": ""
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "lichsutieuthu_khsx",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{supabase_service_role_api_key_0k44}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "file",
+                  "type": "file",
+                  "src": "/C:/Users/Admin/Downloads/08_don_hang_thang_8_9_nhieu_don.xlsx"
+                }
+              ]
+            },
+            "url": {
+              "raw": "http://localhost:8000/api/imports/don-hang",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "8000",
+              "path": [
+                "api",
+                "imports",
+                "don-hang"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Nguyên  liệu",
+      "item": [
+        {
+          "name": "Danh sách nguyên liệu",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": ""
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Xem chi tiet nguyên liệu",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "http://localhost:8000/api/nguyen-lieu/NL0001",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "8000",
+              "path": [
+                "api",
+                "nguyen-lieu",
+                "NL0001"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Thêm nguyên liệu",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": ""
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Cập nhật nguyên liệu",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "PUT",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n  \"ten_nguyen_lieu\": \"Nguyên liệu demo NLTEST01 cập nhật\",\r\n  \"don_vi_do_luong\": \"g\"\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "http://localhost:8000/api/nguyen-lieu/NLTEST01",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "8000",
+              "path": [
+                "api",
+                "nguyen-lieu",
+                "NLTEST01"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "PATCH ngừng sử dụng",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": ""
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "New Request",
+          "request": {
+            "method": "PATCH",
+            "header": [],
+            "url": {
+              "raw": "http://localhost:8000/api/nguyen-lieu/NLTEST01/trang-thai",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "8000",
+              "path": [
+                "api",
+                "nguyen-lieu",
+                "NLTEST01",
+                "trang-thai"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "PATCH kích hoạt lại",
+          "request": {
+            "method": "PATCH",
+            "header": [],
+            "url": {
+              "raw": "http://localhost:8000/api/nguyen-lieu/NLTEST01/trang-thai",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "8000",
+              "path": [
+                "api",
+                "nguyen-lieu",
+                "NLTEST01",
+                "trang-thai"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Search theo tên",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "http://localhost:8000/api/nguyen-lieu?search=Robusta",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "8000",
+              "path": [
+                "api",
+                "nguyen-lieu"
+              ],
+              "query": [
+                {
+                  "key": "search",
+                  "value": "Robusta"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Search theo mã",
+          "request": {
+            "auth": {
+              "type": "bearer"
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "http://localhost:8000/api/nguyen-lieu?search=NLTEST01",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "8000",
+              "path": [
+                "api",
+                "nguyen-lieu"
+              ],
+              "query": [
+                {
+                  "key": "search",
+                  "value": "NLTEST01"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "theo trạng thái dang hoat dong",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "http://localhost:8000/api/nguyen-lieu?trang_thai=DANG_SU_DUNG",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "8000",
+              "path": [
+                "api",
+                "nguyen-lieu"
+              ],
+              "query": [
+                {
+                  "key": "trang_thai",
+                  "value": "DANG_SU_DUNG"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "trạng thái ngưng hoat dong",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "http://localhost:8000/api/nguyen-lieu?trang_thai=NGUNG_SU_DUNG",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "8000",
+              "path": [
+                "api",
+                "nguyen-lieu"
+              ],
+              "query": [
+                {
+                  "key": "trang_thai",
+                  "value": "NGUNG_SU_DUNG"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "theo mã va trạng thái",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "http://localhost:8000/api/nguyen-lieu?search=NLTEST01&trang_thai=DANG_SU_DUNG",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "8000",
+              "path": [
+                "api",
+                "nguyen-lieu"
+              ],
+              "query": [
+                {
+                  "key": "search",
+                  "value": "NLTEST01"
+                },
+                {
+                  "key": "trang_thai",
+                  "value": "DANG_SU_DUNG"
+                }
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Quản lý công thức BOM + tỷ lệ hao hụt.",
+      "item": [
+        {
+          "name": "đăng nhập",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n  \"ma_nguoi_dung\": \"KHO01\",\r\n  \"mat_khau\": \"123456\"\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "http://localhost:8000/api/auth/login",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "8000",
+              "path": [
+                "api",
+                "auth",
+                "login"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "xem ds cong thức",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "http://localhost:8000/api/cong-thuc",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "8000",
+              "path": [
+                "api",
+                "cong-thuc"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "POST tạo mới và lưu mã",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "http://localhost:8000/api/cong-thuc",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "8000",
+              "path": [
+                "api",
+                "cong-thuc"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "xem chi tiet 1 ct",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "http://localhost:8000/api/cong-thuc/CT0001",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "8000",
+              "path": [
+                "api",
+                "cong-thuc",
+                "CT0001"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "cập nhật ct",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "PUT",
+            "header": [],
+            "url": {
+              "raw": "http://localhost:8000/api/cong-thuc/CT0008",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "8000",
+              "path": [
+                "api",
+                "cong-thuc",
+                "CT0008"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "ngừng hoạt động",
+          "request": {
+            "method": "PATCH",
+            "header": [],
+            "url": {
+              "raw": ""
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "tim kiem",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "http://localhost:8000/api/cong-thuc?search=Classic",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "8000",
+              "path": [
+                "api",
+                "cong-thuc"
+              ],
+              "query": [
+                {
+                  "key": "search",
+                  "value": "Classic"
+                }
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Quản lý tồn kho nguyên liệu",
+      "item": [
+        {
+          "name": "dăng nha nhan vien kho",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "http://localhost:8000/api/auth/login",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "8000",
+              "path": [
+                "api",
+                "auth",
+                "login"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "xem tồn kho nguyên liệu",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": ""
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "cap nhật so lượng kho",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n  \"ma_nguyen_lieu\": \"NL0001\",\r\n  \"ngay_ghi_nhan\": \"2026-09-19\",\r\n  \"ton_kho_thuc_te\": 500,\r\n  \"so_luong_book\": 50,\r\n  \"ton_kho_an_toan\": 100,\r\n  \"ton_kho_toi_da\": 800,\r\n  \"trang_thai\": \"BINH_THUONG\"\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "http://localhost:8000/api/ton-kho-nguyen-lieu",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "8000",
+              "path": [
+                "api",
+                "ton-kho-nguyen-lieu"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Xem lịch sử Robusta",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "http://localhost:8000/api/ton-kho-nguyen-lieu/NL0001",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "8000",
+              "path": [
+                "api",
+                "ton-kho-nguyen-lieu",
+                "NL0001"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Cập nhật tồn kho",
+          "request": {
+            "method": "PUT",
+            "header": [],
+            "url": {
+              "raw": "http://localhost:8000/api/ton-kho-nguyen-lieu/NL0001/2026-09-19",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "8000",
+              "path": [
+                "api",
+                "ton-kho-nguyen-lieu",
+                "NL0001",
+                "2026-09-19"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Search và filter",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": ""
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Quản lý nhà cung cấp",
+      "item": [
+        {
+          "name": "Login MH01",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n  \"ma_nguoi_dung\": \"MH01\",\r\n  \"mat_khau\": \"123456\"\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "http://localhost:8000/api/auth/login",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "8000",
+              "path": [
+                "api",
+                "auth",
+                "login"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "POST – Thêm NCC",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "http://localhost:8000/api/nha-cung-cap",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "8000",
+              "path": [
+                "api",
+                "nha-cung-cap"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "PUT – Sửa NCC",
+          "request": {
+            "method": "PUT",
+            "header": [],
+            "url": {
+              "raw": "http://localhost:8000/api/nha-cung-cap/NCC0005",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "8000",
+              "path": [
+                "api",
+                "nha-cung-cap",
+                "NCC0005"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "PATCH – Ngừng hoạt động",
+          "request": {
+            "method": "PATCH",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n  \"trang_thai\": \"NGUNG_HOAT_DONG\"\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "http://localhost:8000/api/nha-cung-cap/NCC0005/trang-thai",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "8000",
+              "path": [
+                "api",
+                "nha-cung-cap",
+                "NCC0005",
+                "trang-thai"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Xem điểm NCC hiện tại",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "http://localhost:8000/api/nha-cung-cap",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "8000",
+              "path": [
+                "api",
+                "nha-cung-cap"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Test tính lại một NCC",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "http://localhost:8000/api/nha-cung-cap/NCC0001/tinh-diem",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "8000",
+              "path": [
+                "api",
+                "nha-cung-cap",
+                "NCC0001",
+                "tinh-diem"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Test NCC không có mapping",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "http://localhost:8000/api/nha-cung-cap/NCC0029/tinh-diem",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "8000",
+              "path": [
+                "api",
+                "nha-cung-cap",
+                "NCC0029",
+                "tinh-diem"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Test tính lại toàn bộ NCC",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "http://localhost:8000/api/nha-cung-cap/tinh-diem",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "8000",
+              "path": [
+                "api",
+                "nha-cung-cap",
+                "tinh-diem"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Test không còn được nhập điểm thủ công",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": ""
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Nguyên liệu theo NCC",
+      "item": [
+        {
+          "name": "login",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n  \"ma_nguoi_dung\": \"MH01\",\r\n  \"mat_khau\": \"123456\"\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "http://localhost:8000/api/auth/login",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "8000",
+              "path": [
+                "api",
+                "auth",
+                "login"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "GET toàn bộ mapping",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": ""
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "GET chi tiết",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": ""
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Search",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": ""
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "POST mapping mới — quan trọng nhất",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n  \"ma_ncc\": \"NCC0002\",\r\n  \"ma_nguyen_lieu\": \"NL0001\",\r\n  \"don_gia_nguyen_lieu\": 115000,\r\n  \"so_luong_ton_kho\": 1000,\r\n  \"so_luong_book\": 50,\r\n  \"so_luong_xuat\": 100,\r\n  \"lead_time_ngay\": 5,\r\n  \"ty_le_chat_luong_dat\": 0.9850,\r\n  \"ty_le_giao_dung_han\": 0.9700,\r\n  \"ty_le_giao_du\": 0.9800\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "http://localhost:8000/api/nguyen-lieu-nha-cung-cap",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "8000",
+              "path": [
+                "api",
+                "nguyen-lieu-nha-cung-cap"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "PUT mapping vừa tạo",
+          "request": {
+            "method": "PUT",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n  \"don_gia_nguyen_lieu\": 117000,\r\n  \"so_luong_ton_kho\": 1200,\r\n  \"so_luong_book\": 80,\r\n  \"so_luong_xuat\": 150,\r\n  \"lead_time_ngay\": 4,\r\n  \"ty_le_chat_luong_dat\": 0.9900,\r\n  \"ty_le_giao_dung_han\": 0.9800,\r\n  \"ty_le_giao_du\": 0.9900\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "http://localhost:8000/api/nguyen-lieu-nha-cung-cap/{{ma_mapping_test}}",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "8000",
+              "path": [
+                "api",
+                "nguyen-lieu-nha-cung-cap",
+                "{{ma_mapping_test}}"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Đơn mua nguyên liệu",
+      "item": [
+        {
+          "name": "login",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n  \"ma_nguoi_dung\": \"MH01\",\r\n  \"mat_khau\": \"123456\"\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "http://localhost:8000/api/auth/login",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "8000",
+              "path": [
+                "api",
+                "auth",
+                "login"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "GET danh sách đơn mua",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "http://localhost:8000/api/don-mua-nguyen-lieu",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "8000",
+              "path": [
+                "api",
+                "don-mua-nguyen-lieu"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "POST tạo đơn mua",
+          "request": {
+            "auth": {
+              "type": "bearer"
+            },
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n  \"ma_ncc\": \"NCC0001\",\r\n  \"ngay_dat_hang\": \"2026-09-20\",\r\n  \"ngay_du_kien_giao\": \"2026-09-25\",\r\n  \"chi_tiet\": [\r\n    {\r\n      \"ma_nguyen_lieu\": \"NL0001\",\r\n      \"so_luong_mua\": 100\r\n    },\r\n    {\r\n      \"ma_nguyen_lieu\": \"NL0002\",\r\n      \"so_luong_mua\": 50\r\n    }\r\n  ]\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "http://localhost:8000/api/don-mua-nguyen-lieu",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "8000",
+              "path": [
+                "api",
+                "don-mua-nguyen-lieu"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "GET chi tiết đon mua",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": ""
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "chỉnh sửa đơn mua",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "PUT",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n  \"ma_ncc\": \"NCC0001\",\r\n  \"ngay_dat_hang\": \"2026-09-20\",\r\n  \"ngay_du_kien_giao\": \"2026-09-26\",\r\n  \"chi_tiet\": [\r\n    {\r\n      \"ma_nguyen_lieu\": \"NL0001\",\r\n      \"so_luong_mua\": 120\r\n    },\r\n    {\r\n      \"ma_nguyen_lieu\": \"NL0002\",\r\n      \"so_luong_mua\": 60\r\n    }\r\n  ]\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "http://localhost:8000/api/don-mua-nguyen-lieu/DM0037",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "8000",
+              "path": [
+                "api",
+                "don-mua-nguyen-lieu",
+                "DM0037"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "GET danh sách + filter",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "http://localhost:8000/api/don-mua-nguyen-lieu?ma_ncc=NCC0001",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "8000",
+              "path": [
+                "api",
+                "don-mua-nguyen-lieu"
+              ],
+              "query": [
+                {
+                  "key": "ma_ncc",
+                  "value": "NCC0001"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "nhu cầu nguyen lieu",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": ""
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "gọi ý nhà cung cấp",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "http://localhost:8000/api/goi-y-nha-cung-cap?ma_nguyen_lieu=NL0003&so_luong_can_mua=38.28",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "8000",
+              "path": [
+                "api",
+                "goi-y-nha-cung-cap"
+              ],
+              "query": [
+                {
+                  "key": "ma_nguyen_lieu",
+                  "value": "NL0003"
+                },
+                {
+                  "key": "so_luong_can_mua",
+                  "value": "38.28"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "de-xuat-nhap-hang",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "http://localhost:8000/api/de-xuat-nhap-hang",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "8000",
+              "path": [
+                "api",
+                "de-xuat-nhap-hang"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "duyet de xuat mua hàng",
+          "request": {
+            "method": "PATCH",
+            "header": [],
+            "url": {
+              "raw": "http://localhost:8000/api/de-xuat-nhap-hang/DX0011/duyet",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "8000",
+              "path": [
+                "api",
+                "de-xuat-nhap-hang",
+                "DX0011",
+                "duyet"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "tu choi",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "PATCH",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n  \"ly_do_tu_choi\": \"Số lượng đề xuất chưa phù hợp\"\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "http://localhost:8000/api/de-xuat-nhap-hang/DX0011/tu-choi",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "8000",
+              "path": [
+                "api",
+                "de-xuat-nhap-hang",
+                "DX0011",
+                "tu-choi"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "tạo đơn mu khi đã duyệt phiếu duyệt nguyen liệu",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "http://localhost:8000/api/de-xuat-nhap-hang/DX0011/tao-don-mua",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "8000",
+              "path": [
+                "api",
+                "de-xuat-nhap-hang",
+                "DX0011",
+                "tao-don-mua"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "duyet don mua hang duyet",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "PATCH",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "//tu-choi",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "http://localhost:8000/api/don-mua-nguyen-lieu/DM0065/duyet",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "8000",
+              "path": [
+                "api",
+                "don-mua-nguyen-lieu",
+                "DM0065",
+                "duyet"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "nhan-hang",
+      "item": [
+        {
+          "name": "Login",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "http://localhost:8000/api/auth/login",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "8000",
+              "path": [
+                "api",
+                "auth",
+                "login"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Nhận hàng DM0065",
+          "request": {
+            "method": "PATCH",
+            "header": [],
+            "url": {
+              "raw": "http://localhost:8000/api/don-mua-nguyen-lieu/DM0065/nhan-hang",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "8000",
+              "path": [
+                "api",
+                "don-mua-nguyen-lieu",
+                "DM0065",
+                "nhan-hang"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "tu dong tinh hieu suat nha cung cap",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "ttp://localhost:8000/api/nha-cung-cap/NCC0002/tinh-diem",
+              "protocol": "ttp",
+              "host": [
+                "localhost"
+              ],
+              "port": "8000",
+              "path": [
+                "api",
+                "nha-cung-cap",
+                "NCC0002",
+                "tinh-diem"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "New Request",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": ""
+        }
+      },
+      "response": []
+    }
+  ],
+  "variable": [
+    {
+      "key": "json_web_token_0b1c"
+    },
+    {
+      "key": "supabase_service_role_api_key_0k44"
+    },
+    {
+      "key": "json_web_token_022j"
+    },
+    {
+      "key": "supabase_service_role_api_key_16h7"
+    },
+    {
+      "key": "supabase_service_role_api_key_0b1c"
+    }
+  ]
+}

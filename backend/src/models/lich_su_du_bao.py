@@ -11,6 +11,7 @@ from sqlalchemy import (
     text,
 )
 
+
 from src.core.database import Base
 
 

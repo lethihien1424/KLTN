@@ -35,3 +35,6 @@ class NhaCungCap(Base):
         default=0,
         server_default="0",
     )
+
+    ty_le_giao_dung_han_thuc_te = Column(Numeric(5, 2), nullable=True)
+    ty_le_giao_du_thuc_te = Column(Numeric(5, 2), nullable=True)
