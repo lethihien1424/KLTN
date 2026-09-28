@@ -1,10 +1,4 @@
-from sqlalchemy import (
-    Column,
-    DateTime,
-    FetchedValue,
-    String,
-    text,
-)
+from sqlalchemy import Column, DateTime, FetchedValue, String, text
 
 from src.core.database import Base
 
@@ -40,6 +34,11 @@ class User(Base):
         server_default="HOAT_DONG",
     )
 
+    nguoi_thao_tac = Column(
+        String(20),
+        nullable=True,
+    )
+
     thoi_gian_tao = Column(
         DateTime(timezone=True),
         nullable=False,
@@ -50,4 +49,19 @@ class User(Base):
         DateTime(timezone=True),
         nullable=False,
         server_default=text("CURRENT_TIMESTAMP"),
+    )
+
+    email = Column(
+        String(100),
+        nullable=True,
+    )
+
+    so_dien_thoai = Column(
+        String(20),
+        nullable=True,
+    )
+
+    dia_chi = Column(
+        String(255),
+        nullable=True,
     )

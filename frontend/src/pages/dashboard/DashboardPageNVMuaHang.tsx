@@ -2,6 +2,12 @@ import DashboardBase, {
   type DashboardConfig,
 } from "../../components/dashboard/DashboardBase";
 import type { User } from "../../services/authService";
+import {
+  PieChartOutlined,
+  FileTextOutlined,
+  ShoppingCartOutlined,
+  TruckOutlined,
+} from "@ant-design/icons";
 
 type Props = {
   user: User;
@@ -14,10 +20,10 @@ const config: DashboardConfig = {
     "Xem kế hoạch mua hàng, nhập dữ liệu mua hàng và xem thông tin nhà cung cấp.",
   roleLabel: "NHÂN VIÊN MUA HÀNG",
   menu: [
-    { id: "tong-quan", label: "Tổng quan", icon: "📊" },
-    { id: "xem-ke-hoach-mua-hang", label: "Xem kế hoạch mua hàng", icon: "📋" },
-    { id: "nhap-du-lieu-mua-hang", label: "Nhập dữ liệu mua hàng", icon: "🛒" },
-    { id: "xem-thong-tin-nha-cung-cap", label: "Xem thông tin nhà cung cấp", icon: "🏢" },
+    { id: "tong-quan", label: "Tổng quan", icon: <PieChartOutlined /> },
+    { id: "xem-ke-hoach-mua-hang", label: "Xem kế hoạch mua hàng", icon: <FileTextOutlined /> },
+    { id: "nhap-du-lieu-mua-hang", label: "Nhập dữ liệu mua hàng", icon: <ShoppingCartOutlined /> },
+    { id: "xem-thong-tin-nha-cung-cap", label: "Xem thông tin nhà cung cấp", icon: <TruckOutlined /> },
   ],
   stats: [
     {

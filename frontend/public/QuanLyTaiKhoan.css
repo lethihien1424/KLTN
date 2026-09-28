@@ -1,0 +1,412 @@
+/* =====================================================
+   QUẢN LÝ TÀI KHOẢN PAGE - Styles
+   File: public/QuanLyTaiKhoan.css
+   ===================================================== */
+
+
+/* ---- Pagination Bar ---- */
+
+.dashboard-pagination-wrap {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 14px 20px;
+    border-top: 1px solid #e2e8f0;
+    background: #ffffff;
+    font-size: 13px;
+    color: #475569;
+}
+
+.pagination-total-info {
+    font-weight: 500;
+    color: #475569;
+}
+
+.pagination-controls {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.pagination-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 32px;
+    height: 32px;
+    padding: 0 10px;
+    border: 1px solid #cbd5e1;
+    border-radius: 8px;
+    background: #ffffff;
+    color: #334155;
+    font-size: 13.5px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.15s ease;
+}
+
+.pagination-btn:hover:not(:disabled) {
+    border-color: #059669;
+    color: #059669;
+    background: #f0fdf4;
+}
+
+.pagination-btn.active {
+    border: 1px solid #059669;
+    background: #ffffff;
+    color: #059669;
+    font-weight: 700;
+}
+
+.pagination-btn:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+}
+
+.pagination-ellipsis {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 24px;
+    height: 32px;
+    color: #94a3b8;
+    font-weight: bold;
+}
+
+
+/* ---- Upload Button ---- */
+
+.btn-upload {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 7px 16px;
+    border: 1px solid #cbd5e1;
+    border-radius: 8px;
+    background: #ffffff;
+    color: #334155;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.15s ease;
+}
+
+.btn-upload:hover {
+    background: #f8fafc;
+    border-color: #2563eb;
+    color: #2563eb;
+}
+
+
+/* ---- Danger Button ---- */
+
+.btn-danger {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 7px 16px;
+    border: 0;
+    border-radius: 8px;
+    background: #dc2626;
+    color: #ffffff;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.15s ease;
+}
+
+.btn-danger:hover {
+    background: #b91c1c;
+}
+
+
+/* ---- Action Buttons in Table ---- */
+
+.dashboard-action-btns {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.tk-actions-center {
+    text-align: center;
+}
+
+.tk-actions-center .dashboard-action-btns {
+    justify-content: center;
+}
+
+
+/* ---- View User Modal Cards ---- */
+
+.view-user-header {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    padding: 16px;
+    background: #f8fafc;
+    border-radius: 12px;
+    border: 1px solid #e2e8f0;
+    margin-bottom: 20px;
+}
+
+.view-user-avatar {
+    width: 52px;
+    height: 52px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #2563eb, #1d4ed8);
+    color: #ffffff;
+    display: grid;
+    place-items: center;
+    font-size: 22px;
+    flex-shrink: 0;
+    box-shadow: 0 4px 6px rgba(37, 99, 235, 0.2);
+}
+
+.view-user-meta h4 {
+    margin: 0;
+    font-size: 16px;
+    font-weight: 700;
+    color: #0f172a;
+}
+
+.view-user-meta p {
+    margin: 4px 0 0;
+    font-size: 12.5px;
+    color: #64748b;
+}
+
+.view-detail-card {
+    border: 1px solid #f1f5f9;
+    background: #ffffff;
+    border-radius: 12px;
+    padding: 16px;
+    margin-bottom: 12px;
+}
+
+.view-detail-card h5 {
+    margin: 0 0 12px;
+    font-size: 12px;
+    font-weight: 700;
+    color: #94a3b8;
+    text-transform: uppercase;
+    letter-spacing: 0.6px;
+}
+
+.view-detail-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 8px 0;
+    border-bottom: 1px dashed #f1f5f9;
+    font-size: 13px;
+}
+
+.view-detail-row:last-child {
+    border-bottom: 0;
+}
+
+.view-detail-label {
+    color: #64748b;
+    font-weight: 500;
+}
+
+.view-detail-value {
+    color: #0f172a;
+    font-weight: 600;
+}
+
+
+/* ---- Delete Warning Box ---- */
+
+.modal-danger-box {
+    display: flex;
+    align-items: flex-start;
+    gap: 14px;
+    padding: 16px;
+    background: #fef2f2;
+    border: 1px solid #fecaca;
+    border-radius: 12px;
+    color: #991b1b;
+    margin-bottom: 16px;
+}
+
+.modal-danger-icon {
+    font-size: 24px;
+    color: #dc2626;
+    flex-shrink: 0;
+    margin-top: 2px;
+}
+
+.modal-danger-box h4 {
+    margin: 0 0 4px;
+    font-size: 15px;
+    font-weight: 700;
+    color: #7f1d1d;
+}
+
+.modal-danger-box p {
+    margin: 0;
+    font-size: 13px;
+    color: #7f1d1d;
+}
+
+
+/* ---- Delete Card Info ---- */
+
+.delete-info-card {
+    border: 1px solid #f1f5f9;
+    background: #ffffff;
+    border-radius: 12px;
+    padding: 16px;
+    margin-top: 12px;
+}
+
+
+/* ---- Modal Field Hint ---- */
+
+.modal-field-hint {
+    font-size: 11.5px;
+    color: #64748b;
+    margin-top: 2px;
+}
+
+
+/* ---- Upload Dropzone ---- */
+
+.upload-dropzone {
+    display: block;
+    border: 2px dashed #cbd5e1;
+    border-radius: 12px;
+    padding: 30px 20px;
+    text-align: center;
+    background: #f8fafc;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.upload-dropzone:hover {
+    border-color: #2563eb;
+    background: #eff6ff;
+}
+
+.upload-icon {
+    font-size: 36px;
+    color: #3b82f6;
+    margin-bottom: 8px;
+    display: block;
+}
+
+.upload-dropzone p {
+    margin: 4px 0 2px;
+    font-weight: 600;
+    color: #0f172a;
+}
+
+.upload-dropzone small {
+    color: #94a3b8;
+}
+
+.upload-file-badge {
+    display: inline-block;
+    margin-top: 12px;
+    padding: 6px 12px;
+    background: #e0f2fe;
+    color: #0369a1;
+    border-radius: 6px;
+    font-weight: 600;
+    font-size: 12px;
+}
+
+
+/* ---- Upload Preview Table ---- */
+
+.upload-preview-wrap {
+    margin-top: 20px;
+}
+
+.upload-preview-label {
+    margin: 0 0 8px;
+    font-size: 12px;
+    font-weight: 700;
+    color: #475569;
+    text-transform: uppercase;
+}
+
+.upload-preview-scroll {
+    max-height: 150px;
+    overflow-y: auto;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+}
+
+.upload-preview-table {
+    width: 100%;
+    font-size: 12px;
+    border-collapse: collapse;
+}
+
+.upload-preview-table thead tr {
+    background: #f8fafc;
+}
+
+.upload-preview-table th {
+    padding: 6px 8px;
+    text-align: left;
+    font-weight: 700;
+    color: #64748b;
+}
+
+.upload-preview-table td {
+    padding: 6px 8px;
+    border-top: 1px solid #f1f5f9;
+}
+
+.upload-preview-code {
+    color: #2563eb;
+    font-weight: 600;
+}
+
+.upload-preview-pw {
+    color: #16a34a;
+}
+
+
+/* ---- Upload Intro Text ---- */
+
+.upload-intro {
+    margin-bottom: 16px;
+}
+
+.upload-intro p {
+    margin: 0 0 10px;
+    font-size: 13px;
+    color: #475569;
+}
+
+.btn-excel-sm {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 5px 12px;
+    border: 0;
+    border-radius: 8px;
+    background: #16a34a;
+    color: #ffffff;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.15s ease;
+}
+
+.btn-excel-sm:hover {
+    background: #15803d;
+}
+
+
+/* ---- Th action column ---- */
+
+.th-actions {
+    text-align: center;
+    width: 120px;
+}

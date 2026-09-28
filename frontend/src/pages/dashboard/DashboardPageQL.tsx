@@ -2,6 +2,14 @@ import DashboardBase, {
   type DashboardConfig,
 } from "../../components/dashboard/DashboardBase";
 import type { User } from "../../services/authService";
+import {
+  PieChartOutlined,
+  LineChartOutlined,
+  FileDoneOutlined,
+  DatabaseOutlined,
+  TruckOutlined,
+  TeamOutlined,
+} from "@ant-design/icons";
 
 type Props = {
   user: User;
@@ -14,10 +22,12 @@ const config: DashboardConfig = {
     "Tổng quan tình hình dự báo nhu cầu và phê duyệt kế hoạch nhập cà phê.",
   roleLabel: "QUẢN LÝ",
   menu: [
-    { id: "tong-quan", label: "Tổng quan", icon: "📊" },
-    { id: "xem-du-bao", label: "Xem dự báo", icon: "📈" },
-    { id: "phe-duyet-ke-hoach", label: "Phê duyệt kế hoạch mua nguyên liệu", icon: "📋" },
-    { id: "cap-nhat-nha-cung-cap", label: "Cập nhật nhà cung cấp", icon: "🏢" },
+    { id: "tong-quan", label: "Tổng quan", icon: <PieChartOutlined /> },
+    { id: "du-bao-nhu-cau", label: "Dự báo nhu cầu", icon: <LineChartOutlined /> },
+    { id: "duyet-ke-hoach", label: "Duyệt kế hoạch", icon: <FileDoneOutlined />, badge: 2 },
+    { id: "ton-kho-nguyen-lieu", label: "Tồn kho nguyên liệu", icon: <DatabaseOutlined /> },
+    { id: "nha-cung-cap", label: "Nhà cung cấp", icon: <TruckOutlined /> },
+    { id: "quan-tri-tai-khoan", label: "Quản trị tài khoản", icon: <TeamOutlined /> },
   ],
   stats: [
     {

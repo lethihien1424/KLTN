@@ -21,6 +21,9 @@ from src.routes.du_bao_routes import (
 from src.routes.import_routes import (
     router as import_router,
 )
+from src.routes.tai_khoan_routes import (
+    router as tai_khoan_router,
+)
 
 
 api_router = APIRouter(
@@ -30,6 +33,10 @@ api_router = APIRouter(
 
 api_router.include_router(
     auth_router
+)
+
+api_router.include_router(
+    tai_khoan_router
 )
 
 api_router.include_router(

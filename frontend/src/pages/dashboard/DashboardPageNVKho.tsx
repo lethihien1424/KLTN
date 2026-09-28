@@ -2,6 +2,12 @@ import DashboardBase, {
   type DashboardConfig,
 } from "../../components/dashboard/DashboardBase";
 import type { User } from "../../services/authService";
+import {
+  PieChartOutlined,
+  DatabaseOutlined,
+  HomeOutlined,
+  ScheduleOutlined,
+} from "@ant-design/icons";
 
 type Props = {
   user: User;
@@ -14,10 +20,10 @@ const config: DashboardConfig = {
     "Quản lý nguyên liệu, kiểm tra tồn kho và theo dõi kế hoạch sản xuất.",
   roleLabel: "NHÂN VIÊN KHO",
   menu: [
-    { id: "tong-quan", label: "Tổng quan", icon: "📊" },
-    { id: "quan-ly-nguyen-lieu", label: "Quản lý nguyên liệu", icon: "📦" },
-    { id: "xem-ton-kho", label: "Xem tồn kho", icon: "🏬" },
-    { id: "xem-ke-hoach-san-xuat", label: "Xem kế hoạch sản xuất", icon: "⚙️" },
+    { id: "tong-quan", label: "Tổng quan", icon: <PieChartOutlined /> },
+    { id: "quan-ly-nguyen-lieu", label: "Quản lý nguyên liệu", icon: <DatabaseOutlined /> },
+    { id: "xem-ton-kho", label: "Xem tồn kho", icon: <HomeOutlined /> },
+    { id: "xem-ke-hoach-san-xuat", label: "Xem kế hoạch sản xuất", icon: <ScheduleOutlined /> },
   ],
   stats: [
     {

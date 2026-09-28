@@ -1,3 +1,4 @@
+#### D:\KLTN\KLTN\backend\src\repositories\auth_repository.py
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 

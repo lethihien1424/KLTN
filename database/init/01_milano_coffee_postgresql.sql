@@ -24,6 +24,9 @@ CREATE TABLE users(
     ho_ten VARCHAR(100) NOT NULL,
     vai_tro VARCHAR(50) NOT NULL,
     trang_thai VARCHAR(30) NOT NULL DEFAULT 'HOAT_DONG',
+    email VARCHAR(100),
+    so_dien_thoai VARCHAR(20),
+    dia_chi VARCHAR(255),
 
     nguoi_thao_tac VARCHAR(20),
     thoi_gian_tao TIMESTAMPTZ NOT NULL

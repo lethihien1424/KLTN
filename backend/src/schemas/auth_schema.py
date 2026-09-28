@@ -1,3 +1,4 @@
+#### D:\KLTN\KLTN\backend\src\schemas\auth_schema.py
 from pydantic import BaseModel, ConfigDict
 
 
@@ -15,6 +16,9 @@ class UserResponse(BaseModel):
     ho_ten: str
     vai_tro: str
     trang_thai: str
+    email: str | None = None
+    so_dien_thoai: str | None = None
+    dia_chi: str | None = None
 
 
 class TokenResponse(BaseModel):
@@ -33,6 +37,9 @@ class MeResponse(BaseModel):
     ho_ten: str
     vai_tro: str
     trang_thai: str
+    email: str | None = None
+    so_dien_thoai: str | None = None
+    dia_chi: str | None = None
 
 
 class LogoutResponse(BaseModel):

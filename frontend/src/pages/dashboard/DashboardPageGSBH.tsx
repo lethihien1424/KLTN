@@ -2,6 +2,11 @@ import DashboardBase, {
   type DashboardConfig,
 } from "../../components/dashboard/DashboardBase";
 import type { User } from "../../services/authService";
+import {
+  PieChartOutlined,
+  ShoppingCartOutlined,
+  LineChartOutlined,
+} from "@ant-design/icons";
 
 type Props = {
   user: User;
@@ -14,9 +19,9 @@ const config: DashboardConfig = {
     "Nhập dữ liệu bán hàng và xem kết quả dự báo nhu cầu sản phẩm cà phê.",
   roleLabel: "GIÁM SÁT BÁN HÀNG",
   menu: [
-    { id: "tong-quan", label: "Tổng quan", icon: "📊" },
-    { id: "nhap-du-lieu-ban-hang", label: "Nhập dữ liệu bán hàng", icon: "📈" },
-    { id: "xem-du-bao", label: "Xem dự báo", icon: "📉" },
+    { id: "tong-quan", label: "Tổng quan", icon: <PieChartOutlined /> },
+    { id: "nhap-du-lieu-ban-hang", label: "Nhập dữ liệu bán hàng", icon: <ShoppingCartOutlined /> },
+    { id: "xem-du-bao", label: "Xem dự báo", icon: <LineChartOutlined /> },
   ],
   stats: [
     {

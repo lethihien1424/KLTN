@@ -1,8 +1,12 @@
+/// D:\KLTN\KLTN\frontend\src\services\authService.ts
 export type User = {
   ma_nguoi_dung: string;
   ho_ten: string;
   vai_tro: string;
   trang_thai: string;
+  email?: string;
+  so_dien_thoai?: string;
+  dia_chi?: string;
 };
 
 type LoginResponse = {

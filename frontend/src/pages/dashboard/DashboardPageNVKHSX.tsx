@@ -2,6 +2,13 @@ import DashboardBase, {
   type DashboardConfig,
 } from "../../components/dashboard/DashboardBase";
 import type { User } from "../../services/authService";
+import {
+  PieChartOutlined,
+  ExperimentOutlined,
+  LineChartOutlined,
+  FileSearchOutlined,
+  FormOutlined,
+} from "@ant-design/icons";
 
 type Props = {
   user: User;
@@ -14,11 +21,11 @@ const config: DashboardConfig = {
     "Quản lý công thức BOM, tỉ lệ hao hụt, xem đề xuất nhập hàng và lập kế hoạch mua hàng.",
   roleLabel: "KẾ HOẠCH SẢN XUẤT",
   menu: [
-    { id: "tong-quan", label: "Tổng quan", icon: "📊" },
-    { id: "quan-ly-cong-thuc-bom", label: "Quản lý công thức BOM", icon: "🧪" },
-    { id: "quan-ly-ti-le-hao-hut", label: "Quản lý tỉ lệ hao hụt", icon: "📉" },
-    { id: "xem-de-xuat-nhap-hang", label: "Xem đề xuất nhập hàng", icon: "📑" },
-    { id: "lap-ke-hoach-mua-hang", label: "Lập kế hoạch mua hàng", icon: "📝" },
+    { id: "tong-quan", label: "Tổng quan", icon: <PieChartOutlined /> },
+    { id: "quan-ly-cong-thuc-bom", label: "Quản lý công thức BOM", icon: <ExperimentOutlined /> },
+    { id: "quan-ly-ti-le-hao-hut", label: "Quản lý tỉ lệ hao hụt", icon: <LineChartOutlined /> },
+    { id: "xem-de-xuat-nhap-hang", label: "Xem đề xuất nhập hàng", icon: <FileSearchOutlined /> },
+    { id: "lap-ke-hoach-mua-hang", label: "Lập kế hoạch mua hàng", icon: <FormOutlined /> },
   ],
   stats: [
     {
