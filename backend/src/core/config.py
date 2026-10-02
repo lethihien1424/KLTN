@@ -31,6 +31,13 @@ class Settings(BaseSettings):
 
     CORS_ORIGINS: str = "http://localhost:5173"
 
+    # Tài khoản email dùng để gửi OTP.
+    SMTP_HOST: str
+    SMTP_PORT: int = 465
+    SMTP_USERNAME: str
+    SMTP_PASSWORD: str
+    SMTP_FROM_EMAIL: str
+
     @property
     def database_url(self) -> str:
         if self.DATABASE_URL:

@@ -43,7 +43,9 @@ from src.models.chi_tiet_lich_su_du_bao import (
 from src.models.danh_gia_mo_hinh import (
     DanhGiaMoHinh,
 )
-
+from src.models.password_reset_model import (
+    PasswordResetRequest,
+)
 
 __all__ = [
     "User",
@@ -61,4 +63,5 @@ __all__ = [
     "LichSuDuBao",
     "ChiTietLichSuDuBao",
     "DanhGiaMoHinh",
+    "PasswordResetRequest",
 ]

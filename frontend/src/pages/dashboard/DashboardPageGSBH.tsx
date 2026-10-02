@@ -1,7 +1,9 @@
 import DashboardBase, {
   type DashboardConfig,
 } from "../../components/dashboard/DashboardBase";
+
 import type { User } from "../../services/authService";
+
 import {
   PieChartOutlined,
   ShoppingCartOutlined,
@@ -15,14 +17,30 @@ type Props = {
 
 const config: DashboardConfig = {
   title: "Bảng Điều Khiển Bán Hàng",
+
   subtitle:
-    "Nhập dữ liệu bán hàng và xem kết quả dự báo nhu cầu sản phẩm cà phê.",
+    "Theo dõi dữ liệu bán hàng và dự báo nhu cầu tiêu thụ sản phẩm cà phê.",
+
   roleLabel: "GIÁM SÁT BÁN HÀNG",
+
   menu: [
-    { id: "tong-quan", label: "Tổng quan", icon: <PieChartOutlined /> },
-    { id: "nhap-du-lieu-ban-hang", label: "Nhập dữ liệu bán hàng", icon: <ShoppingCartOutlined /> },
-    { id: "xem-du-bao", label: "Xem dự báo", icon: <LineChartOutlined /> },
+    {
+      id: "tong-quan",
+      label: "Tổng quan",
+      icon: <PieChartOutlined />,
+    },
+    {
+      id: "nhap-du-lieu-ban-hang",
+      label: "Nhập dữ liệu bán hàng",
+      icon: <ShoppingCartOutlined />,
+    },
+    {
+      id: "du-bao-nhu-cau",
+      label: "Dự báo nhu cầu",
+      icon: <LineChartOutlined />,
+    },
   ],
+
   stats: [
     {
       label: "Đơn bán trong tháng",
@@ -49,13 +67,28 @@ const config: DashboardConfig = {
       color: "green",
     },
   ],
+
   tableTitle: "Nhật ký nhập dữ liệu bán hàng gần đây",
+
   columns: [
-    { key: "code", label: "Mã đơn hàng" },
-    { key: "name", label: "Tên sản phẩm" },
-    { key: "detail", label: "Số lượng tiêu thụ" },
-    { key: "status", label: "Trạng thái" },
+    {
+      key: "code",
+      label: "Mã đơn hàng",
+    },
+    {
+      key: "name",
+      label: "Tên sản phẩm",
+    },
+    {
+      key: "detail",
+      label: "Số lượng tiêu thụ",
+    },
+    {
+      key: "status",
+      label: "Trạng thái",
+    },
   ],
+
   rows: [
     {
       code: "DH-001",
@@ -89,4 +122,4 @@ export default function DashboardPageGSBH({
       onLogout={onLogout}
     />
   );
-}
+}

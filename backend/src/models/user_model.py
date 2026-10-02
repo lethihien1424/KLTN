@@ -1,3 +1,4 @@
+### D:\KLTN\KLTN\backend\src\models\user_model.py
 from sqlalchemy import Column, DateTime, FetchedValue, String, text
 
 from src.core.database import Base

@@ -624,7 +624,9 @@
     gap: 6px;
 }
 
+
 /* Approve / Reject buttons used in generic table rows */
+
 .btn-approve {
     display: inline-flex;
     align-items: center;
@@ -661,7 +663,9 @@
     background: #fecaca;
 }
 
+
 /* Empty row in tables */
+
 .dashboard-empty-row,
 .tk-empty-row {
     text-align: center;
@@ -670,7 +674,9 @@
     font-size: 13px;
 }
 
+
 /* Chart section */
+
 .dashboard-chart-section {
     margin-bottom: 20px;
     padding: 20px;
@@ -697,7 +703,9 @@
     height: 250px;
 }
 
+
 /* Pagination Bar Styling */
+
 .dashboard-pagination-wrap {
     display: flex;
     align-items: center;
@@ -765,7 +773,9 @@
     font-weight: bold;
 }
 
+
 /* Modal Overlay & Card Styling */
+
 .modal-overlay {
     position: fixed;
     top: 0;
@@ -796,7 +806,6 @@
         opacity: 0;
         transform: translateY(12px) scale(0.98);
     }
-
     to {
         opacity: 1;
         transform: translateY(0) scale(1);
@@ -889,7 +898,9 @@
     margin-top: 2px;
 }
 
+
 /* User View Card Styling */
+
 .view-user-header {
     display: flex;
     align-items: center;
@@ -966,7 +977,9 @@
     font-weight: 600;
 }
 
+
 /* Delete Warning Box */
+
 .modal-danger-box {
     display: flex;
     align-items: flex-start;
@@ -986,7 +999,9 @@
     margin-top: 2px;
 }
 
+
 /* Upload Dropzone Styling */
+
 .upload-dropzone {
     border: 2px dashed #cbd5e1;
     border-radius: 12px;
@@ -1034,35 +1049,28 @@
     .dashboard-shell {
         display: block;
     }
-
     .dashboard-sidebar {
         width: 100%;
     }
-
     .dashboard-sidebar nav {
         display: flex;
         overflow-x: auto;
     }
-
     .dashboard-nav-item {
         flex: 0 0 auto;
         width: auto;
         white-space: nowrap;
     }
-
     .dashboard-logout {
         margin-top: 10px;
     }
-
     .dashboard-topbar {
         padding: 0 15px;
     }
-
     .dashboard-main {
         padding: 20px 15px;
     }
-
     .dashboard-demo-label {
         display: none;
     }
-}
+}

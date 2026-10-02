@@ -1,3 +1,8 @@
+/* =====================================================
+   CSS DÙNG CHUNG CHO ĐĂNG NHẬP VÀ QUÊN MẬT KHẨU
+   File: src/pages/auth/Auth.css
+   ===================================================== */
+
 * {
     box-sizing: border-box;
 }
@@ -6,6 +11,11 @@ body {
     margin: 0;
     font-family: "Segoe UI", Arial, sans-serif;
 }
+
+
+/* =====================================================
+   GIAO DIỆN LOGIN HIỆN TẠI
+   ===================================================== */
 
 .login-page {
     min-height: 100vh;
@@ -98,6 +108,26 @@ body {
     font-weight: 700;
 }
 
+
+/* Hỗ trợ nút Quên mật khẩu dạng button hoặc link. */
+
+button.login-forgot {
+    padding: 0;
+    border: 0;
+    background: transparent;
+    font-family: inherit;
+    font-size: inherit;
+    cursor: pointer;
+}
+
+a.login-forgot {
+    text-decoration: none;
+}
+
+.login-forgot:hover {
+    text-decoration: underline;
+}
+
 .login-error {
     margin: 0 0 12px;
     color: #bb3030;
@@ -138,4 +168,355 @@ body {
     text-align: center;
     color: #a5b2c7;
     font-size: 10px;
+}
+
+
+/* =====================================================
+   LOGIN MỚI VÀ BA MÀN HÌNH QUÊN MẬT KHẨU
+   Các component dùng class auth-*
+   ===================================================== */
+
+.auth-page {
+    min-height: 100vh;
+    min-height: 100dvh;
+    display: grid;
+    place-items: center;
+    padding: 28px 16px;
+    background: radial-gradient(circle at 18% 30%, #dcecff, transparent 38%), radial-gradient(circle at 88% 85%, #e8eaff, transparent 39%), #f5faff;
+    color: #17243b;
+    font-family: "Segoe UI", Arial, sans-serif;
+}
+
+.auth-card {
+    width: min(100%, 440px);
+    padding: 32px;
+    background: #ffffff;
+    border: 1px solid #edf2fa;
+    border-radius: 24px;
+    box-shadow: 0 18px 48px rgba(60, 93, 143, 0.12);
+}
+
+.auth-logo {
+    display: grid;
+    place-items: center;
+    width: 56px;
+    height: 56px;
+    margin: 0 auto 12px;
+    border-radius: 18px;
+    background: linear-gradient(145deg, #64a8ff, #2463e9);
+    box-shadow: 0 6px 16px rgba(44, 105, 237, 0.24);
+    color: #ffffff;
+    font-size: 27px;
+    font-weight: 800;
+}
+
+.auth-brand {
+    margin: 0 0 24px;
+    text-align: center;
+    font-size: 12px;
+    font-weight: 800;
+    letter-spacing: 2px;
+    color: #54708f;
+}
+
+.auth-card h1 {
+    margin: 0;
+    text-align: center;
+    font-size: 25px;
+    letter-spacing: -0.5px;
+    color: #17243b;
+}
+
+.auth-description {
+    margin: 10px 0 24px;
+    color: #718198;
+    font-size: 14px;
+    line-height: 1.6;
+    text-align: center;
+}
+
+
+/* ---- Ba bước: Email, OTP, Mật khẩu mới ---- */
+
+.auth-steps {
+    display: flex;
+    justify-content: space-between;
+    gap: 8px;
+    margin-bottom: 26px;
+}
+
+.auth-step {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 7px;
+    color: #93a0b3;
+}
+
+.auth-step span {
+    display: grid;
+    place-items: center;
+    width: 30px;
+    height: 30px;
+    background: #edf2f8;
+    border-radius: 50%;
+    font-size: 12px;
+    font-weight: 700;
+}
+
+.auth-step small {
+    font-size: 11px;
+    text-align: center;
+}
+
+.auth-step.is-active {
+    color: #2864e8;
+}
+
+.auth-step.is-active span {
+    background: #2864e8;
+    color: #ffffff;
+}
+
+
+/* ---- Các trường nhập ---- */
+
+.auth-card form>label {
+    display: block;
+    margin: 17px 0 7px;
+    color: #263955;
+    font-size: 13px;
+    font-weight: 600;
+}
+
+.auth-card form>input {
+    width: 100%;
+    height: 46px;
+    padding: 0 13px;
+    border: 1px solid #dce5ef;
+    border-radius: 10px;
+    background: #f8fafc;
+    color: #17243b;
+    font: inherit;
+    font-size: 14px;
+    outline: none;
+    transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.auth-card form>input::placeholder {
+    color: #96a3b5;
+}
+
+.auth-card form>input:focus {
+    border-color: #3d7cf0;
+    box-shadow: 0 0 0 3px rgba(61, 124, 240, 0.12);
+}
+
+
+/* Email tự điền, người dùng không chỉnh sửa. */
+
+.auth-card form>input[readonly] {
+    background: #eef3f8;
+    color: #60738d;
+}
+
+.auth-card form>input:disabled {
+    opacity: 0.65;
+    cursor: not-allowed;
+}
+
+
+/* ---- Trường OTP ---- */
+
+.auth-card form>input.auth-otp {
+    text-align: center;
+    letter-spacing: 8px;
+    font-size: 24px;
+    font-weight: 700;
+}
+
+.auth-countdown {
+    margin: 12px 0 0;
+    color: #2864e8;
+    text-align: center;
+    font-size: 13px;
+    font-weight: 600;
+    line-height: 1.6;
+}
+
+.auth-countdown.is-expired {
+    color: #bb3030;
+}
+
+
+/* ---- Nút chính và nút gửi lại ---- */
+
+.auth-primary,
+.auth-secondary {
+    width: 100%;
+    min-height: 46px;
+    padding: 10px 14px;
+    border-radius: 10px;
+    font: inherit;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.15s ease, opacity 0.15s ease;
+}
+
+.auth-primary {
+    margin-top: 22px;
+    border: 0;
+    color: #ffffff;
+    background: #2864e8;
+    box-shadow: 0 6px 14px rgba(40, 100, 232, 0.18);
+}
+
+.auth-primary:hover:not(:disabled) {
+    background: #1d54cf;
+}
+
+.auth-secondary {
+    margin-top: 11px;
+    border: 1px solid #d6e2f6;
+    color: #2864e8;
+    background: #f5f8ff;
+}
+
+.auth-secondary:hover:not(:disabled) {
+    background: #eaf1ff;
+}
+
+.auth-page button:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.auth-page button:focus-visible,
+.login-page button:focus-visible,
+.login-page a:focus-visible {
+    outline: 3px solid #8db4ff;
+    outline-offset: 3px;
+}
+
+
+/* ---- Thông báo lỗi, hướng dẫn và thành công ---- */
+
+.auth-alert {
+    padding: 12px 14px;
+    margin-bottom: 15px;
+    border-radius: 10px;
+    font-size: 13px;
+    line-height: 1.6;
+    overflow-wrap: anywhere;
+}
+
+.auth-alert-error {
+    color: #a52424;
+    background: #fff1f1;
+    border: 1px solid #ffd4d4;
+}
+
+.auth-alert-info {
+    color: #305c95;
+    background: #eff6ff;
+    border: 1px solid #d9e9ff;
+}
+
+.auth-alert-success {
+    color: #167347;
+    background: #eefbf4;
+    border: 1px solid #caeedb;
+}
+
+
+/* ---- Ghi nhớ đăng nhập và hiển thị mật khẩu ---- */
+
+.auth-card form>label.auth-checkbox,
+.auth-checkbox {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: #718198;
+    font-size: 12px;
+    font-weight: 400;
+}
+
+.auth-checkbox input {
+    margin: 0;
+    accent-color: #2864e8;
+}
+
+.auth-options {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 12px;
+    margin-top: 17px;
+}
+
+.auth-options .auth-checkbox {
+    margin: 0;
+}
+
+
+/* ---- Nút dạng chữ ---- */
+
+.auth-text-button,
+.auth-back {
+    display: block;
+    padding: 4px;
+    border: 0;
+    background: transparent;
+    color: #2864e8;
+    font: inherit;
+    font-size: 12px;
+    cursor: pointer;
+}
+
+.auth-text-button {
+    margin: 15px auto 0;
+}
+
+.auth-options .auth-text-button {
+    margin: 0;
+    font-weight: 600;
+}
+
+.auth-back {
+    margin: 22px auto 0;
+    color: #60738d;
+}
+
+.auth-text-button:hover:not(:disabled),
+.auth-back:hover:not(:disabled) {
+    text-decoration: underline;
+}
+
+.auth-footer {
+    margin: 24px 0 0;
+    text-align: center;
+    color: #99a7ba;
+    font-size: 11px;
+}
+
+
+/* ---- Điện thoại ---- */
+
+@media (max-width: 480px) {
+    .auth-page {
+        padding: 20px 14px;
+    }
+    .auth-card {
+        padding: 26px 22px;
+        border-radius: 20px;
+    }
+    .auth-card h1 {
+        font-size: 23px;
+    }
+    .login-card {
+        padding: 24px;
+    }
 }

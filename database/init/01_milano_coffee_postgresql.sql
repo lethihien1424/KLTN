@@ -81,6 +81,21 @@ CREATE TABLE nhat_ky_hoat_dong (
         ON DELETE SET NULL
 );
 -- =========================
+-- QUÊN MẬT KHẨU
+-- =========================
+
+CREATE TABLE password_reset_requests (
+    ma_nguoi_dung VARCHAR(20) PRIMARY KEY
+        REFERENCES users(ma_nguoi_dung) ON DELETE CASCADE,
+    otp_hash VARCHAR(64) NOT NULL,
+    otp_expires_at TIMESTAMPTZ NOT NULL,
+    attempts_left INTEGER NOT NULL DEFAULT 5,
+    reset_token_hash VARCHAR(64),
+    reset_expires_at TIMESTAMPTZ,
+    requested_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+-- =========================
 -- SẢN PHẨM
 -- =========================
 
