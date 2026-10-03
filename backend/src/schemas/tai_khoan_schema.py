@@ -1,4 +1,3 @@
-### D:\KLTN\KLTN\backend\src\schemas\tai_khoan_schema.py
 from datetime import datetime
 from typing import Literal
 
@@ -7,10 +6,9 @@ from pydantic import BaseModel, ConfigDict, Field
 
 VaiTro = Literal[
     "ADMIN",
-    "QUAN_LY",
-    "GIAM_SAT_BAN_HANG",
-    "NHAN_VIEN_KE_HOACH_SAN_XUAT",
-    "NHAN_VIEN_KHO",
+    "QUAN_LY_BAN_HANG",
+    "QUAN_LY_MUA_HANG",
+    "NHAN_VIEN_BAN_HANG",
     "NHAN_VIEN_MUA_HANG",
 ]
 
@@ -38,42 +36,16 @@ class TaiKhoanResponse(BaseModel):
 
 
 class TaiKhoanCreateRequest(BaseModel):
-    ma_nguoi_dung: str = Field(
-        min_length=1,
-        max_length=20,
-        description="Mã người dùng",
-    )
-
-    mat_khau: str = Field(
-        min_length=1,
-        max_length=255,
-        description="Mật khẩu khởi tạo",
-    )
-
-    ho_ten: str = Field(
-        min_length=1,
-        max_length=100,
-        description="Họ và tên",
-    )
+    # Backend tự sinh mã, không cần nhập ma_nguoi_dung.
+    ho_ten: str = Field(min_length=1, max_length=100)
+    mat_khau: str = Field(min_length=1, max_length=72)
 
     vai_tro: VaiTro
-
     trang_thai: TrangThai = "HOAT_DONG"
 
-    email: str | None = Field(
-        default=None,
-        max_length=100,
-    )
-
-    so_dien_thoai: str | None = Field(
-        default=None,
-        max_length=20,
-    )
-
-    dia_chi: str | None = Field(
-        default=None,
-        max_length=255,
-    )
+    email: str | None = Field(default=None, max_length=100)
+    so_dien_thoai: str | None = Field(default=None, max_length=20)
+    dia_chi: str | None = Field(default=None, max_length=255)
 
 
 class TaiKhoanUpdateRequest(BaseModel):
@@ -84,26 +56,15 @@ class TaiKhoanUpdateRequest(BaseModel):
     )
 
     vai_tro: VaiTro | None = None
-
     trang_thai: TrangThai | None = None
 
-    email: str | None = Field(
-        default=None,
-        max_length=100,
-    )
+    email: str | None = Field(default=None, max_length=100)
+    so_dien_thoai: str | None = Field(default=None, max_length=20)
+    dia_chi: str | None = Field(default=None, max_length=255)
 
-    so_dien_thoai: str | None = Field(
-        default=None,
-        max_length=20,
-    )
-
-    dia_chi: str | None = Field(
-        default=None,
-        max_length=255,
-    )
-
+    # Không gửi mat_khau thì giữ mật khẩu cũ.
     mat_khau: str | None = Field(
         default=None,
         min_length=1,
-        max_length=255,
+        max_length=72,
     )

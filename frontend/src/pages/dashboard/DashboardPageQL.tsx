@@ -1,15 +1,17 @@
+import {
+  DatabaseOutlined,
+  FileDoneOutlined,
+  LineChartOutlined,
+  PieChartOutlined,
+  TruckOutlined,
+} from "@ant-design/icons";
+
 import DashboardBase, {
   type DashboardConfig,
 } from "../../components/dashboard/DashboardBase";
+
 import type { User } from "../../services/authService";
-import {
-  PieChartOutlined,
-  LineChartOutlined,
-  FileDoneOutlined,
-  DatabaseOutlined,
-  TruckOutlined,
-  TeamOutlined,
-} from "@ant-design/icons";
+
 
 type Props = {
   user: User;
@@ -17,18 +19,43 @@ type Props = {
 };
 
 const config: DashboardConfig = {
-  title: "Bảng Điều Khiển Quản Lý",
+  title: "Bảng Điều Khiển Quản Lý Bán Hàng",
+
   subtitle:
     "Tổng quan tình hình dự báo nhu cầu và phê duyệt kế hoạch nhập cà phê.",
-  roleLabel: "QUẢN LÝ",
+
+  roleLabel: "QUẢN LÝ BÁN HÀNG",
+
   menu: [
-    { id: "tong-quan", label: "Tổng quan", icon: <PieChartOutlined /> },
-    { id: "du-bao-nhu-cau", label: "Dự báo nhu cầu", icon: <LineChartOutlined /> },
-    { id: "duyet-ke-hoach", label: "Duyệt kế hoạch", icon: <FileDoneOutlined />, badge: 2 },
-    { id: "ton-kho-nguyen-lieu", label: "Tồn kho nguyên liệu", icon: <DatabaseOutlined /> },
-    { id: "nha-cung-cap", label: "Nhà cung cấp", icon: <TruckOutlined /> },
-    { id: "quan-tri-tai-khoan", label: "Quản trị tài khoản", icon: <TeamOutlined /> },
+    {
+      id: "tong-quan",
+      label: "Tổng quan",
+      icon: <PieChartOutlined />,
+    },
+    {
+      id: "du-bao-nhu-cau",
+      label: "Dự báo nhu cầu",
+      icon: <LineChartOutlined />,
+    },
+    {
+      id: "duyet-ke-hoach",
+      label: "Duyệt kế hoạch",
+      icon: <FileDoneOutlined />,
+      badge: 2,
+    },
+    {
+      id: "ton-kho-nguyen-lieu",
+      label: "Tồn kho nguyên liệu",
+      icon: <DatabaseOutlined />,
+    },
+    {
+      id: "nha-cung-cap",
+      label: "Nhà cung cấp",
+      icon: <TruckOutlined />,
+    },
   ],
+
+  // Các số liệu dưới đây hiện là dữ liệu minh họa.
   stats: [
     {
       label: "KẾ HOẠCH CHỜ DUYỆT",
@@ -55,35 +82,43 @@ const config: DashboardConfig = {
       color: "green",
     },
   ],
+
   tableTitle: "Kế Hoạch Mua Nguyên Liệu Chờ Phê Duyệt",
+
   columns: [
-    { key: "code", label: "Mã KH" },
-    { key: "creator", label: "Người lập" },
-    { key: "volume", label: "Tổng khối lượng" },
-    { key: "cost", label: "Chi phí dự kiến" },
-    { key: "date", label: "Ngày giao dự kiến" },
-    { key: "status", label: "Trạng thái" },
-    { key: "actions", label: "Thao tác duyệt" },
-  ],
-  rows: [
     {
-      code: "KH-0926",
-      creator: "Lê Thị Dinh (KHSX01)",
-      volume: "8.5 Tấn",
-      cost: "810,000,000 đ",
-      date: "05/10/2026",
-      status: "Chờ duyệt",
+      key: "code",
+      label: "Mã KH",
     },
     {
-      code: "KH-0927",
-      creator: "Lê Thị Dinh (KHSX01)",
-      volume: "3.2 Tấn",
-      cost: "320,000,000 đ",
-      date: "10/10/2026",
-      status: "Chờ duyệt",
+      key: "creator",
+      label: "Người lập",
+    },
+    {
+      key: "volume",
+      label: "Tổng khối lượng",
+    },
+    {
+      key: "cost",
+      label: "Chi phí dự kiến",
+    },
+    {
+      key: "date",
+      label: "Ngày giao dự kiến",
+    },
+    {
+      key: "status",
+      label: "Trạng thái",
+    },
+    {
+      key: "actions",
+      label: "Thao tác duyệt",
     },
   ],
+
+  rows: [],
 };
+
 
 export default function DashboardPageQL({
   user,
@@ -96,4 +131,4 @@ export default function DashboardPageQL({
       onLogout={onLogout}
     />
   );
-}
+}

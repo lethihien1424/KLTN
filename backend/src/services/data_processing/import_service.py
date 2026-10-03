@@ -1,3 +1,4 @@
+### D:\KLTN\KLTN\backend\src\services\data_processing\import_service.py
 from datetime import datetime
 from decimal import Decimal, ROUND_HALF_UP
 from zoneinfo import ZoneInfo
@@ -32,7 +33,7 @@ from src.services.data_processing.kiem_tra_du_lieu import (
     validate_choice,
 )
 from src.services.data_processing.template_validator import validate_columns
-from src.utils.password_utils import hash_password
+from src.core.security import hash_password
 
 
 class ImportService:
@@ -220,10 +221,9 @@ class ImportService:
 
         allowed_roles = {
             "ADMIN",
-            "QUAN_LY",
-            "GIAM_SAT_BAN_HANG",
-            "NHAN_VIEN_KE_HOACH_SAN_XUAT",
-            "NHAN_VIEN_KHO",
+            "QUAN_LY_MUA_HANG",
+            "QUAN_LY_BAN_HANG",
+            "NHAN_VIEN_BAN_HANG",
             "NHAN_VIEN_MUA_HANG",
         }
         allowed_status = {

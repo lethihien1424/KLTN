@@ -1,7 +1,9 @@
 #### D:\KLTN\KLTN\backend\src\services\tai_khoan_service.py
+from datetime import datetime, timezone
 from typing import Sequence
 
 from fastapi import HTTPException, status
+from sqlalchemy.exc import IntegrityError, SQLAlchemyError
 from sqlalchemy.orm import Session
 
 from src.core.security import hash_password
@@ -54,75 +56,143 @@ class TaiKhoanService:
 
         return user
 
+    @staticmethod
+    def _hash_password(password: str) -> str:
+        try:
+            return hash_password(password)
+        except ValueError as exc:
+            raise HTTPException(
+                status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                detail=str(exc),
+            ) from exc
+
+    @staticmethod
+    def _optional_text(value: str | None) -> str | None:
+        if value is None:
+            return None
+
+        return value.strip() or None
+
+    @staticmethod
+    def _database_error(
+        db: Session,
+        exc: SQLAlchemyError,
+        deleting: bool = False,
+    ) -> None:
+        db.rollback()
+
+        if isinstance(exc, IntegrityError):
+            original = getattr(exc, "orig", None)
+
+            code = (
+                getattr(original, "pgcode", None)
+                or getattr(original, "sqlstate", None)
+            )
+
+            if code == "23503":
+                message = (
+                    "Tài khoản đang được dữ liệu khác tham chiếu. "
+                    "Hãy chuyển sang NGUNG_HOAT_DONG thay vì xóa."
+                    if deleting
+                    else "Mã tham chiếu không hợp lệ."
+                )
+
+            elif code == "23505":
+                message = (
+                    "Mã tài khoản hoặc dữ liệu duy nhất "
+                    "đã tồn tại."
+                )
+
+            elif code == "23514":
+                message = (
+                    "Vai trò hoặc dữ liệu không đáp ứng "
+                    "ràng buộc trong database."
+                )
+
+            else:
+                message = (
+                    "Dữ liệu vi phạm ràng buộc database."
+                )
+
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT,
+                detail=message,
+            ) from exc
+
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Không thể lưu thay đổi tài khoản.",
+        ) from exc
+
     def create(
         self,
         db: Session,
         payload: TaiKhoanCreateRequest,
         creator: User | None = None,
     ) -> User:
-        ma_nguoi_dung = payload.ma_nguoi_dung.strip()
         ho_ten = payload.ho_ten.strip()
 
-        if not ma_nguoi_dung or not ho_ten:
+        if not ho_ten:
             raise HTTPException(
                 status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
-                detail=(
-                    "Mã người dùng và họ tên "
-                    "không được để trống."
-                ),
+                detail="Họ tên không được để trống.",
             )
 
-        existing = self.repository.get_by_id(
-            db=db,
-            ma_nguoi_dung=ma_nguoi_dung,
+        password_hash = self._hash_password(
+            payload.mat_khau
         )
 
-        if existing is not None:
+        actor_id = (
+            creator.ma_nguoi_dung
+            if creator is not None
+            else None
+        )
+
+        try:
+            account_id = self.repository.generate_account_id(
+                db=db,
+                vai_tro=payload.vai_tro,
+            )
+
+            user = User(
+                ma_nguoi_dung=account_id,
+                mat_khau=password_hash,
+                ho_ten=ho_ten,
+                vai_tro=payload.vai_tro,
+                trang_thai=payload.trang_thai,
+                nguoi_thao_tac=actor_id,
+                email=self._optional_text(payload.email),
+                so_dien_thoai=self._optional_text(
+                    payload.so_dien_thoai
+                ),
+                dia_chi=self._optional_text(payload.dia_chi),
+            )
+
+            self.repository.create(db=db, user=user)
+            db.commit()
+
+        except ValueError as exc:
+            db.rollback()
+
             raise HTTPException(
-                status_code=status.HTTP_409_CONFLICT,
-                detail=(
-                    f"Mã người dùng "
-                    f"{ma_nguoi_dung} đã tồn tại."
-                ),
-            )
+                status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                detail=str(exc),
+            ) from exc
 
-        user = User(
-            ma_nguoi_dung=ma_nguoi_dung,
-            mat_khau=hash_password(payload.mat_khau),
-            ho_ten=ho_ten,
-            vai_tro=payload.vai_tro,
-            trang_thai=payload.trang_thai,
-            nguoi_thao_tac=(
-                creator.ma_nguoi_dung
-                if creator is not None
-                else None
-            ),
-            email=payload.email,
-            so_dien_thoai=payload.so_dien_thoai,
-            dia_chi=payload.dia_chi,
-        )
-
-        created_user = self.repository.create(
-            db=db,
-            user=user,
-        )
+        except SQLAlchemyError as exc:
+            self._database_error(db, exc)
 
         self._write_log(
             db=db,
-            account_id=(
-                creator.ma_nguoi_dung
-                if creator is not None
-                else created_user.ma_nguoi_dung
-            ),
+            account_id=actor_id or user.ma_nguoi_dung,
             action="THEM_TAI_KHOAN",
             description=(
-                "Thêm tài khoản: "
-                f"{created_user.ma_nguoi_dung} "
-                f"({created_user.ho_ten})."
+                f"Thêm tài khoản: {user.ma_nguoi_dung} "
+                f"({user.ho_ten})."
             ),
         )
 
-        return created_user
+        return user
 
     def update(
         self,
@@ -140,90 +210,99 @@ class TaiKhoanService:
             exclude_unset=True
         )
 
-        if "ho_ten" in changes:
-            value = changes["ho_ten"]
-
-            if value is None or not value.strip():
+        for field, label in (
+            ("ho_ten", "Họ tên"),
+            ("vai_tro", "Vai trò"),
+            ("trang_thai", "Trạng thái"),
+            ("mat_khau", "Mật khẩu"),
+        ):
+            if field in changes and changes[field] is None:
                 raise HTTPException(
-                    status_code=(
-                        status.HTTP_422_UNPROCESSABLE_ENTITY
-                    ),
+                    status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                    detail=f"{label} không được để trống.",
+                )
+
+        if "ho_ten" in changes:
+            changes["ho_ten"] = changes["ho_ten"].strip()
+
+            if not changes["ho_ten"]:
+                raise HTTPException(
+                    status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
                     detail="Họ tên không được để trống.",
                 )
 
-            user.ho_ten = value.strip()
-
-        if "vai_tro" in changes:
-            value = changes["vai_tro"]
-
-            if value is None:
-                raise HTTPException(
-                    status_code=(
-                        status.HTTP_422_UNPROCESSABLE_ENTITY
-                    ),
-                    detail="Vai trò không được để trống.",
-                )
-
-            user.vai_tro = value
-
-        if "trang_thai" in changes:
-            value = changes["trang_thai"]
-
-            if value is None:
-                raise HTTPException(
-                    status_code=(
-                        status.HTTP_422_UNPROCESSABLE_ENTITY
-                    ),
-                    detail="Trạng thái không được để trống.",
-                )
-
-            user.trang_thai = value
-
-        for field in (
-            "email",
-            "so_dien_thoai",
-            "dia_chi",
-        ):
-            if field in changes:
-                setattr(
-                    user,
-                    field,
-                    changes[field],
-                )
-
         if "mat_khau" in changes:
-            new_password = changes["mat_khau"]
-
-            if new_password:
-                user.mat_khau = hash_password(
-                    new_password
-                )
-
-        if modifier is not None:
-            user.nguoi_thao_tac = (
-                modifier.ma_nguoi_dung
+            changes["mat_khau"] = self._hash_password(
+                changes["mat_khau"]
             )
 
-        updated_user = self.repository.update(
-            db=db,
-            user=user,
+        actor_id = (
+            modifier.ma_nguoi_dung
+            if modifier is not None
+            else None
         )
+
+        protected = (
+            user.ma_nguoi_dung.lower() == "admin"
+            or actor_id == user.ma_nguoi_dung
+        )
+
+        if protected:
+            if (
+                "vai_tro" in changes
+                and changes["vai_tro"] != user.vai_tro
+            ):
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail=(
+                        "Không thể đổi vai trò tài khoản admin "
+                        "hoặc tài khoản đang đăng nhập."
+                    ),
+                )
+
+            if changes.get("trang_thai") == "NGUNG_HOAT_DONG":
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail=(
+                        "Không thể ngưng hoạt động tài khoản admin "
+                        "hoặc tài khoản đang đăng nhập."
+                    ),
+                )
+
+        try:
+            for field, value in changes.items():
+                if field in {
+                    "email",
+                    "so_dien_thoai",
+                    "dia_chi",
+                }:
+                    value = self._optional_text(value)
+
+                setattr(user, field, value)
+
+            if actor_id is not None:
+                user.nguoi_thao_tac = actor_id
+
+            user.thoi_gian_cap_nhat = datetime.now(
+                timezone.utc
+            )
+
+            self.repository.update(db=db, user=user)
+            db.commit()
+
+        except SQLAlchemyError as exc:
+            self._database_error(db, exc)
 
         self._write_log(
             db=db,
-            account_id=(
-                modifier.ma_nguoi_dung
-                if modifier is not None
-                else ma_nguoi_dung
-            ),
+            account_id=actor_id or ma_nguoi_dung,
             action="CAP_NHAT_TAI_KHOAN",
             description=(
-                f"Cập nhật tài khoản: "
-                f"{ma_nguoi_dung}."
+                f"Cập nhật tài khoản: {ma_nguoi_dung}."
             ),
         )
 
-        return updated_user
+        return user
 
     def delete(
         self,
@@ -236,18 +315,19 @@ class TaiKhoanService:
             ma_nguoi_dung=ma_nguoi_dung,
         )
 
-        if ma_nguoi_dung.lower() == "admin":
+        if user.ma_nguoi_dung.lower() == "admin":
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
-                detail=(
-                    "Không thể xóa tài khoản admin."
-                ),
+                detail="Không thể xóa tài khoản admin.",
             )
 
-        if (
-            remover is not None
-            and remover.ma_nguoi_dung == ma_nguoi_dung
-        ):
+        actor_id = (
+            remover.ma_nguoi_dung
+            if remover is not None
+            else None
+        )
+
+        if actor_id == user.ma_nguoi_dung:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail=(
@@ -256,23 +336,22 @@ class TaiKhoanService:
                 ),
             )
 
-        self.repository.delete(
-            db=db,
-            user=user,
-        )
+        try:
+            self.repository.delete(db=db, user=user)
+            db.commit()
+
+        except SQLAlchemyError as exc:
+            self._database_error(
+                db=db,
+                exc=exc,
+                deleting=True,
+            )
 
         self._write_log(
             db=db,
-            account_id=(
-                remover.ma_nguoi_dung
-                if remover is not None
-                else None
-            ),
+            account_id=actor_id,
             action="XOA_TAI_KHOAN",
-            description=(
-                f"Xóa tài khoản: "
-                f"{ma_nguoi_dung}."
-            ),
+            description=f"Xóa tài khoản: {ma_nguoi_dung}.",
         )
 
     def _write_log(

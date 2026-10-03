@@ -1,412 +1,947 @@
-/* =====================================================
-   QUẢN LÝ TÀI KHOẢN PAGE - Styles
-   File: public/QuanLyTaiKhoan.css
-   ===================================================== */
+/* QUẢN LÝ TÀI KHOẢN */
 
+.tk-page {
+    color: #17243b;
+    font-family: "Segoe UI", Arial, sans-serif;
+    font-size: 14px;
+    line-height: 1.5;
+}
 
-/* ---- Pagination Bar ---- */
+.tk-page,
+.tk-page *,
+.tk-page *::before,
+.tk-page *::after {
+    box-sizing: border-box;
+}
 
-.dashboard-pagination-wrap {
+.tk-heading,
+.tk-toolbar,
+.tk-filters,
+.tk-pagination,
+.tk-pagination>div,
+.tk-modal-head,
+.tk-modal-footer,
+.tk-person,
+.tk-profile,
+.tk-actions {
     display: flex;
     align-items: center;
+}
+
+.tk-heading {
     justify-content: space-between;
-    padding: 14px 20px;
-    border-top: 1px solid #e2e8f0;
+    gap: 20px;
+    margin-bottom: 22px;
+    flex-wrap: wrap;
+}
+
+.tk-eyebrow {
+    color: #64809c;
+    font-size: 10px;
+    font-weight: 800;
+    letter-spacing: 1.5px;
+}
+
+.tk-heading h2 {
+    margin: 6px 0;
+    font-size: 24px;
+    font-weight: 700;
+    letter-spacing: -0.5px;
+}
+
+.tk-heading p,
+.tk-profile p {
+    margin: 5px 0;
+    color: #64748b;
+}
+
+.tk-toolbar {
+    gap: 9px;
+    flex-wrap: wrap;
+}
+
+
+/* Nút */
+
+.tk-btn,
+.tk-icon-btn {
+    border: 1px solid #dbe3ee;
+    border-radius: 9px;
     background: #ffffff;
-    font-size: 13px;
-    color: #475569;
+    color: #334155;
+    font: inherit;
+    cursor: pointer;
+    transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease;
 }
 
-.pagination-total-info {
-    font-weight: 500;
-    color: #475569;
-}
-
-.pagination-controls {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-}
-
-.pagination-btn {
+.tk-btn {
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    min-width: 32px;
-    height: 32px;
-    padding: 0 10px;
-    border: 1px solid #cbd5e1;
-    border-radius: 8px;
-    background: #ffffff;
-    color: #334155;
-    font-size: 13.5px;
-    font-weight: 500;
-    cursor: pointer;
-    transition: all 0.15s ease;
+    gap: 8px;
+    min-height: 39px;
+    padding: 9px 14px;
+    font-size: 13px;
+    font-weight: 600;
+    white-space: nowrap;
 }
 
-.pagination-btn:hover:not(:disabled) {
-    border-color: #059669;
-    color: #059669;
-    background: #f0fdf4;
+.tk-btn:hover:not(:disabled),
+.tk-icon-btn:hover:not(:disabled) {
+    border-color: #a9c4f8;
+    background: #f0f5ff;
+    color: #2563eb;
 }
 
-.pagination-btn.active {
-    border: 1px solid #059669;
-    background: #ffffff;
-    color: #059669;
-    font-weight: 700;
+.tk-btn.tk-primary {
+    border-color: #2563eb;
+    background: #2563eb;
+    color: #ffffff;
 }
 
-.pagination-btn:disabled {
-    opacity: 0.4;
+.tk-btn.tk-primary:hover:not(:disabled) {
+    border-color: #1d4ed8;
+    background: #1d4ed8;
+    color: #ffffff;
+}
+
+.tk-btn.tk-danger {
+    border-color: #dc2626;
+    background: #dc2626;
+    color: #ffffff;
+}
+
+.tk-btn.tk-danger:hover:not(:disabled) {
+    border-color: #b91c1c;
+    background: #b91c1c;
+    color: #ffffff;
+}
+
+.tk-btn:disabled,
+.tk-icon-btn:disabled {
+    opacity: 0.45;
     cursor: not-allowed;
 }
 
-.pagination-ellipsis {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    min-width: 24px;
-    height: 32px;
-    color: #94a3b8;
-    font-weight: bold;
+.tk-icon-btn {
+    display: inline-grid;
+    place-items: center;
+    width: 34px;
+    height: 34px;
+    padding: 0;
+    flex-shrink: 0;
+}
+
+.tk-delete-icon {
+    color: #dc2626;
+}
+
+.tk-btn:focus-visible,
+.tk-icon-btn:focus-visible {
+    outline: 3px solid #bfdbfe;
+    outline-offset: 2px;
 }
 
 
-/* ---- Upload Button ---- */
+/* Thống kê */
 
-.btn-upload {
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    padding: 7px 16px;
-    border: 1px solid #cbd5e1;
-    border-radius: 8px;
-    background: #ffffff;
-    color: #334155;
-    font-size: 13px;
-    font-weight: 600;
-    cursor: pointer;
-    transition: all 0.15s ease;
-}
-
-.btn-upload:hover {
-    background: #f8fafc;
-    border-color: #2563eb;
-    color: #2563eb;
-}
-
-
-/* ---- Danger Button ---- */
-
-.btn-danger {
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    padding: 7px 16px;
-    border: 0;
-    border-radius: 8px;
-    background: #dc2626;
-    color: #ffffff;
-    font-size: 13px;
-    font-weight: 600;
-    cursor: pointer;
-    transition: background 0.15s ease;
-}
-
-.btn-danger:hover {
-    background: #b91c1c;
-}
-
-
-/* ---- Action Buttons in Table ---- */
-
-.dashboard-action-btns {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-}
-
-.tk-actions-center {
-    text-align: center;
-}
-
-.tk-actions-center .dashboard-action-btns {
-    justify-content: center;
-}
-
-
-/* ---- View User Modal Cards ---- */
-
-.view-user-header {
-    display: flex;
-    align-items: center;
-    gap: 16px;
-    padding: 16px;
-    background: #f8fafc;
-    border-radius: 12px;
-    border: 1px solid #e2e8f0;
+.tk-summary {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 14px;
     margin-bottom: 20px;
 }
 
-.view-user-avatar {
-    width: 52px;
-    height: 52px;
-    border-radius: 50%;
-    background: linear-gradient(135deg, #2563eb, #1d4ed8);
-    color: #ffffff;
-    display: grid;
-    place-items: center;
-    font-size: 22px;
-    flex-shrink: 0;
-    box-shadow: 0 4px 6px rgba(37, 99, 235, 0.2);
-}
-
-.view-user-meta h4 {
-    margin: 0;
-    font-size: 16px;
-    font-weight: 700;
-    color: #0f172a;
-}
-
-.view-user-meta p {
-    margin: 4px 0 0;
-    font-size: 12.5px;
-    color: #64748b;
-}
-
-.view-detail-card {
-    border: 1px solid #f1f5f9;
+.tk-summary>div {
+    padding: 17px 20px;
+    border: 1px solid #e3eaf3;
+    border-radius: 13px;
     background: #ffffff;
-    border-radius: 12px;
-    padding: 16px;
-    margin-bottom: 12px;
+    box-shadow: 0 2px 4px rgb(23 36 59 / 2%);
 }
 
-.view-detail-card h5 {
-    margin: 0 0 12px;
+.tk-summary span {
+    display: block;
+    color: #64748b;
     font-size: 12px;
-    font-weight: 700;
-    color: #94a3b8;
-    text-transform: uppercase;
-    letter-spacing: 0.6px;
 }
 
-.view-detail-row {
+.tk-summary strong {
+    display: block;
+    margin-top: 9px;
+    color: #244c8e;
+    font-size: 26px;
+    font-weight: 700;
+}
+
+
+/* Danh sách và bộ lọc */
+
+.tk-list {
+    overflow: hidden;
+    border: 1px solid #e3eaf3;
+    border-radius: 14px;
+    background: #ffffff;
+}
+
+.tk-filters {
+    gap: 10px;
+    padding: 18px;
+    border-bottom: 1px solid #edf1f7;
+    flex-wrap: wrap;
+}
+
+.tk-search {
     display: flex;
     align-items: center;
-    justify-content: space-between;
-    padding: 8px 0;
-    border-bottom: 1px dashed #f1f5f9;
-    font-size: 13px;
-}
-
-.view-detail-row:last-child {
-    border-bottom: 0;
-}
-
-.view-detail-label {
-    color: #64748b;
-    font-weight: 500;
-}
-
-.view-detail-value {
-    color: #0f172a;
-    font-weight: 600;
-}
-
-
-/* ---- Delete Warning Box ---- */
-
-.modal-danger-box {
-    display: flex;
-    align-items: flex-start;
-    gap: 14px;
-    padding: 16px;
-    background: #fef2f2;
-    border: 1px solid #fecaca;
-    border-radius: 12px;
-    color: #991b1b;
-    margin-bottom: 16px;
-}
-
-.modal-danger-icon {
-    font-size: 24px;
-    color: #dc2626;
-    flex-shrink: 0;
-    margin-top: 2px;
-}
-
-.modal-danger-box h4 {
-    margin: 0 0 4px;
-    font-size: 15px;
-    font-weight: 700;
-    color: #7f1d1d;
-}
-
-.modal-danger-box p {
-    margin: 0;
-    font-size: 13px;
-    color: #7f1d1d;
-}
-
-
-/* ---- Delete Card Info ---- */
-
-.delete-info-card {
-    border: 1px solid #f1f5f9;
+    gap: 9px;
+    flex: 1;
+    min-width: 230px;
+    padding: 0 12px;
+    border: 1px solid #dbe3ee;
+    border-radius: 9px;
     background: #ffffff;
-    border-radius: 12px;
-    padding: 16px;
-    margin-top: 12px;
-}
-
-
-/* ---- Modal Field Hint ---- */
-
-.modal-field-hint {
-    font-size: 11.5px;
-    color: #64748b;
-    margin-top: 2px;
-}
-
-
-/* ---- Upload Dropzone ---- */
-
-.upload-dropzone {
-    display: block;
-    border: 2px dashed #cbd5e1;
-    border-radius: 12px;
-    padding: 30px 20px;
-    text-align: center;
-    background: #f8fafc;
-    cursor: pointer;
-    transition: all 0.2s ease;
-}
-
-.upload-dropzone:hover {
-    border-color: #2563eb;
-    background: #eff6ff;
-}
-
-.upload-icon {
-    font-size: 36px;
-    color: #3b82f6;
-    margin-bottom: 8px;
-    display: block;
-}
-
-.upload-dropzone p {
-    margin: 4px 0 2px;
-    font-weight: 600;
-    color: #0f172a;
-}
-
-.upload-dropzone small {
     color: #94a3b8;
 }
 
-.upload-file-badge {
-    display: inline-block;
-    margin-top: 12px;
-    padding: 6px 12px;
-    background: #e0f2fe;
-    color: #0369a1;
-    border-radius: 6px;
-    font-weight: 600;
-    font-size: 12px;
-}
-
-
-/* ---- Upload Preview Table ---- */
-
-.upload-preview-wrap {
-    margin-top: 20px;
-}
-
-.upload-preview-label {
-    margin: 0 0 8px;
-    font-size: 12px;
-    font-weight: 700;
-    color: #475569;
-    text-transform: uppercase;
-}
-
-.upload-preview-scroll {
-    max-height: 150px;
-    overflow-y: auto;
-    border: 1px solid #e2e8f0;
-    border-radius: 8px;
-}
-
-.upload-preview-table {
+.tk-search input {
     width: 100%;
+    min-width: 0;
+    height: 40px;
+    padding: 0;
+    border: 0;
+    outline: 0;
+    background: transparent;
+    color: #17243b;
+    font: inherit;
+}
+
+.tk-search input::placeholder {
+    color: #94a3b8;
     font-size: 12px;
-    border-collapse: collapse;
 }
 
-.upload-preview-table thead tr {
-    background: #f8fafc;
+.tk-filters select,
+.tk-field input,
+.tk-field select,
+.tk-field textarea {
+    min-height: 42px;
+    padding: 10px 12px;
+    border: 1px solid #dbe3ee;
+    border-radius: 9px;
+    background: #ffffff;
+    color: #17243b;
+    font: inherit;
 }
 
-.upload-preview-table th {
-    padding: 6px 8px;
-    text-align: left;
-    font-weight: 700;
+.tk-field input,
+.tk-field select,
+.tk-field textarea {
+    width: 100%;
+}
+
+.tk-field textarea {
+    resize: vertical;
+}
+
+.tk-field input:focus,
+.tk-field select:focus,
+.tk-field textarea:focus,
+.tk-filters select:focus,
+.tk-search:focus-within {
+    border-color: #3b82f6;
+    outline: 2px solid #dbeafe;
+}
+
+.tk-field input:disabled,
+.tk-field select:disabled,
+.tk-field textarea:disabled {
+    background: #f3f6fa;
     color: #64748b;
 }
 
-.upload-preview-table td {
-    padding: 6px 8px;
-    border-top: 1px solid #f1f5f9;
+
+/* Bảng */
+
+.tk-table-scroll {
+    width: 100%;
+    overflow-x: auto;
 }
 
-.upload-preview-code {
-    color: #2563eb;
+.tk-table {
+    width: 100%;
+    border-collapse: collapse;
+    text-align: left;
+}
+
+.tk-table th {
+    padding: 13px 18px;
+    background: #f8fafc;
+    color: #64748b;
+    font-size: 11px;
+    font-weight: 700;
+    white-space: nowrap;
+}
+
+.tk-table td {
+    padding: 16px 18px;
+    border-top: 1px solid #edf1f7;
+    vertical-align: middle;
+    font-size: 13px;
+}
+
+.tk-table tbody tr:hover {
+    background: #fafcff;
+}
+
+.tk-person {
+    gap: 11px;
+    min-width: 190px;
+}
+
+.tk-person strong {
+    display: block;
+    color: #17243b;
     font-weight: 600;
 }
 
-.upload-preview-pw {
-    color: #16a34a;
+.tk-person small,
+.tk-contact small {
+    display: block;
+    margin-top: 5px;
+    color: #94a3b8;
+    font-size: 11px;
+}
+
+.tk-contact {
+    min-width: 180px;
+}
+
+.tk-contact span {
+    display: block;
+    overflow-wrap: anywhere;
+}
+
+.tk-avatar {
+    display: inline-grid;
+    place-items: center;
+    flex-shrink: 0;
+    width: 39px;
+    height: 39px;
+    border-radius: 11px;
+    background: #eaf1ff;
+    color: #2563eb;
+    font-weight: 700;
+}
+
+.tk-avatar-large {
+    width: 60px;
+    height: 60px;
+    border-radius: 16px;
+    font-size: 25px;
 }
 
 
-/* ---- Upload Intro Text ---- */
+/* Trạng thái */
 
-.upload-intro {
-    margin-bottom: 16px;
-}
-
-.upload-intro p {
-    margin: 0 0 10px;
-    font-size: 13px;
-    color: #475569;
-}
-
-.btn-excel-sm {
+.tk-badge {
     display: inline-flex;
     align-items: center;
     gap: 6px;
-    padding: 5px 12px;
-    border: 0;
-    border-radius: 8px;
-    background: #16a34a;
-    color: #ffffff;
-    font-size: 12px;
+    padding: 6px 9px;
+    border-radius: 7px;
+    font-size: 11px;
     font-weight: 600;
-    cursor: pointer;
-    transition: background 0.15s ease;
+    white-space: nowrap;
 }
 
-.btn-excel-sm:hover {
-    background: #15803d;
+.tk-badge>span {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: currentColor;
 }
 
+.tk-badge.is-active {
+    background: #ecfdf3;
+    color: #15803d;
+}
 
-/* ---- Th action column ---- */
+.tk-badge.is-inactive {
+    background: #fef2f2;
+    color: #dc2626;
+}
 
-.th-actions {
+.tk-actions {
+    justify-content: center;
+    gap: 6px;
+}
+
+.tk-center {
     text-align: center;
-    width: 120px;
+}
+
+.tk-table td.tk-empty {
+    padding: 48px 20px;
+    color: #94a3b8;
+    text-align: center;
+}
+
+
+/* Phân trang */
+
+.tk-pagination {
+    justify-content: space-between;
+    gap: 12px;
+    padding: 14px 18px;
+    border-top: 1px solid #edf1f7;
+    color: #64748b;
+    font-size: 12px;
+}
+
+.tk-pagination>div {
+    gap: 10px;
+}
+
+.tk-pagination .tk-btn {
+    min-height: 32px;
+    padding: 5px 11px;
+    font-size: 12px;
+}
+
+
+/* Thông báo */
+
+.tk-message {
+    margin-bottom: 16px;
+    padding: 12px 15px;
+    border: 1px solid transparent;
+    border-radius: 9px;
+    font-size: 13px;
+    overflow-wrap: anywhere;
+}
+
+.tk-success {
+    border-color: #bbf7d0;
+    background: #f0fdf4;
+    color: #15803d;
+}
+
+.tk-error {
+    border-color: #fecaca;
+    background: #fef2f2;
+    color: #b91c1c;
+}
+
+
+/* Hộp thoại */
+
+.tk-dialog {
+    width: min(690px, calc(100vw - 32px));
+    max-width: 690px;
+    max-height: calc(100dvh - 48px);
+    margin: auto;
+    padding: 0;
+    overflow-y: auto;
+    border: 1px solid #e2e8f0;
+    border-radius: 16px;
+    background: #ffffff;
+    color: #17243b;
+    box-shadow: 0 24px 80px rgb(15 23 42 / 22%);
+}
+
+.tk-dialog::backdrop {
+    background: rgb(15 23 42 / 42%);
+    backdrop-filter: blur(3px);
+}
+
+.tk-modal-head {
+    position: sticky;
+    top: 0;
+    z-index: 2;
+    justify-content: space-between;
+    gap: 16px;
+    padding: 20px 24px;
+    border-bottom: 1px solid #edf1f7;
+    background: #ffffff;
+}
+
+.tk-modal-head h3 {
+    margin: 5px 0 0;
+    color: #17243b;
+    font-size: 20px;
+    font-weight: 700;
+}
+
+.tk-modal-body {
+    padding: 23px 24px;
+}
+
+.tk-modal-footer {
+    position: sticky;
+    bottom: 0;
+    z-index: 2;
+    justify-content: flex-end;
+    gap: 10px;
+    padding: 16px 24px;
+    border-top: 1px solid #edf1f7;
+    background: #fbfcfe;
+}
+
+.tk-modal-message {
+    margin: 16px 24px 0;
+}
+
+.tk-dialog form {
+    margin: 0;
+}
+
+
+/* Form thêm và sửa */
+
+.tk-form-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 17px;
+}
+
+.tk-field {
+    display: flex;
+    flex-direction: column;
+    gap: 7px;
+    min-width: 0;
+}
+
+.tk-field>span {
+    color: #334155;
+    font-size: 13px;
+    font-weight: 600;
+}
+
+.tk-field small {
+    color: #94a3b8;
+    font-size: 11px;
+    line-height: 1.5;
+}
+
+.tk-required {
+    color: #dc2626;
+}
+
+.tk-full {
+    grid-column: 1 / -1;
+}
+
+.tk-section-title {
+    margin: 24px 0 13px;
+    color: #64809c;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.7px;
+    text-transform: uppercase;
+}
+
+.tk-info {
+    margin-bottom: 20px;
+    padding: 12px 14px;
+    border: 1px solid #dbeafe;
+    border-radius: 9px;
+    background: #eff6ff;
+    color: #315b96;
+    font-size: 12px;
+    overflow-wrap: anywhere;
+}
+
+.tk-info p {
+    margin: 4px 0 0;
+}
+
+.tk-hint {
+    margin: 12px 0;
+    color: #64748b;
+    font-size: 12px;
+    line-height: 1.7;
+}
+
+
+/* Xem tài khoản */
+
+.tk-profile {
+    gap: 15px;
+    padding: 17px;
+    border: 1px solid #e3eaf5;
+    border-radius: 12px;
+    background: #f8fbff;
+}
+
+.tk-profile h4 {
+    margin: 0 0 5px;
+    color: #17243b;
+    font-size: 18px;
+}
+
+.tk-profile p {
+    font-size: 12px;
+}
+
+.tk-details {
+    margin: 0;
+    padding: 0 16px;
+    border: 1px solid #e7edf5;
+    border-radius: 10px;
+    background: #ffffff;
+}
+
+.tk-detail {
+    display: grid;
+    grid-template-columns: 160px minmax(0, 1fr);
+    gap: 16px;
+    padding: 13px 0;
+    border-bottom: 1px solid #edf1f7;
+}
+
+.tk-detail:last-child {
+    border-bottom: 0;
+}
+
+.tk-detail dt {
+    margin: 0;
+    color: #64748b;
+    font-size: 12px;
+}
+
+.tk-detail dd {
+    margin: 0;
+    color: #17243b;
+    font-size: 13px;
+    font-weight: 500;
+    overflow-wrap: anywhere;
+}
+
+
+/* Xóa tài khoản */
+
+.tk-warning {
+    display: flex;
+    align-items: flex-start;
+    gap: 13px;
+    margin-bottom: 18px;
+    padding: 16px;
+    border: 1px solid #fecaca;
+    border-radius: 11px;
+    background: #fef2f2;
+    color: #991b1b;
+}
+
+.tk-warning>.anticon {
+    flex-shrink: 0;
+    margin-top: 3px;
+    font-size: 23px;
+}
+
+.tk-warning strong {
+    font-size: 14px;
+}
+
+.tk-warning p {
+    margin: 5px 0 0;
+    font-size: 12px;
+    line-height: 1.7;
+}
+
+
+/* Upload */
+
+.tk-upload-intro {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 16px;
+    flex-wrap: wrap;
+}
+
+.tk-upload-intro p {
+    flex: 1;
+    margin: 0;
+    color: #64748b;
+    font-size: 12px;
+}
+
+.tk-dropzone {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 9px;
+    padding: 28px 20px;
+    border: 2px dashed #cbd5e1;
+    border-radius: 12px;
+    background: #f8fafc;
+    color: #64748b;
+    text-align: center;
+    cursor: pointer;
+}
+
+.tk-dropzone:hover {
+    border-color: #93b4f4;
+    background: #eff6ff;
+}
+
+.tk-dropzone>.anticon {
+    color: #2563eb;
+    font-size: 29px;
+}
+
+.tk-dropzone strong,
+.tk-dropzone p {
+    margin: 0;
+    color: #334155;
+}
+
+.tk-dropzone small {
+    color: #94a3b8;
+    font-size: 11px;
+}
+
+.tk-file-name {
+    display: inline-block;
+    max-width: 100%;
+    padding: 6px 10px;
+    border-radius: 6px;
+    background: #dbeafe;
+    color: #1d4ed8;
+    font-size: 12px;
+    overflow-wrap: anywhere;
+}
+
+.tk-preview {
+    max-height: 260px;
+    margin-top: 14px;
+    overflow: auto;
+    border: 1px solid #e3eaf3;
+    border-radius: 9px;
+}
+
+.tk-preview .tk-table th {
+    position: sticky;
+    top: 0;
+    z-index: 1;
+}
+
+.tk-preview .tk-table th,
+.tk-preview .tk-table td {
+    padding: 10px 12px;
+    font-size: 11px;
+}
+
+.tk-import-report {
+    margin-top: 16px;
+    padding: 12px 14px;
+    border: 1px solid #e2e8f0;
+    border-radius: 9px;
+    background: #f8fafc;
+    color: #475569;
+    font-size: 12px;
+    overflow-wrap: anywhere;
+}
+
+.tk-import-report p {
+    margin: 5px 0;
+}
+
+
+/* Responsive */
+
+@media (max-width: 1000px) {
+    .tk-summary {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+    .tk-heading {
+        align-items: flex-start;
+    }
+}
+
+@media (max-width: 640px) {
+    .tk-heading h2 {
+        font-size: 21px;
+    }
+    .tk-toolbar {
+        width: 100%;
+    }
+    .tk-toolbar .tk-btn {
+        flex: 1;
+    }
+    .tk-summary {
+        gap: 9px;
+    }
+    .tk-summary>div {
+        padding: 14px;
+    }
+    .tk-summary strong {
+        font-size: 23px;
+    }
+    .tk-filters {
+        align-items: stretch;
+        padding: 14px;
+    }
+    .tk-search {
+        flex-basis: 100%;
+        min-width: 0;
+    }
+    .tk-filters select {
+        flex: 1;
+        min-width: 0;
+        font-size: 12px;
+    }
+    .tk-pagination {
+        align-items: flex-start;
+        flex-direction: column;
+    }
+    .tk-form-grid {
+        grid-template-columns: 1fr;
+    }
+    .tk-modal-head,
+    .tk-modal-body,
+    .tk-modal-footer {
+        padding: 16px;
+    }
+    .tk-modal-message {
+        margin-right: 16px;
+        margin-left: 16px;
+    }
+    .tk-detail {
+        grid-template-columns: 1fr;
+        gap: 4px;
+    }
+    .tk-profile {
+        align-items: flex-start;
+    }
+    .tk-modal-footer {
+        flex-wrap: wrap;
+    }
+    .tk-modal-footer .tk-btn {
+        flex: 1;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .tk-btn,
+    .tk-icon-btn {
+        transition: none;
+    }
+}
+
+
+/* Thông báo nổi giữa phía trên */
+
+.tk-toast-wrap {
+    position: fixed;
+    top: 24px;
+    left: 50%;
+    z-index: 9999;
+    width: min(460px, calc(100vw - 32px));
+    transform: translateX(-50%);
+    pointer-events: none;
+}
+
+.tk-toast {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    padding: 16px;
+    border: 1px solid #bbf7d0;
+    border-radius: 13px;
+    background: #ffffff;
+    color: #17243b;
+    box-shadow: 0 12px 35px rgb(15 23 42 / 16%), 0 2px 6px rgb(15 23 42 / 5%);
+    pointer-events: auto;
+    animation: tk-toast-enter 0.2s ease-out;
+}
+
+.tk-toast-icon {
+    display: grid;
+    place-items: center;
+    flex-shrink: 0;
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    background: #dcfce7;
+    color: #15803d;
+    font-size: 19px;
+    font-weight: 700;
+}
+
+.tk-toast-content {
+    flex: 1;
+    min-width: 0;
+}
+
+.tk-toast-content strong {
+    display: block;
+    color: #15803d;
+    font-size: 14px;
+}
+
+.tk-toast-content p {
+    margin: 5px 0 0;
+    color: #475569;
+    font-size: 13px;
+    line-height: 1.6;
+    overflow-wrap: anywhere;
+}
+
+.tk-toast-close {
+    display: grid;
+    place-items: center;
+    flex-shrink: 0;
+    width: 28px;
+    height: 28px;
+    padding: 0;
+    border: 0;
+    border-radius: 6px;
+    background: transparent;
+    color: #64748b;
+    font-size: 23px;
+    cursor: pointer;
+}
+
+.tk-toast-close:hover {
+    background: #f1f5f9;
+    color: #17243b;
+}
+
+.tk-toast-close:focus-visible {
+    outline: 3px solid #bfdbfe;
+    outline-offset: 2px;
+}
+
+.tk-toast-error {
+    border-color: #fecaca;
+}
+
+.tk-toast-error .tk-toast-icon {
+    background: #fee2e2;
+    color: #dc2626;
+}
+
+.tk-toast-error .tk-toast-content strong {
+    color: #b91c1c;
+}
+
+@keyframes tk-toast-enter {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .tk-toast {
+        animation: none;
+    }
 }

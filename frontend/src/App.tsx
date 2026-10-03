@@ -2,11 +2,11 @@
 import { useEffect, useState } from "react";
 
 import Login from "./pages/auth/Login";
+
 import DashboardPageAdmin from "./pages/dashboard/DashboardPageAdmin";
 import DashboardPageQL from "./pages/dashboard/DashboardPageQL";
 import DashboardPageGSBH from "./pages/dashboard/DashboardPageGSBH";
-import DashboardPageNVKHSX from "./pages/dashboard/DashboardPageNVKHSX";
-import DashboardPageNVKho from "./pages/dashboard/DashboardPageNVKho";
+import DashboardPageQLMH from "./pages/dashboard/DashboardPageQLMH";
 import DashboardPageNVMuaHang from "./pages/dashboard/DashboardPageNVMuaHang";
 
 import {
@@ -17,76 +17,147 @@ import {
   type User,
 } from "./services/authService";
 
+
 export default function App() {
   const [user, setUser] = useState<User | null>(null);
+
   const [checking, setChecking] = useState(
     Boolean(getToken())
   );
 
   useEffect(() => {
+    let cancelled = false;
+
     if (!getToken()) {
+      setChecking(false);
       return;
     }
 
-    getMe()
-      .then(setUser)
-      .catch(() => {
-        clearAuth();
-        setUser(null);
-      })
-      .finally(() => setChecking(false));
+    async function checkSession(): Promise<void> {
+      try {
+        const currentUser = await getMe();
+
+        if (cancelled) {
+          return;
+        }
+
+        if (currentUser.trang_thai !== "HOAT_DONG") {
+          clearAuth();
+          setUser(null);
+          return;
+        }
+
+        setUser(currentUser);
+      } catch {
+        if (!cancelled) {
+          clearAuth();
+          setUser(null);
+        }
+      } finally {
+        if (!cancelled) {
+          setChecking(false);
+        }
+      }
+    }
+
+    void checkSession();
+
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
-  async function handleLogout() {
+  function handleLoginSuccess(currentUser: User): void {
+    if (currentUser.trang_thai !== "HOAT_DONG") {
+      clearAuth();
+      setUser(null);
+      return;
+    }
+
+    setUser(currentUser);
+  }
+
+  async function handleLogout(): Promise<void> {
     try {
       await logout();
+    } catch {
+      // Vẫn kết thúc phiên trên trình duyệt nếu API gặp lỗi.
     } finally {
+      clearAuth();
       setUser(null);
     }
   }
 
   if (checking) {
     return (
-      <p style={{ padding: 40, textAlign: "center" }}>
-        Đang kiểm tra phiên đăng nhập...
-      </p>
+      <main
+        style={{
+          padding: 40,
+          textAlign: "center",
+        }}
+      >
+        <p role="status">
+          Đang kiểm tra phiên đăng nhập...
+        </p>
+      </main>
     );
   }
 
   if (!user) {
-    return <Login onLoginSuccess={setUser} />;
+    return (
+      <Login onLoginSuccess={handleLoginSuccess} />
+    );
   }
 
-  const props = {
+  const dashboardProps = {
     user,
     onLogout: handleLogout,
   };
 
   switch (user.vai_tro) {
     case "ADMIN":
-      return <DashboardPageAdmin {...props} />;
+      return (
+        <DashboardPageAdmin {...dashboardProps} />
+      );
 
-    case "QUAN_LY":
-      return <DashboardPageQL {...props} />;
+    case "QUAN_LY_BAN_HANG":
+      return (
+        <DashboardPageQL {...dashboardProps} />
+      );
 
-    case "GIAM_SAT_BAN_HANG":
-      return <DashboardPageGSBH {...props} />;
+    case "QUAN_LY_MUA_HANG":
+      return (
+        <DashboardPageQLMH {...dashboardProps} />
+      );
 
-    case "NHAN_VIEN_KE_HOACH_SAN_XUAT":
-      return <DashboardPageNVKHSX {...props} />;
-
-    case "NHAN_VIEN_KHO":
-      return <DashboardPageNVKho {...props} />;
+    case "NHAN_VIEN_BAN_HANG":
+      return (
+        <DashboardPageGSBH {...dashboardProps} />
+      );
 
     case "NHAN_VIEN_MUA_HANG":
-      return <DashboardPageNVMuaHang {...props} />;
+      return (
+        <DashboardPageNVMuaHang {...dashboardProps} />
+      );
 
     default:
       return (
         <main style={{ padding: 32 }}>
           <h1>Vai trò chưa được hỗ trợ</h1>
-          <p>{user.vai_tro}</p>
-          <button type="button" onClick={handleLogout}>
+
+          <p>
+            Vai trò của tài khoản: {user.vai_tro}
+          </p>
+
+          <p>
+            Vui lòng liên hệ quản trị viên để kiểm tra
+            vai trò tài khoản.
+          </p>
+
+          <button
+            type="button"
+            onClick={() => void handleLogout()}
+          >
             Đăng xuất
           </button>
         </main>

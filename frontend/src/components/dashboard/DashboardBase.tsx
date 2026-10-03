@@ -95,9 +95,9 @@ type Props = {
 
 const FORECAST_ROLES = new Set([
   "ADMIN",
-  "QUAN_LY",
-  "GIAM_SAT_BAN_HANG",
-  "NHAN_VIEN_KE_HOACH_SAN_XUAT",
+  "QUAN_LY_BAN_HANG",
+  "NHAN_VIEN_BAN_HANG",
+  "NHAN_VIEN_MUA_HANG",
 ]);
 
 export default function DashboardBase({

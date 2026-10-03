@@ -1,14 +1,15 @@
+import {
+  LineChartOutlined,
+  PieChartOutlined,
+  ShoppingCartOutlined,
+} from "@ant-design/icons";
+
 import DashboardBase, {
   type DashboardConfig,
 } from "../../components/dashboard/DashboardBase";
 
 import type { User } from "../../services/authService";
 
-import {
-  PieChartOutlined,
-  ShoppingCartOutlined,
-  LineChartOutlined,
-} from "@ant-design/icons";
 
 type Props = {
   user: User;
@@ -16,12 +17,12 @@ type Props = {
 };
 
 const config: DashboardConfig = {
-  title: "Bảng Điều Khiển Bán Hàng",
+  title: "Bảng Điều Khiển Nhân Viên Bán Hàng",
 
   subtitle:
     "Theo dõi dữ liệu bán hàng và dự báo nhu cầu tiêu thụ sản phẩm cà phê.",
 
-  roleLabel: "GIÁM SÁT BÁN HÀNG",
+  roleLabel: "NHÂN VIÊN BÁN HÀNG",
 
   menu: [
     {
@@ -41,34 +42,10 @@ const config: DashboardConfig = {
     },
   ],
 
-  stats: [
-    {
-      label: "Đơn bán trong tháng",
-      value: "128",
-      note: "Tổng số hóa đơn tiêu thụ",
-      color: "blue",
-    },
-    {
-      label: "Sản phẩm theo dõi",
-      value: "07",
-      note: "Dòng sản phẩm cà phê",
-      color: "purple",
-    },
-    {
-      label: "Cần kiểm tra dữ liệu",
-      value: "03",
-      note: "Số liệu bán chưa đồng bộ",
-      color: "orange",
-    },
-    {
-      label: "Cập nhật bán hàng",
-      value: "Đã cập nhật",
-      note: "Dữ liệu mới nhất",
-      color: "green",
-    },
-  ],
+  // Chưa có API số liệu tổng quan trong đoạn code đã gửi.
+  stats: [],
 
-  tableTitle: "Nhật ký nhập dữ liệu bán hàng gần đây",
+  tableTitle: "Dữ liệu bán hàng",
 
   columns: [
     {
@@ -89,27 +66,10 @@ const config: DashboardConfig = {
     },
   ],
 
-  rows: [
-    {
-      code: "DH-001",
-      name: "Cà phê Espresso rang xay",
-      detail: "85 kg • Chi nhánh Q.1",
-      status: "Đã nhập",
-    },
-    {
-      code: "DH-002",
-      name: "Cà phê Robusta nguyên hạt",
-      detail: "120 kg • Chi nhánh Q.3",
-      status: "Đã nhập",
-    },
-    {
-      code: "DH-003",
-      name: "Cà phê Arabica Cầu Đất",
-      detail: "95 kg • Chi nhánh Q.7",
-      status: "Chờ xác nhận",
-    },
-  ],
+  // Điền dữ liệu từ API khi kết nối bảng bán hàng.
+  rows: [],
 };
+
 
 export default function DashboardPageGSBH({
   user,
