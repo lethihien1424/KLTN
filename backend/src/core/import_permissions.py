@@ -1,50 +1,18 @@
-###D:\KLTN\KLTN\backend\src\core\import_permissions.py
+"""Import operations mapped to capability keys, independent of roles."""
+
 IMPORT_PERMISSIONS = {
-    "ADMIN": {
-        "users",
-        "san_pham",
-        "nguyen_lieu",
-        "nha_cung_cap",
-        "nguyen_lieu_nha_cung_cap",
-        "ton_kho_nguyen_lieu",
-        "ngay_le",
-        "cong_thuc",
-        "don_hang",
-    },
-
-    "QUAN_LY": {
-        "san_pham",
-        "nha_cung_cap",
-        "nguyen_lieu_nha_cung_cap",
-        "ngay_le",
-        "don_hang",
-    },
-
-    "GIAM_SAT_BAN_HANG": {
-        "don_hang",
-    },
-
-    "NHAN_VIEN_KE_HOACH_SAN_XUAT": {
-        "cong_thuc",
-    },
-
-    "NHAN_VIEN_KHO": {
-        "nguyen_lieu",
-        "nguyen_lieu_nha_cung_cap",
-        "ton_kho_nguyen_lieu",
-    },
-
-    "NHAN_VIEN_MUA_HANG": {
-        "nha_cung_cap",
-    },
+    "users": {"USER_IMPORT", "USER_ASSIGN_ROLE"},
+    "san_pham": {"IMPORT_SAN_PHAM"},
+    "nguyen_lieu": {"IMPORT_NGUYEN_LIEU"},
+    "cong_thuc": {"IMPORT_CONG_THUC"},
+    "ton_kho_nguyen_lieu": {"IMPORT_TON_KHO"},
+    "nha_cung_cap": {"IMPORT_NHA_CUNG_CAP"},
+    "nguyen_lieu_nha_cung_cap": {"IMPORT_NGUYEN_LIEU_NCC"},
+    "ngay_le": {"IMPORT_NGAY_LE"},
+    "don_hang": {"IMPORT_DON_HANG"},
 }
 
 
-def can_import(
-    role: str,
-    import_type: str,
-) -> bool:
-    return import_type in IMPORT_PERMISSIONS.get(
-        role,
-        set(),
-    )
+def can_import(permissions, import_type: str) -> bool:
+    required = IMPORT_PERMISSIONS.get(import_type)
+    return required is not None and required.issubset(permissions)

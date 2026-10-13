@@ -1,6 +1,7 @@
 ///D:\KLTN\KLTN\frontend\src\components\dashboard\DashboardBase.tsx
 import { useState } from "react";
 import type { ReactNode } from "react";
+import SidebarMenu from "../layout/SidebarMenu";
 
 import type { User } from "../../services/authService";
 
@@ -53,6 +54,7 @@ export type DashboardItem = {
   label: string;
   icon?: string | ReactNode;
   badge?: string | number;
+  children?: DashboardItem[];
 };
 
 export type StatItem = {
@@ -82,48 +84,45 @@ export type DashboardConfig = {
   columns?: TableColumn[];
   rows: TableRowData[];
   topActions?: ReactNode;
-  renderCustomContent?: (
-    activeMenu: string,
-  ) => ReactNode;
+  renderCustomContent?: (activeMenu: string) => ReactNode;
 };
 
 type Props = {
   user: User;
   config: DashboardConfig;
   onLogout: () => void | Promise<void>;
+  workspace?: DashboardWorkspace;
 };
 
-const FORECAST_ROLES = new Set([
-  "ADMIN",
-  "QUAN_LY_BAN_HANG",
-  "NHAN_VIEN_BAN_HANG",
-  "NHAN_VIEN_MUA_HANG",
-]);
+export type DashboardWorkspace = {
+  path: string;
+  menu: DashboardItem[];
+  content?: ReactNode;
+  onNavigate: (path: string) => void;
+  refreshPermissions: () => Promise<void>;
+};
 
 export default function DashboardBase({
   user,
   config,
   onLogout,
+  workspace,
 }: Props) {
-  const [activeMenu, setActiveMenu] = useState(
-    config.menu[0]?.id ?? "",
-  );
+  const [localMenu, setActiveMenu] = useState(config.menu[0]?.id ?? "");
+  const activeMenu = workspace?.path ?? localMenu;
 
   const [search, setSearch] = useState("");
 
-  const selected = config.menu.find(
-    (item) => item.id === activeMenu,
-  );
+  const selected = config.menu.find((item) => item.id === activeMenu);
 
-  const isOverview =
-    activeMenu === config.menu[0]?.id;
+  const isOverview = workspace
+    ? activeMenu === "/"
+    : activeMenu === config.menu[0]?.id;
 
   const isForecast =
-    activeMenu === "du-bao-nhu-cau";
+    activeMenu === "du-bao-nhu-cau" || activeMenu === "/du-bao";
 
-  const canForecast = FORECAST_ROLES.has(
-    user.vai_tro,
-  );
+  const canForecast = user.permissions?.includes("DU_BAO_VIEW") ?? false;
 
   const defaultColumns: TableColumn[] = [
     { key: "code", label: "Mã" },
@@ -132,12 +131,9 @@ export default function DashboardBase({
     { key: "status", label: "Trạng thái" },
   ];
 
-  const columns =
-    config.columns ?? defaultColumns;
+  const columns = config.columns ?? defaultColumns;
 
-  const query = search
-    .trim()
-    .toLocaleLowerCase("vi");
+  const query = search.trim().toLocaleLowerCase("vi");
 
   const rows = config.rows.filter((row) => {
     if (!query) {
@@ -145,9 +141,7 @@ export default function DashboardBase({
     }
 
     return Object.values(row).some((value) =>
-      String(value)
-        .toLocaleLowerCase("vi")
-        .includes(query),
+      String(value).toLocaleLowerCase("vi").includes(query),
     );
   });
 
@@ -168,35 +162,17 @@ export default function DashboardBase({
     datasets: [
       {
         label: "Nhu cầu dự báo (Tấn)",
-        data: [
-          12.0,
-          13.8,
-          14.2,
-          14.9,
-          15.2,
-          16.8,
-          17.5,
-        ],
+        data: [12.0, 13.8, 14.2, 14.9, 15.2, 16.8, 17.5],
         borderColor: "#2563eb",
-        backgroundColor:
-          "rgba(37, 99, 235, 0.08)",
+        backgroundColor: "rgba(37, 99, 235, 0.08)",
         tension: 0.3,
         fill: true,
       },
       {
         label: "Tiêu thụ thực tế (Tấn)",
-        data: [
-          12.5,
-          13.5,
-          14.0,
-          15.1,
-          15.2,
-          null,
-          null,
-        ],
+        data: [12.5, 13.5, 14.0, 15.1, 15.2, null, null],
         borderColor: "#16a34a",
-        backgroundColor:
-          "rgba(22, 163, 74, 0.08)",
+        backgroundColor: "rgba(22, 163, 74, 0.08)",
         tension: 0.3,
         borderDash: [5, 5],
       },
@@ -241,18 +217,12 @@ export default function DashboardBase({
     setSearch("");
   }
 
-  function renderTableCell(
-    row: TableRowData,
-    column: TableColumn,
-  ): ReactNode {
+  function renderTableCell(row: TableRowData, column: TableColumn): ReactNode {
     const value = row[column.key];
 
     if (column.key === "code") {
       return (
-        <td
-          key={column.key}
-          className="dashboard-code"
-        >
+        <td key={column.key} className="dashboard-code">
           {value}
         </td>
       );
@@ -265,8 +235,7 @@ export default function DashboardBase({
         value === "Chờ xác nhận";
 
       const isDanger =
-        value === "NGUNG_HOAT_DONG" ||
-        value === "Ngưng hoạt động";
+        value === "NGUNG_HOAT_DONG" || value === "Ngưng hoạt động";
 
       const badgeClass = isDanger
         ? "danger"
@@ -276,34 +245,21 @@ export default function DashboardBase({
 
       return (
         <td key={column.key}>
-          <span
-            className={`dashboard-badge ${badgeClass}`}
-          >
-            {value}
-          </span>
+          <span className={`dashboard-badge ${badgeClass}`}>{value}</span>
         </td>
       );
     }
 
     if (column.key === "actions") {
-      if (
-        typeof row.renderActions === "function"
-      ) {
-        return (
-          <td key={column.key}>
-            {row.renderActions(row)}
-          </td>
-        );
+      if (typeof row.renderActions === "function") {
+        return <td key={column.key}>{row.renderActions(row)}</td>;
       }
 
-      const hasView =
-        typeof row.onView === "function";
+      const hasView = typeof row.onView === "function";
 
-      const hasEdit =
-        typeof row.onEdit === "function";
+      const hasEdit = typeof row.onEdit === "function";
 
-      const hasDelete =
-        typeof row.onDelete === "function";
+      const hasDelete = typeof row.onDelete === "function";
 
       if (hasView || hasEdit || hasDelete) {
         return (
@@ -352,50 +308,38 @@ export default function DashboardBase({
             <button
               type="button"
               className="btn-approve"
-              disabled={
-                typeof row.onApprove !== "function"
-              }
+              disabled={typeof row.onApprove !== "function"}
               title={
                 typeof row.onApprove === "function"
                   ? "Duyệt kế hoạch"
                   : "Chưa kết nối chức năng duyệt"
               }
               onClick={() => {
-                if (
-                  typeof row.onApprove === "function"
-                ) {
+                if (typeof row.onApprove === "function") {
                   row.onApprove(row);
                 }
               }}
             >
-              <CheckOutlined
-                style={{ marginRight: 4 }}
-              />
+              <CheckOutlined style={{ marginRight: 4 }} />
               Duyệt
             </button>
 
             <button
               type="button"
               className="btn-reject"
-              disabled={
-                typeof row.onReject !== "function"
-              }
+              disabled={typeof row.onReject !== "function"}
               title={
                 typeof row.onReject === "function"
                   ? "Từ chối kế hoạch"
                   : "Chưa kết nối chức năng từ chối"
               }
               onClick={() => {
-                if (
-                  typeof row.onReject === "function"
-                ) {
+                if (typeof row.onReject === "function") {
                   row.onReject(row);
                 }
               }}
             >
-              <CloseOutlined
-                style={{ marginRight: 4 }}
-              />
+              <CloseOutlined style={{ marginRight: 4 }} />
               Từ chối
             </button>
           </div>
@@ -403,10 +347,7 @@ export default function DashboardBase({
       );
     }
 
-    if (
-      column.key === "name" ||
-      column.key === "creator"
-    ) {
+    if (column.key === "name" || column.key === "creator") {
       return (
         <td key={column.key}>
           <strong>{value}</strong>
@@ -414,19 +355,14 @@ export default function DashboardBase({
       );
     }
 
-    return (
-      <td key={column.key}>{value}</td>
-    );
+    return <td key={column.key}>{value}</td>;
   }
 
   return (
     <div className="dashboard-shell">
       <aside className="dashboard-sidebar">
         <div className="dashboard-brand">
-          <div
-            className="dashboard-brand-icon"
-            aria-hidden="true"
-          >
+          <div className="dashboard-brand-icon" aria-hidden="true">
             <svg
               viewBox="0 0 24 24"
               width="22"
@@ -444,11 +380,7 @@ export default function DashboardBase({
                 fill="white"
               />
 
-              <path
-                d="M6 2v3M10 2v3M14 2v3"
-                stroke="white"
-                strokeWidth="1.8"
-              />
+              <path d="M6 2v3M10 2v3M14 2v3" stroke="white" strokeWidth="1.8" />
             </svg>
           </div>
 
@@ -461,50 +393,10 @@ export default function DashboardBase({
         <div className="dashboard-brand-divider" />
 
         <nav aria-label="Menu chính">
-          {config.menu.map((item) => (
-            <button
-              key={item.id}
-              type="button"
-              className={
-                item.id === activeMenu
-                  ? "dashboard-nav-item active"
-                  : "dashboard-nav-item"
-              }
-              aria-current={
-                item.id === activeMenu
-                  ? "page"
-                  : undefined
-              }
-              onClick={() =>
-                selectMenu(item.id)
-              }
-            >
-              <span
-                className="dashboard-nav-icon"
-                aria-hidden="true"
-              >
-                {item.icon ?? "•"}
-              </span>
-
-              <span className="dashboard-nav-label">
-                {item.label}
-              </span>
-
-              {item.badge !== undefined &&
-                item.badge !== null && (
-                  <span className="dashboard-nav-badge">
-                    {item.badge}
-                  </span>
-                )}
-            </button>
-          ))}
+          <SidebarMenu items={workspace?.menu ?? config.menu} activePath={activeMenu} onNavigate={(id) => workspace ? workspace.onNavigate(id) : selectMenu(id)} />
         </nav>
 
-        <button
-          type="button"
-          className="dashboard-logout"
-          onClick={onLogout}
-        >
+        <button type="button" className="dashboard-logout" onClick={onLogout}>
           <LogoutOutlined />
           <span>Đăng xuất</span>
         </button>
@@ -513,23 +405,17 @@ export default function DashboardBase({
       <div className="dashboard-content">
         <header className="dashboard-topbar">
           <div className="dashboard-search">
-            <SearchOutlined
-              className="dashboard-search-icon"
-            />
+            <SearchOutlined className="dashboard-search-icon" />
 
             <input
               type="text"
               aria-label="Tìm kiếm dữ liệu trong bảng"
               placeholder={
-                isForecast
-                  ? "Lọc sản phẩm trong trang dự báo"
-                  : "Tìm kiếm..."
+                isForecast ? "Lọc sản phẩm trong trang dự báo" : "Tìm kiếm..."
               }
               value={search}
               disabled={isForecast}
-              onChange={(event) =>
-                setSearch(event.target.value)
-              }
+              onChange={(event) => setSearch(event.target.value)}
             />
           </div>
 
@@ -547,17 +433,29 @@ export default function DashboardBase({
               <div
                 className="dashboard-user-avatar"
                 title={user.ho_ten}
+                role={workspace ? "button" : undefined}
+                tabIndex={workspace ? 0 : undefined}
+                aria-label={workspace ? "Làm mới quyền" : undefined}
+                onClick={() => void workspace?.refreshPermissions()}
+                onKeyDown={(event) => {
+                  if (event.key === "Enter" || event.key === " ") {
+                    event.preventDefault();
+                    void workspace?.refreshPermissions();
+                  }
+                }}
               >
                 <UserOutlined />
               </div>
 
               <div className="dashboard-user-info">
-                <span className="dashboard-user-name">
-                  {user.ho_ten}
-                </span>
+                <span className="dashboard-user-name">{user.ho_ten}</span>
 
                 <span className="dashboard-user-role-badge">
-                  {config.roleLabel}
+                  {workspace
+                    ? (
+                        user.role?.ten_vai_tro ?? user.vai_tro
+                      ).toLocaleUpperCase("vi")
+                    : config.roleLabel}
                 </span>
               </div>
             </div>
@@ -565,7 +463,9 @@ export default function DashboardBase({
         </header>
 
         <main className="dashboard-main">
-          {isForecast ? (
+          {workspace?.content !== undefined ? (
+            workspace.content
+          ) : isForecast ? (
             canForecast ? (
               <DuBaoNhuCauPage />
             ) : (
@@ -573,10 +473,7 @@ export default function DashboardBase({
                 <div className="dashboard-panel-heading">
                   <div>
                     <h2>Không có quyền truy cập</h2>
-                    <p>
-                      Tài khoản không có quyền
-                      chạy dự báo nhu cầu.
-                    </p>
+                    <p>Tài khoản không có quyền chạy dự báo nhu cầu.</p>
                   </div>
                 </div>
               </section>
@@ -585,11 +482,7 @@ export default function DashboardBase({
             <>
               <div className="dashboard-heading">
                 <div>
-                  <h1>
-                    {isOverview
-                      ? config.title
-                      : selected?.label}
-                  </h1>
+                  <h1>{isOverview ? config.title : selected?.label}</h1>
 
                   <p>{config.subtitle}</p>
                 </div>
@@ -615,23 +508,16 @@ export default function DashboardBase({
               {isOverview && (
                 <section className="dashboard-panel dashboard-chart-section">
                   <div className="dashboard-chart-header">
-                    <h3>
-                      📊 Biểu đồ Dự Báo Nhu Cầu
-                      Nguyên Liệu (Chart.js)
-                    </h3>
+                    <h3>📊 Biểu đồ Dự Báo Nhu Cầu Nguyên Liệu (Chart.js)</h3>
 
                     <p>
-                      So sánh nhu cầu nguyên liệu
-                      cà phê thực tế và kết quả
-                      dự báo qua các tháng
+                      So sánh nhu cầu nguyên liệu cà phê thực tế và kết quả dự
+                      báo qua các tháng
                     </p>
                   </div>
 
                   <div className="dashboard-chart-body">
-                    <Line
-                      data={chartData}
-                      options={chartOptions}
-                    />
+                    <Line data={chartData} options={chartOptions} />
                   </div>
                 </section>
               )}
@@ -643,15 +529,10 @@ export default function DashboardBase({
                   <div className="dashboard-panel-heading">
                     <div>
                       <h2>
-                        {isOverview
-                          ? config.tableTitle
-                          : selected?.label}
+                        {isOverview ? config.tableTitle : selected?.label}
                       </h2>
 
-                      <p>
-                        Danh sách dữ liệu quản lý
-                        trong hệ thống
-                      </p>
+                      <p>Danh sách dữ liệu quản lý trong hệ thống</p>
                     </div>
 
                     <div className="dashboard-top-actions">
@@ -659,9 +540,7 @@ export default function DashboardBase({
                         <a
                           href="#view-all"
                           className="dashboard-view-all"
-                          onClick={(event) =>
-                            event.preventDefault()
-                          }
+                          onClick={(event) => event.preventDefault()}
                         >
                           Xem tất cả
                         </a>
@@ -674,9 +553,7 @@ export default function DashboardBase({
                       <thead>
                         <tr>
                           {columns.map((column) => (
-                            <th key={column.key}>
-                              {column.label}
-                            </th>
+                            <th key={column.key}>{column.label}</th>
                           ))}
                         </tr>
                       </thead>
@@ -685,10 +562,7 @@ export default function DashboardBase({
                         {rows.map((row) => (
                           <tr key={row.code}>
                             {columns.map((column) =>
-                              renderTableCell(
-                                row,
-                                column,
-                              ),
+                              renderTableCell(row, column),
                             )}
                           </tr>
                         ))}

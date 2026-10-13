@@ -1,3 +1,4 @@
+from src.schemas.ly_do_schema import StatusReasonFields
 from decimal import Decimal
 from typing import Annotated, Literal
 
@@ -26,7 +27,7 @@ class NhaCungCapUpdate(BaseModel):
     ten_ncc: SupplierName
 
 
-class NhaCungCapStatusUpdate(BaseModel):
+class NhaCungCapStatusUpdate(StatusReasonFields):
     model_config = ConfigDict(extra="forbid")
 
     trang_thai: SupplierStatus

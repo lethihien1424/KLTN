@@ -1,6 +1,5 @@
 from src.services.nguyen_lieu_nha_cung_cap_service import NguyenLieuNhaCungCapService
 
-
 class NguyenLieuNhaCungCapController:
     def __init__(self):
         self.service = NguyenLieuNhaCungCapService()

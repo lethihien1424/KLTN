@@ -3,7 +3,7 @@ from sqlalchemy.orm import Session
 
 from src.controllers.nguyen_lieu_nha_cung_cap_controller import NguyenLieuNhaCungCapController
 from src.core.database import get_db
-from src.dependencies.role_dependency import require_role
+from src.dependencies.permission_dependency import require_permission
 from src.schemas.nguyen_lieu_nha_cung_cap_schema import (
     NguyenLieuNhaCungCapCreate,
     NguyenLieuNhaCungCapResponse,
@@ -11,15 +11,12 @@ from src.schemas.nguyen_lieu_nha_cung_cap_schema import (
 )
 
 
-router = APIRouter(
-    prefix="/nguyen-lieu-nha-cung-cap",
-    tags=["Nguyên liệu theo nhà cung cấp"],
-    dependencies=[Depends(require_role("ADMIN", "NHAN_VIEN_MUA_HANG", "QUAN_LY"))],
-)
+router = APIRouter(prefix='/nguyen-lieu-nha-cung-cap', tags=['Nguyên liệu theo nhà cung cấp'])
+
 controller = NguyenLieuNhaCungCapController()
 
 
-@router.get("", response_model=list[NguyenLieuNhaCungCapResponse])
+@router.get('', response_model=list[NguyenLieuNhaCungCapResponse], dependencies=[Depends(require_permission('NGUYEN_LIEU_NCC_VIEW'))])
 def list_mapping(
     search: str | None = Query(default=None),
     ma_ncc: str | None = Query(default=None),
@@ -31,17 +28,17 @@ def list_mapping(
     )
 
 
-@router.get("/{ma_nguyen_lieu_ncc}", response_model=NguyenLieuNhaCungCapResponse)
+@router.get('/{ma_nguyen_lieu_ncc}', response_model=NguyenLieuNhaCungCapResponse, dependencies=[Depends(require_permission('NGUYEN_LIEU_NCC_VIEW'))])
 def detail_mapping(ma_nguyen_lieu_ncc: str, db: Session = Depends(get_db)):
     return controller.detail(db, ma_nguyen_lieu_ncc)
 
 
-@router.post("", response_model=NguyenLieuNhaCungCapResponse, status_code=201)
+@router.post('', response_model=NguyenLieuNhaCungCapResponse, status_code=201, dependencies=[Depends(require_permission('NGUYEN_LIEU_NCC_CREATE'))])
 def create_mapping(payload: NguyenLieuNhaCungCapCreate, db: Session = Depends(get_db)):
     return controller.create(db, payload)
 
 
-@router.put("/{ma_nguyen_lieu_ncc}", response_model=NguyenLieuNhaCungCapResponse)
+@router.put('/{ma_nguyen_lieu_ncc}', response_model=NguyenLieuNhaCungCapResponse, dependencies=[Depends(require_permission('NGUYEN_LIEU_NCC_UPDATE'))])
 def update_mapping(
     ma_nguyen_lieu_ncc: str,
     payload: NguyenLieuNhaCungCapUpdate,

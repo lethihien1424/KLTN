@@ -1,5 +1,6 @@
 ### D:\KLTN\KLTN\backend\src\routes\api_router.py
 from fastapi import APIRouter
+from src.routes.rbac_routes import router as rbac_router
 
 from src.routes.auth_routes import (
     router as auth_router,
@@ -57,6 +58,7 @@ api_router = APIRouter(
 )
 
 api_router.include_router(auth_router)
+api_router.include_router(rbac_router)
 api_router.include_router(password_reset_router)
 
 api_router.include_router(tai_khoan_router)
@@ -82,3 +84,6 @@ api_router.include_router(
     de_xuat_nhap_hang_router
 )
 api_router.include_router(dashboard_router)
+
+from src.routes.ly_do_routes import router as ly_do_router
+api_router.include_router(ly_do_router)

@@ -3,10 +3,12 @@ export type User = {
   ma_nguoi_dung: string;
   ho_ten: string;
   vai_tro: string;
+  role?: { ma_vai_tro: string; ten_vai_tro: string };
+  permissions: string[];
   trang_thai: string;
-  email?: string;
-  so_dien_thoai?: string;
-  dia_chi?: string;
+  email?: string | null;
+  so_dien_thoai?: string | null;
+  dia_chi?: string | null;
 };
 
 type LoginResponse = {
@@ -78,7 +80,13 @@ export async function login(
   const storage = ghi_nho ? localStorage : sessionStorage;
   storage.setItem("access_token", result.access_token);
 
-  return result.user;
+  // /me is the current authority, including runtime permission changes.
+  try {
+    return await getMe();
+  } catch (cause) {
+    clearAuth();
+    throw cause;
+  }
 }
 
 export async function getMe(): Promise<User> {
@@ -95,10 +103,15 @@ export async function getMe(): Promise<User> {
   });
 
   if (!response.ok) {
+    if (response.status === 401 || response.status === 403) window.dispatchEvent(new Event('auth-session-expired'));
     throw await getError(response);
   }
 
-  return (await response.json()) as User;
+  const user = (await response.json()) as User;
+  if (!user.ma_nguoi_dung || !Array.isArray(user.permissions) || !user.permissions.every(key => typeof key === "string")) {
+    throw new Error("Máy chủ chưa trả danh sách quyền hợp lệ. Vui lòng kiểm tra cấu hình RBAC.");
+  }
+  return user;
 }
 
 export async function logout(): Promise<void> {

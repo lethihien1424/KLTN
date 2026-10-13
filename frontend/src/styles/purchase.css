@@ -1,0 +1,468 @@
+/* Compatibility for NEW purchase pages only. Values below are copied from
+   unchanged Dashboard.css / DuBaoNhuCau.css at baseline 250639d.
+   No :root, body, shell, sidebar, header or old-page selectors. */
+.purchase-page .pm-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 40px;
+  padding: 9px 15px;
+  border: 1px solid #d5dfeb;
+  border-radius: 8px;
+  background: #ffffff;
+  color: #334155;
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1.4;
+  text-decoration: none;
+  white-space: nowrap;
+  transition:
+    background 0.15s ease,
+    border-color 0.15s ease;
+}
+
+.purchase-page .pm-btn.primary {
+  border-color: var(--db-blue);
+  background: var(--db-blue);
+  color: #ffffff;
+}
+
+.purchase-page .pm-tabs {
+  display: flex;
+  align-items: stretch;
+  gap: 24px;
+  padding: 0 24px;
+  border-bottom: 1px solid var(--db-border);
+  background: #ffffff;
+}
+
+.purchase-page .pm-tabs > button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 56px;
+  margin: 0;
+  padding: 15px 2px;
+  border: 0;
+  border-bottom: 3px solid transparent;
+  border-radius: 0;
+  background: transparent;
+  color: var(--db-muted);
+  font-size: 13px;
+  font-weight: 600;
+  transition:
+    color 0.15s ease,
+    border-color 0.15s ease;
+}
+
+.purchase-page .pm-tabs > button.active {
+  border-bottom-color: var(--db-blue);
+  color: var(--db-blue);
+}
+
+.purchase-page .pm-panel {
+  width: 100%;
+  min-width: 0;
+  overflow: hidden;
+  border: 1px solid var(--db-border);
+  border-radius: 16px;
+  background: #ffffff;
+  box-shadow: 0 4px 18px rgba(15, 23, 42, 0.04);
+}
+
+.purchase-page .pm-cards {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 14px;
+  margin-bottom: 26px;
+}
+
+.purchase-page .pm-summary {
+  min-width: 0;
+  padding: 17px;
+  border: 1px solid #e2eaf5;
+  border-radius: 11px;
+  background: #f8faff;
+}
+
+.purchase-page .pm-summary > span {
+  display: block;
+  margin-bottom: 8px;
+  color: var(--db-muted);
+  font-size: 12px;
+}
+
+.purchase-page .pm-summary > strong {
+  display: block;
+  color: #1e3a5f;
+  font-size: 17px;
+  font-weight: 700;
+  line-height: 1.5;
+  overflow-wrap: anywhere;
+}
+
+.purchase-page .pm-summary small {
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.purchase-page .pm-table-scroll {
+  width: 100%;
+  min-width: 0;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.purchase-page .pm-table {
+  width: 100%;
+  margin: 0;
+  border-collapse: collapse;
+  background: #ffffff;
+  text-align: left;
+}
+
+.purchase-page .pm-table th {
+  padding: 13px 16px;
+  border-bottom: 1px solid var(--db-border);
+  background: #f8fafc;
+  color: #64748b;
+  font-size: 12px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.purchase-page .pm-table td {
+  padding: 15px 16px;
+  border-bottom: 1px solid #edf1f7;
+  background: transparent;
+  color: #334155;
+  font-size: 13px;
+  font-weight: 400;
+  vertical-align: middle;
+}
+
+.purchase-page .pm-table tr:hover {
+  background: #f8fbff;
+}
+
+.purchase-page .pm-table .numeric {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.purchase-page .pm-empty {
+  padding: 44px 20px;
+  color: #94a3b8;
+  text-align: center;
+}
+
+.purchase-page .pm-error {
+  margin: 16px 0;
+  padding: 14px 16px;
+  border: 1px solid #fecaca;
+  border-radius: 10px;
+  background: #fef2f2;
+  color: #b91c1c;
+  font-size: 13px;
+}
+
+.purchase-page .pm-spinner {
+  display: inline-block;
+  flex: 0 0 16px;
+  width: 16px;
+  height: 16px;
+  border: 2px solid currentColor;
+  border-right-color: transparent;
+  border-radius: 50%;
+  animation: db-forecast-spin 0.8s linear infinite;
+}
+
+.purchase-page .pm-field input,
+.purchase-page .pm-field select,
+.purchase-page .pm-field textarea,
+.purchase-page .pm-search input {
+  width: 310px;
+  max-width: 100%;
+  min-height: 40px;
+  padding: 9px 12px;
+  border: 1px solid #d5dfeb;
+  border-radius: 8px;
+  background: #ffffff;
+  color: var(--db-text);
+  font-size: 12px;
+}
+
+.purchase-page .pm-badge {
+  display: inline-block;
+  padding: 4px 10px;
+  border-radius: 16px;
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.purchase-page .pm-badge.success {
+  background: #dcfce7;
+  color: #15803d;
+}
+
+.purchase-page .pm-badge.warning {
+  background: #fef9c3;
+  color: #a16207;
+}
+
+.purchase-page .pm-badge.muted {
+  background: #f1f5f9;
+  color: #64748b;
+}
+
+.purchase-page .pm-heading {
+  margin-bottom: 24px;
+  border: 1px solid var(--db-border);
+  border-radius: 16px;
+  flex-wrap: wrap;
+}
+.purchase-page .pm-heading .pm-actions {
+  margin-left: auto;
+}
+.purchase-page .pm-heading .db-heading-icon .anticon {
+  font-size: 24px;
+}
+.purchase-page .pm-panel {
+  padding: 24px;
+  margin-bottom: 24px;
+}
+.purchase-page .pm-panel h2 {
+  font-size: 17px;
+  margin: 0 0 16px;
+}
+.purchase-page .pm-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.purchase-page .pm-toolbar {
+  display: flex;
+  align-items: end;
+  gap: 14px;
+  flex-wrap: wrap;
+  margin-bottom: 20px;
+}
+.purchase-page .pm-search {
+  flex: 1;
+  min-width: 180px;
+}
+.purchase-page .pm-field,
+.purchase-page .pm-search {
+  display: block;
+}
+.purchase-page .pm-field > span,
+.purchase-page .pm-search > span {
+  display: block;
+  font-size: 13px;
+  font-weight: 600;
+  margin-bottom: 6px;
+}
+.purchase-page .pm-field input,
+.purchase-page .pm-field select,
+.purchase-page .pm-field textarea,
+.purchase-page .pm-search input {
+  width: 100%;
+  font: inherit;
+}
+.purchase-page .pm-field small,
+.purchase-page .pm-small {
+  font-size: 12px;
+  color: var(--db-muted);
+}
+.purchase-page .pm-btn {
+  font: inherit;
+  text-decoration: none;
+  white-space: nowrap;
+  cursor: pointer;
+}
+.purchase-page .pm-btn:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+.purchase-page .pm-btn.danger {
+  color: #b91c1c;
+  border-color: #fecaca;
+  background: #fef2f2;
+}
+.purchase-page .pm-link {
+  color: var(--db-blue);
+  font: inherit;
+  border: 0;
+  background: transparent;
+  padding: 0;
+  text-align: left;
+  cursor: pointer;
+}
+.purchase-page .pm-tabs {
+  margin-bottom: 24px;
+  overflow-x: auto;
+}
+.purchase-page .pm-pagination {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding-top: 16px;
+  color: var(--db-muted);
+  font-size: 13px;
+}
+.purchase-page .pm-pagination button {
+  margin-left: 6px;
+}
+.purchase-page .pm-form {
+  display: grid;
+  gap: 16px;
+}
+.purchase-page .pm-form-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+}
+.purchase-page .pm-line-item {
+  padding: 20px;
+  border: 1px solid var(--db-border);
+  border-radius: 12px;
+  background: #f8fafc;
+  display: grid;
+  gap: 12px;
+}
+.purchase-page .pm-help,
+.purchase-page .pm-success {
+  padding: 12px 16px;
+  border: 1px solid #dbeafe;
+  border-radius: 10px;
+  background: #eff6ff;
+  color: var(--db-muted);
+  margin: 12px 0;
+}
+.purchase-page .pm-error {
+  margin: 12px 0;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.purchase-page .pm-empty {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  align-items: center;
+}
+.purchase-page .pm-info {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+  gap: 20px;
+}
+.purchase-page .pm-info dt {
+  font-size: 13px;
+  color: var(--db-muted);
+  margin-bottom: 6px;
+}
+.purchase-page .pm-info dd {
+  margin: 0;
+  font-weight: 600;
+}
+.purchase-page .pm-score {
+  height: 6px;
+  background: #eff6ff;
+  border-radius: 6px;
+  margin-top: 5px;
+}
+.purchase-page .pm-score span {
+  display: block;
+  height: 100%;
+  background: var(--db-blue);
+  border-radius: 6px;
+}
+.purchase-page .pm-dialog {
+  padding: 0;
+  border: 1px solid var(--db-border);
+  border-radius: 16px;
+  background: white;
+  color: var(--db-text);
+  font: inherit;
+  width: min(740px, 90vw);
+  max-height: calc(100vh - 48px);
+}
+.purchase-page .pm-dialog[open] {
+  display: flex;
+  flex-direction: column;
+}
+.purchase-page .pm-dialog.drawer {
+  margin-right: 24px;
+  height: calc(100vh - 48px);
+}
+.purchase-page .pm-dialog.compact {
+  width: min(500px, 90vw);
+}
+.purchase-page .pm-dialog::backdrop {
+  background: rgba(15, 23, 42, 0.45);
+}
+.purchase-page .pm-dialog-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 20px 24px;
+  border-bottom: 1px solid var(--db-border);
+  flex-shrink: 0;
+}
+.purchase-page .pm-dialog-heading h2 {
+  margin: 0;
+  font-size: 18px;
+}
+.purchase-page .pm-dialog-heading button {
+  border: 0;
+  background: none;
+  font-size: 24px;
+  color: var(--db-muted);
+  cursor: pointer;
+}
+.purchase-page .pm-dialog-body {
+  padding: 24px;
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+}
+.purchase-page .pm-dialog-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  padding: 16px 24px;
+  border-top: 1px solid var(--db-border);
+  flex-shrink: 0;
+}
+.purchase-page .pm-quicklinks {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 16px;
+}
+.purchase-page .pm-quicklinks a {
+  padding: 20px;
+  border: 1px solid var(--db-border);
+  border-radius: 12px;
+  color: var(--db-blue);
+  background: white;
+  text-decoration: none;
+}
+@media (max-width: 760px) {
+  .purchase-page .pm-form-grid {
+    grid-template-columns: 1fr;
+  }
+  .purchase-page .pm-heading {
+    padding: 18px;
+  }
+  .purchase-page .pm-panel {
+    padding: 16px;
+  }
+  .purchase-page .pm-dialog.drawer {
+    margin: auto;
+  }
+}

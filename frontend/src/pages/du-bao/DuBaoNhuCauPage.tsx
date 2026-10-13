@@ -12,6 +12,8 @@ import {
 } from "../../services/duBaoService";
 
 import { getMe } from "../../services/authService";
+import { useAuth } from '../../auth/AuthContext';
+import { navigate } from '../../routes/navigation';
 
 import "../../../public/DuBaoNhuCau.css";
 
@@ -389,7 +391,8 @@ export default function DuBaoNhuCauPage({
   const [soTuan, setSoTuan] = useState<SoTuanDuBao>(4);
 
   const [accountId, setAccountId] = useState("");
-  const [canRun, setCanRun] = useState(false);
+  const { can } = useAuth();
+  const canRun = can('DU_BAO_RUN');
 
   const [result, setResult] =
     useState<DuBaoResponse | null>(null);
@@ -427,14 +430,6 @@ export default function DuBaoNhuCauPage({
         }
 
         setAccountId(user.ma_nguoi_dung);
-
-        setCanRun(
-          [
-            "ADMIN",
-            "QUAN_LY_BAN_HANG",
-            "NHAN_VIEN_BAN_HANG",
-          ].includes(user.vai_tro),
-        );
 
         const session = getSession(user.ma_nguoi_dung);
 
@@ -834,6 +829,7 @@ export default function DuBaoNhuCauPage({
                     result={result}
                     tenSanPham={tenSanPham}
                   />
+                  {can('NHU_CAU_NGUYEN_LIEU_VIEW') && <button className="db-button db-primary" onClick={() => navigate('/nhu-cau', { forecast: result.ma_lich_su_du_bao })}>Xem nhu cầu nguyên liệu →</button>}
                 </>
               ) : (
                 <div className="db-empty">
@@ -877,6 +873,7 @@ export default function DuBaoNhuCauPage({
                 result={viewResult}
                 tenSanPham={tenSanPham}
               />
+              {can('NHU_CAU_NGUYEN_LIEU_VIEW') && <button className="db-button db-primary" onClick={() => navigate('/nhu-cau', { forecast: viewResult.ma_lich_su_du_bao })}>Xem nhu cầu nguyên liệu →</button>}
             </>
           ) : (
             <>

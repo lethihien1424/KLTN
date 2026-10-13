@@ -1,5 +1,6 @@
 ###D:\KLTN\KLTN\backend\src\models\__init__.py
 from src.models.user_model import User
+from src.models.rbac_model import Role, Permission, RolePermission
 from src.models.nhat_ky_hoat_dong_model import (
     NhatKyHoatDong,
 )
@@ -48,6 +49,7 @@ from src.models.password_reset_model import (
 )
 
 __all__ = [
+    "Role", "Permission", "RolePermission",
     "User",
     "NhatKyHoatDong",
     "SanPham",
@@ -65,3 +67,5 @@ __all__ = [
     "DanhGiaMoHinh",
     "PasswordResetRequest",
 ]
+
+from src.models.ly_do_model import LyDo, LyDoChucNang
