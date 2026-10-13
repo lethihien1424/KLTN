@@ -2,15 +2,10 @@ from datetime import datetime
 from typing import Literal
 
 from pydantic import BaseModel, ConfigDict, Field
+from src.schemas.rbac_schema import RoleCode
 
 
-VaiTro = Literal[
-    "ADMIN",
-    "QUAN_LY_BAN_HANG",
-    "QUAN_LY_MUA_HANG",
-    "NHAN_VIEN_BAN_HANG",
-    "NHAN_VIEN_MUA_HANG",
-]
+VaiTro = RoleCode
 
 TrangThai = Literal[
     "HOAT_DONG",

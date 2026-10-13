@@ -2,7 +2,6 @@
 from fastapi import (
     APIRouter,
     Depends,
-    HTTPException,
     Query,
     status,
 )
@@ -12,10 +11,8 @@ from src.controllers.tai_khoan_controller import (
     TaiKhoanController,
 )
 from src.core.database import get_db
-from src.dependencies.auth_dependency import (
-    get_current_user,
-)
 from src.models.user_model import User
+from src.dependencies.permission_dependency import require_permission
 from src.schemas.tai_khoan_schema import (
     TaiKhoanCreateRequest,
     TaiKhoanResponse,
@@ -29,25 +26,6 @@ router = APIRouter(
 )
 
 
-def require_admin(
-    current_user: User = Depends(
-        get_current_user
-    ),
-) -> User:
-    if current_user.vai_tro != "ADMIN":
-        raise HTTPException(
-            status_code=(
-                status.HTTP_403_FORBIDDEN
-            ),
-            detail=(
-                "Chỉ quản trị viên được "
-                "quản lý tài khoản."
-            ),
-        )
-
-    return current_user
-
-
 @router.get(
     "",
     response_model=list[TaiKhoanResponse],
@@ -58,7 +36,7 @@ def get_users(
     trang_thai: str | None = Query(None),
     db: Session = Depends(get_db),
     current_user: User = Depends(
-        require_admin
+        require_permission("USER_VIEW")
     ),
 ):
     return TaiKhoanController.get_all(
@@ -77,7 +55,7 @@ def get_user_by_id(
     ma_nguoi_dung: str,
     db: Session = Depends(get_db),
     current_user: User = Depends(
-        require_admin
+        require_permission("USER_VIEW")
     ),
 ):
     return TaiKhoanController.get_by_id(
@@ -95,7 +73,7 @@ def create_user(
     payload: TaiKhoanCreateRequest,
     db: Session = Depends(get_db),
     current_user: User = Depends(
-        require_admin
+        require_permission("USER_CREATE", "USER_ASSIGN_ROLE")
     ),
 ):
     return TaiKhoanController.create(
@@ -114,7 +92,7 @@ def update_user(
     payload: TaiKhoanUpdateRequest,
     db: Session = Depends(get_db),
     current_user: User = Depends(
-        require_admin
+        require_permission("USER_UPDATE")
     ),
 ):
     return TaiKhoanController.update(
@@ -133,7 +111,7 @@ def delete_user(
     ma_nguoi_dung: str,
     db: Session = Depends(get_db),
     current_user: User = Depends(
-        require_admin
+        require_permission("USER_DELETE")
     ),
 ):
     TaiKhoanController.delete(

@@ -90,7 +90,9 @@ function StatusBadge({ value }: { value: string }) {
   );
 }
 
+import { useAuth } from '../../auth/AuthContext';
 export default function QuanLyTaiKhoanPage() {
+  const { can } = useAuth();
   const [users, setUsers] = useState<UserAccount[]>([]);
   const [currentId, setCurrentId] = useState("");
   const [loading, setLoading] = useState(true);
@@ -267,7 +269,7 @@ export default function QuanLyTaiKhoanPage() {
         const payload: UserUpdateInput = { ...common };
 
         // Vai trò cũ không được gửi lại nếu không thay đổi.
-        if (form.vai_tro !== selected.vai_tro) {
+        if (can('USER_ASSIGN_ROLE') && form.vai_tro !== selected.vai_tro) {
           payload.vai_tro = form.vai_tro as AccountRole;
         }
 
@@ -401,7 +403,7 @@ export default function QuanLyTaiKhoanPage() {
           <button className="tk-btn" disabled={busy} onClick={() => void download("export")}>
             <FileExcelOutlined /> Xuất Excel
           </button>
-          <button
+          {can('USER_IMPORT') && <button
             className="tk-btn"
             disabled={busy}
             onClick={() => {
@@ -413,10 +415,10 @@ export default function QuanLyTaiKhoanPage() {
             }}
           >
             <UploadOutlined /> Upload file
-          </button>
-          <button className="tk-btn tk-primary" disabled={busy} onClick={openCreate}>
+          </button>}
+          {can('USER_CREATE') && can('USER_ASSIGN_ROLE') && <button className="tk-btn tk-primary" disabled={busy} onClick={openCreate}>
             <PlusOutlined /> Thêm tài khoản
-          </button>
+          </button>}
         </div>
       </header>
 
@@ -514,8 +516,8 @@ export default function QuanLyTaiKhoanPage() {
                   <td>
                     <div className="tk-actions">
                       <button className="tk-icon-btn" title="Xem chi tiết" aria-label={`Xem ${user.ma_nguoi_dung}`} disabled={busy} onClick={() => void openUser("view", user)}><EyeOutlined /></button>
-                      <button className="tk-icon-btn" title="Cập nhật" aria-label={`Sửa ${user.ma_nguoi_dung}`} disabled={busy} onClick={() => void openUser("edit", user)}><EditOutlined /></button>
-                      <button className="tk-icon-btn tk-delete-icon" title="Xóa" aria-label={`Xóa ${user.ma_nguoi_dung}`} disabled={busy || user.ma_nguoi_dung.toLowerCase() === "admin" || user.ma_nguoi_dung === currentId} onClick={() => void openUser("delete", user)}><DeleteOutlined /></button>
+                      {can('USER_UPDATE') && <button className="tk-icon-btn" title="Cập nhật" aria-label={`Sửa ${user.ma_nguoi_dung}`} disabled={busy} onClick={() => void openUser("edit", user)}><EditOutlined /></button>}
+                      {can('USER_DELETE') && <button className="tk-icon-btn tk-delete-icon" title="Xóa" aria-label={`Xóa ${user.ma_nguoi_dung}`} disabled={busy || user.ma_nguoi_dung.toLowerCase() === "admin" || user.ma_nguoi_dung === currentId} onClick={() => void openUser("delete", user)}><DeleteOutlined /></button>}
                     </div>
                   </td>
                 </tr>
@@ -577,7 +579,7 @@ export default function QuanLyTaiKhoanPage() {
                   </label>
                   <label className="tk-field">
                     <span>Vai trò <b className="tk-required">*</b></span>
-                    <select required disabled={Boolean(protectedUser)} value={form.vai_tro} onChange={event => setField("vai_tro", event.target.value)}>
+                    <select required disabled={Boolean(protectedUser) || !can('USER_ASSIGN_ROLE')} value={form.vai_tro} onChange={event => setField("vai_tro", event.target.value)}>
                       {legacyRole && <option value={form.vai_tro} disabled>{roleLabel(form.vai_tro)}</option>}
                       {ACCOUNT_ROLES.map(role => <option key={role.value} value={role.value}>{role.label}</option>)}
                     </select>

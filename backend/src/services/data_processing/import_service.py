@@ -6,6 +6,7 @@ from zoneinfo import ZoneInfo
 from fastapi import HTTPException, UploadFile, status
 from sqlalchemy.exc import DataError, IntegrityError, SQLAlchemyError
 from sqlalchemy.orm import Session
+from sqlalchemy import select
 
 from src.core.import_permissions import can_import
 from src.models.chi_tiet_cong_thuc_model import ChiTietCongThuc
@@ -19,9 +20,12 @@ from src.models.nha_cung_cap_model import NhaCungCap
 from src.models.san_pham_model import SanPham
 from src.models.ton_kho_nguyen_lieu_model import TonKhoNguyenLieu
 from src.models.user_model import User
+from src.models.rbac_model import Role
+from src.services.authorization_service import AuthorizationService
 from src.repositories.import_repository import ImportRepository
 from src.repositories.nhat_ky_repository import NhatKyRepository
 from src.schemas.import_schema import ImportResponse
+from src.services.nha_cung_cap_service import NhaCungCapService
 from src.services.data_processing.file_reader import read_upload_file
 from src.services.data_processing.kiem_tra_du_lieu import (
     is_empty,
@@ -48,7 +52,8 @@ class ImportService:
         current_user: User,
         db: Session,
     ) -> ImportResponse:
-        if not can_import(current_user.vai_tro, import_type):
+        context = AuthorizationService().load(db, current_user)
+        if not can_import(context.permissions, import_type):
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
                 detail="Bạn không có quyền import loại dữ liệu này.",
@@ -214,18 +219,17 @@ class ImportService:
             "vai_tro",
             "trang_thai",
         }
+        optional = set()
         validate_columns(
             dataframe=dataframe,
             required_columns=required,
+            optional_columns=optional,
         )
 
-        allowed_roles = {
-            "ADMIN",
-            "QUAN_LY_MUA_HANG",
-            "QUAN_LY_BAN_HANG",
-            "NHAN_VIEN_BAN_HANG",
-            "NHAN_VIEN_MUA_HANG",
-        }
+        allowed_roles = set(db.scalars(
+            select(Role.ma_vai_tro).where(Role.trang_thai == "HOAT_DONG")
+            .with_for_update(read=True)
+        ).all())
         allowed_status = {
             "HOAT_DONG",
             "NGUNG_HOAT_DONG",
@@ -394,13 +398,8 @@ class ImportService:
                 ),
             )
             self.import_repository.add(
-
                 db=db,
-                values={
-                    "ten_nguyen_lieu": model.ten_nguyen_lieu,
-                    "don_vi_do_luong": model.don_vi_do_luong,
-                    "trang_thai": model.trang_thai,
-                },
+                model=model,
             )
             count += 1
 
@@ -424,6 +423,7 @@ class ImportService:
         validate_columns(
             dataframe=dataframe,
             required_columns=required,
+            optional_columns=optional,
         )
 
         count = 0
@@ -569,7 +569,7 @@ class ImportService:
             required_columns=required,
         )
 
-        service = TonKhoService()
+        count = 0
         for _, row in dataframe.iterrows():
             row_number = int(row["_row_number"])
 
@@ -699,13 +699,6 @@ class ImportService:
             "ma_chi_tiet_cong_thuc",
         }
 
-        validate_columns(
-            dataframe=dataframe,
-            required_columns=set(formula_columns) | {"ma_nguyen_lieu", "ty_le_phoi_tron"},
-            optional_columns={"ma_cong_thuc", "ma_chi_tiet_cong_thuc"},
-        )
-
-
         formula_columns = [
             "ten_cong_thuc",
             "ma_san_pham",
@@ -713,6 +706,11 @@ class ImportService:
             "ty_le_hao_hut",
             "trang_thai",
         ]
+        validate_columns(
+            dataframe=dataframe,
+            required_columns=set(formula_columns) | {"ma_nguyen_lieu", "ty_le_phoi_tron"},
+            optional_columns={"ma_cong_thuc", "ma_chi_tiet_cong_thuc"},
+        )
         grouped = dataframe.groupby(
             formula_columns,
             dropna=False,
@@ -1191,6 +1189,10 @@ class ImportService:
         result: str,
         description: str,
     ) -> None:
+        if db.info.get('audit_actor') and import_type in {
+            'nguyen_lieu', 'nha_cung_cap', 'nguyen_lieu_nha_cung_cap', 'ton_kho_nguyen_lieu', 'cong_thuc'
+        }:
+            return  # Successful row snapshots are already in the import transaction.
         if not self.log_repository.has_table(db):
             return
 

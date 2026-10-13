@@ -5,19 +5,15 @@ from sqlalchemy.orm import Session
 
 from src.controllers.goi_y_nha_cung_cap_controller import GoiYNhaCungCapController
 from src.core.database import get_db
-from src.dependencies.role_dependency import require_role
+from src.dependencies.permission_dependency import require_permission
 from src.schemas.goi_y_nha_cung_cap_schema import GoiYNhaCungCapResponse
 
 
-router = APIRouter(
-    prefix="/goi-y-nha-cung-cap",
-    tags=["Gợi ý nhà cung cấp"],
-    dependencies=[Depends(require_role("ADMIN", "NHAN_VIEN_MUA_HANG"))],
-)
+router = APIRouter(prefix='/goi-y-nha-cung-cap', tags=['Gợi ý nhà cung cấp'])
 controller = GoiYNhaCungCapController()
 
 
-@router.get("", response_model=GoiYNhaCungCapResponse)
+@router.get('', response_model=GoiYNhaCungCapResponse, dependencies=[Depends(require_permission('GOI_Y_NHA_CUNG_CAP_VIEW'))])
 def suggest_suppliers(
     ma_nguyen_lieu: str = Query(min_length=1, max_length=20),
     so_luong_can_mua: Decimal = Query(

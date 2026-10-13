@@ -6,6 +6,7 @@ import {
 
 import DashboardBase, {
   type DashboardConfig,
+  type DashboardWorkspace,
 } from "../../components/dashboard/DashboardBase";
 
 import type { User } from "../../services/authService";
@@ -14,6 +15,7 @@ import type { User } from "../../services/authService";
 type Props = {
   user: User;
   onLogout: () => void | Promise<void>;
+  workspace?: DashboardWorkspace;
 };
 
 const config: DashboardConfig = {
@@ -74,12 +76,14 @@ const config: DashboardConfig = {
 export default function DashboardPageGSBH({
   user,
   onLogout,
+  workspace,
 }: Props) {
   return (
     <DashboardBase
       user={user}
       config={config}
       onLogout={onLogout}
+      workspace={workspace}
     />
   );
 }

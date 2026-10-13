@@ -3,6 +3,7 @@ from fastapi import (
     Depends,
     HTTPException,
     status,
+    Request,
 )
 from fastapi.security import (
     HTTPAuthorizationCredentials,
@@ -28,6 +29,7 @@ security = HTTPBearer(
 
 
 def get_current_user(
+    request: Request,
     credentials: HTTPAuthorizationCredentials | None = Depends(
         security
     ),
@@ -128,4 +130,6 @@ def get_current_user(
             ),
         )
 
+    from src.services.activity_audit import bind_actor
+    bind_actor(db, user, request)
     return user

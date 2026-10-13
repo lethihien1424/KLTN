@@ -1,3 +1,4 @@
+from src.services.ly_do_service import record_status_change
 from contextlib import contextmanager
 from datetime import datetime, timezone
 
@@ -85,7 +86,7 @@ class CongThucService:
             result = self._detail(db, model)
         return result
 
-    def update_status(self, db, code, payload):
+    def update_status(self, db, code, payload, actor=None):
         with self._write(db):
             model = self._get(db, code, lock=True)
             if payload.trang_thai == "DANG_SU_DUNG":
@@ -101,6 +102,7 @@ class CongThucService:
                 except ValidationError as exc:
                     raise HTTPException(422, "BOM hiện tại không hợp lệ để kích hoạt.") from exc
                 self._validate_references(db, model.ma_san_pham, bom.chi_tiet)
+            record_status_change(db, model, payload, actor, "DOI_TRANG_THAI_CONG_THUC", code)
             model.trang_thai = payload.trang_thai
             model.thoi_gian_cap_nhat = datetime.now(timezone.utc)
             db.flush()

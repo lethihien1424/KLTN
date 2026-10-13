@@ -1,3 +1,4 @@
+from src.schemas.ly_do_schema import StatusReasonFields
 from datetime import datetime
 from decimal import Decimal
 from typing import Annotated, Literal
@@ -41,7 +42,7 @@ class CongThucCreate(CongThucUpdate):
     trang_thai: TrangThaiCongThuc = "DANG_SU_DUNG"
 
 
-class CongThucStatusUpdate(BaseModel):
+class CongThucStatusUpdate(StatusReasonFields):
     model_config = ConfigDict(extra="forbid")
     trang_thai: TrangThaiCongThuc
 

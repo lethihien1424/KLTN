@@ -1,3 +1,4 @@
+from src.schemas.ly_do_schema import StatusReasonFields
 from typing import Annotated, Literal
 
 from pydantic import BaseModel, ConfigDict, StringConstraints
@@ -21,7 +22,7 @@ class NguyenLieuCreate(NguyenLieuUpdate):
     trang_thai: TrangThaiNguyenLieu = "DANG_SU_DUNG"
 
 
-class NguyenLieuStatusUpdate(BaseModel):
+class NguyenLieuStatusUpdate(StatusReasonFields):
     model_config = ConfigDict(extra="forbid")
 
     trang_thai: TrangThaiNguyenLieu

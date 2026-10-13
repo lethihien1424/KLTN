@@ -449,6 +449,8 @@ async function requestDuBao(
   }
 
   const isRun = options.method === "POST";
+  if (response.status === 401) window.dispatchEvent(new Event('auth-session-expired'));
+  if (response.status === 403) window.dispatchEvent(new Event('auth-permissions-refresh'));
 
   if (response.status === 204 && response.ok) {
     return null;

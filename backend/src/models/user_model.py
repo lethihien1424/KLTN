@@ -1,5 +1,5 @@
 ### D:\KLTN\KLTN\backend\src\models\user_model.py
-from sqlalchemy import Column, DateTime, FetchedValue, String, text
+from sqlalchemy import Column, DateTime, FetchedValue, ForeignKey, String, text
 
 from src.core.database import Base
 
@@ -25,6 +25,7 @@ class User(Base):
 
     vai_tro = Column(
         String(50),
+        ForeignKey("roles.ma_vai_tro", name="fk_users_vai_tro"),
         nullable=False,
     )
 

@@ -9,6 +9,7 @@ from src.schemas.auth_schema import (
     TokenResponse,
 )
 from src.services.auth_service import AuthService
+from src.services.authorization_service import AuthorizationContext
 
 
 class AuthController:
@@ -24,10 +25,10 @@ class AuthController:
 
     @staticmethod
     def me(
-        current_user: User,
+        context: AuthorizationContext,
     ) -> MeResponse:
         return MeResponse.model_validate(
-            current_user
+            AuthService.user_response(context).model_dump()
         )
 
     @staticmethod

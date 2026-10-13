@@ -1,17 +1,18 @@
 import DashboardBase, {
   type DashboardConfig,
+  type DashboardWorkspace,
 } from "../../components/dashboard/DashboardBase";
 import type { User } from "../../services/authService";
 import {
   PieChartOutlined,
   FileTextOutlined,
-  ShoppingCartOutlined,
   TruckOutlined,
 } from "@ant-design/icons";
 
 type Props = {
   user: User;
   onLogout: () => void | Promise<void>;
+  workspace?: DashboardWorkspace;
 };
 
 const config: DashboardConfig = {
@@ -21,9 +22,16 @@ const config: DashboardConfig = {
   roleLabel: "NHÂN VIÊN MUA HÀNG",
   menu: [
     { id: "tong-quan", label: "Tổng quan", icon: <PieChartOutlined /> },
-    { id: "xem-ke-hoach-mua-hang", label: "Xem kế hoạch mua hàng", icon: <FileTextOutlined /> },
-    { id: "nhap-du-lieu-mua-hang", label: "Nhập dữ liệu mua hàng", icon: <ShoppingCartOutlined /> },
-    { id: "xem-thong-tin-nha-cung-cap", label: "Xem thông tin nhà cung cấp", icon: <TruckOutlined /> },
+    {
+      id: "xem-ke-hoach-mua-hang",
+      label: "Xem kế hoạch mua hàng",
+      icon: <FileTextOutlined />,
+    },
+    {
+      id: "xem-thong-tin-nha-cung-cap",
+      label: "Xem thông tin nhà cung cấp",
+      icon: <TruckOutlined />,
+    },
   ],
   stats: [
     {
@@ -77,12 +85,14 @@ const config: DashboardConfig = {
 export default function DashboardPageNVMuaHang({
   user,
   onLogout,
+  workspace,
 }: Props) {
   return (
     <DashboardBase
       user={user}
       config={config}
       onLogout={onLogout}
+      workspace={workspace}
     />
   );
-}
+}

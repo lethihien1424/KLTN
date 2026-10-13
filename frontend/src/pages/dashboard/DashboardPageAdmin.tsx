@@ -6,12 +6,12 @@ import {
   PieChartOutlined,
   ReloadOutlined,
   SafetyCertificateOutlined,
-  ShoppingOutlined,
   UserOutlined,
 } from "@ant-design/icons";
 
 import DashboardBase, {
   type DashboardConfig,
+  type DashboardWorkspace,
 } from "../../components/dashboard/DashboardBase";
 
 import type { User } from "../../services/authService";
@@ -27,6 +27,7 @@ import QuanLyTaiKhoanPage from "../tai-khoan/QuanLyTaiKhoanPage";
 type Props = {
   user: User;
   onLogout: () => void | Promise<void>;
+  workspace?: DashboardWorkspace;
 };
 
 const ROLE_COLORS = [
@@ -40,6 +41,7 @@ const ROLE_COLORS = [
 export default function DashboardPageAdmin({
   user,
   onLogout,
+  workspace,
 }: Props) {
   const [accounts, setAccounts] = useState<UserAccount[]>([]);
   const [loading, setLoading] = useState(true);
@@ -167,11 +169,6 @@ if (otherActiveCount > 0) {
         id: "phan-quyen",
         label: "Phân quyền",
         icon: <SafetyCertificateOutlined />,
-      },
-      {
-        id: "quan-ly-san-pham",
-        label: "Quản lý sản phẩm",
-        icon: <ShoppingOutlined />,
       },
       {
         id: "xem-nhat-ky-hoat-dong",
@@ -667,6 +664,7 @@ if (otherActiveCount > 0) {
       user={user}
       config={config}
       onLogout={onLogout}
+      workspace={workspace}
     />
   );
 }

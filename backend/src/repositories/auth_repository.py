@@ -16,6 +16,6 @@ class AuthRepository:
 
         statement = select(User).where(
             User.ma_nguoi_dung == account_id
-        )
+        ).execution_options(populate_existing=True)
 
         return db.scalar(statement)

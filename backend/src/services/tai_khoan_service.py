@@ -10,6 +10,7 @@ from src.core.security import hash_password
 from src.models.user_model import User
 from src.repositories.nhat_ky_repository import NhatKyRepository
 from src.repositories.tai_khoan_repository import TaiKhoanRepository
+from src.services.authorization_service import AuthorizationService
 from src.schemas.tai_khoan_schema import (
     TaiKhoanCreateRequest,
     TaiKhoanUpdateRequest,
@@ -149,6 +150,7 @@ class TaiKhoanService:
         )
 
         try:
+            AuthorizationService().assignable_role(db, payload.vai_tro)
             account_id = self.repository.generate_account_id(
                 db=db,
                 vai_tro=payload.vai_tro,
@@ -170,6 +172,10 @@ class TaiKhoanService:
 
             self.repository.create(db=db, user=user)
             db.commit()
+
+        except HTTPException:
+            db.rollback()
+            raise
 
         except ValueError as exc:
             db.rollback()
@@ -270,6 +276,11 @@ class TaiKhoanService:
                 )
 
         try:
+            if "vai_tro" in changes:
+                if modifier is None:
+                    raise HTTPException(403, "Thiếu người thực hiện gán vai trò.")
+                AuthorizationService().require(db, modifier, "USER_ASSIGN_ROLE")
+                AuthorizationService().assignable_role(db, changes["vai_tro"])
             for field, value in changes.items():
                 if field in {
                     "email",
@@ -289,6 +300,10 @@ class TaiKhoanService:
 
             self.repository.update(db=db, user=user)
             db.commit()
+
+        except HTTPException:
+            db.rollback()
+            raise
 
         except SQLAlchemyError as exc:
             self._database_error(db, exc)

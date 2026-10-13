@@ -9,6 +9,8 @@ from src.controllers.auth_controller import (
     AuthController,
 )
 from src.core.database import get_db
+from src.dependencies.permission_dependency import get_authorization
+from src.services.authorization_service import AuthorizationContext
 from src.dependencies.auth_dependency import (
     get_current_user,
 )
@@ -46,12 +48,10 @@ def login(
     response_model=MeResponse,
 )
 def me(
-    current_user: User = Depends(
-        get_current_user
-    ),
+    context: AuthorizationContext = Depends(get_authorization),
 ):
     return AuthController.me(
-        current_user=current_user
+        context=context
     )
 
 

@@ -68,7 +68,9 @@ class TaiKhoanRepository:
         db: Session,
         vai_tro: str,
     ) -> str:
-        prefix = ROLE_PREFIXES[vai_tro]
+        # Prefixes preserve existing account naming only; they do not authorize.
+        # New role codes work without extending this mapping.
+        prefix = ROLE_PREFIXES.get(vai_tro, "TK")
 
         # Khóa được giữ đến khi commit/rollback.
         # Tránh hai yêu cầu tạo tài khoản lấy cùng một số.
