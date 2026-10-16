@@ -1,40 +1,37 @@
-###D:\KLTN\KLTN\backend\src\core\import_permissions.py
+
 IMPORT_PERMISSIONS = {
+    # Quản trị viên - toàn quyền import
     "ADMIN": {
-        "users",
-        "san_pham",
-        "nguyen_lieu",
-        "nha_cung_cap",
-        "nguyen_lieu_nha_cung_cap",
-        "ton_kho_nguyen_lieu",
-        "ngay_le",
-        "cong_thuc",
-        "don_hang",
+        "ALL",
     },
 
+    # Quản lý bán hàng
     "QUAN_LY": {
         "san_pham",
         "nha_cung_cap",
         "nguyen_lieu_nha_cung_cap",
         "ngay_le",
         "don_hang",
+        "ctkm",
     },
 
-    "GIAM_SAT_BAN_HANG": {
-        "don_hang",
-    },
-
-    "NHAN_VIEN_KE_HOACH_SAN_XUAT": {
-        "cong_thuc",
-    },
-
-    "NHAN_VIEN_KHO": {
+    # Quản lý mua hàng
+    "QUAN_LY_MUA_HANG": {
         "nguyen_lieu",
+        "nha_cung_cap",
         "nguyen_lieu_nha_cung_cap",
         "ton_kho_nguyen_lieu",
     },
 
+    # Nhân viên bán hàng
+    "NHAN_VIEN_BAN_HANG": {
+        "don_hang",
+        "ctkm",
+    },
+
+    # Nhân viên mua hàng
     "NHAN_VIEN_MUA_HANG": {
+        "nguyen_lieu",
         "nha_cung_cap",
     },
 }
@@ -44,7 +41,14 @@ def can_import(
     role: str,
     import_type: str,
 ) -> bool:
-    return import_type in IMPORT_PERMISSIONS.get(
+    allowed_types = IMPORT_PERMISSIONS.get(
         role,
         set(),
     )
+
+    # ADMIN có toàn quyền import
+    if "ALL" in allowed_types:
+        return True
+
+    # Các vai trò khác theo quyền được cấp
+    return import_type in allowed_types

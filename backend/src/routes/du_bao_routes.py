@@ -2,18 +2,19 @@
 from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 
-from src.controllers.du_bao_controller import (
-    DuBaoController,
-)
 from src.core.database import get_db
-from src.dependencies.role_dependency import (
-    require_role,
+from src.dependencies.permission_dependency import (
+    require_permission,
 )
 from src.models.user_model import User
+from src.controllers.du_bao_controller import DuBaoController
 from src.schemas.du_bao_schema import (
     DuBaoRequest,
     DuBaoResponse,
     LichSuDuBaoResponse,
+)
+from src.services.forecasting.du_bao_service import (
+    DuBaoService,
 )
 from src.services.lich_su_du_bao_service import (
     LichSuDuBaoService,
@@ -26,30 +27,28 @@ router = APIRouter(
 )
 
 
-QUYEN_CHAY_DU_BAO = (
-    "ADMIN",
-    "QUAN_LY_BAN_HANG",
-    "NHAN_VIEN_BAN_HANG",
-)
-
-QUYEN_XEM_DU_BAO = (
-    "ADMIN",
-    "QUAN_LY_BAN_HANG",
-    "QUAN_LY_MUA_HANG",
-    "NHAN_VIEN_BAN_HANG",
-    "NHAN_VIEN_MUA_HANG",
-)
+@router.get("/san-pham")
+def get_products(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(
+        require_permission("du_bao_nhu_cau", "XEM")
+    ),
+):
+    return DuBaoService.get_catalog(db)
 
 
 @router.post(
     "/nhu-cau",
     response_model=DuBaoResponse,
 )
-def du_bao_nhu_cau(
+def forecast(
     request: DuBaoRequest,
     db: Session = Depends(get_db),
     current_user: User = Depends(
-        require_role(*QUYEN_CHAY_DU_BAO)
+        require_permission(
+            "du_bao_nhu_cau",
+            "CHAY_DU_BAO",
+        )
     ),
 ):
     return DuBaoController.du_bao_nhu_cau(
@@ -63,44 +62,40 @@ def du_bao_nhu_cau(
     "/lich-su",
     response_model=list[LichSuDuBaoResponse],
 )
-def lay_lich_su_du_bao(
+def history(
     db: Session = Depends(get_db),
     current_user: User = Depends(
-        require_role(*QUYEN_XEM_DU_BAO)
+        require_permission("lich_su_du_bao", "XEM")
     ),
 ):
-    return LichSuDuBaoService.lay_danh_sach(
-        db=db,
-    )
+    return LichSuDuBaoService.lay_danh_sach(db)
 
 
 @router.get(
     "/moi-nhat",
     response_model=DuBaoResponse | None,
 )
-def lay_du_bao_moi_nhat(
+def latest(
     db: Session = Depends(get_db),
     current_user: User = Depends(
-        require_role(*QUYEN_XEM_DU_BAO)
+        require_permission("du_bao_nhu_cau", "XEM")
     ),
 ):
-    return LichSuDuBaoService.lay_moi_nhat(
-        db=db,
-    )
+    return LichSuDuBaoService.lay_moi_nhat(db)
 
 
 @router.get(
     "/lich-su/{ma_lich_su_du_bao}",
     response_model=DuBaoResponse,
 )
-def lay_chi_tiet_du_bao(
+def detail(
     ma_lich_su_du_bao: str,
     db: Session = Depends(get_db),
     current_user: User = Depends(
-        require_role(*QUYEN_XEM_DU_BAO)
+        require_permission("lich_su_du_bao", "XEM")
     ),
 ):
     return LichSuDuBaoService.lay_chi_tiet(
-        db=db,
-        ma_lich_su_du_bao=ma_lich_su_du_bao,
+        db,
+        ma_lich_su_du_bao,
     )

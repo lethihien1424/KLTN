@@ -1,4 +1,5 @@
 ////D:\KLTN\KLTN\frontend\src\pages\tai-khoan\QuanLyTaiKhoanPage.tsx
+////D:\KLTN\KLTN\frontend\src\pages\tai-khoan\QuanLyTaiKhoanPage.tsx
 import {
   useEffect,
   useMemo,
@@ -393,170 +394,395 @@ export default function QuanLyTaiKhoanPage() {
     );
   }
 
+  const countAll = users.length;
+  const countActive = users.filter(u => u.trang_thai === "HOAT_DONG").length;
+  const countInactive = users.filter(u => u.trang_thai === "NGUNG_HOAT_DONG").length;
+  const countRoles = ACCOUNT_ROLES.length;
+
   return (
     <section className="tk-page">
-      <header className="tk-heading">
+      {/* Một thẻ lớn: header sát mép trên -> tabs -> nội dung */}
+      <div className="tk-card-wrapper">
+        {/* Header với icon xanh */}
+        <div className="tk-page-header">
+          <div className="tk-header-icon" aria-hidden="true">
+            <UserOutlined />
+          </div>
+          <div className="tk-header-text">
+            <h2>Quản lý tài khoản</h2>
+            <p>Tổng quan tài khoản, vai trò và trạng thái truy cập hệ thống.</p>
+          </div>
+        </div>
 
-        <div className="tk-toolbar">
-          <button className="tk-btn" disabled={busy} onClick={() => void download("export")}>
-            <FileExcelOutlined /> Xuất Excel
+        {/* Tabs lọc trạng thái */}
+        <div className="tk-tabs" role="tablist" aria-label="Bộ lọc trạng thái tài khoản">
+          <button
+            type="button"
+            role="tab"
+            aria-selected={statusFilter === ""}
+            className={`tk-tab ${statusFilter === "" ? "is-active" : ""}`}
+            onClick={() => setStatusFilter("")}
+          >
+            Tất cả
+            <span className="tk-tab-badge">{countAll}</span>
           </button>
           <button
-            className="tk-btn"
-            disabled={busy}
-            onClick={() => {
-              setFileName("");
-              setImportRows([]);
-              setImportReport([]);
-              setModalError("");
-              setModal("upload");
-            }}
+            type="button"
+            role="tab"
+            aria-selected={statusFilter === "HOAT_DONG"}
+            className={`tk-tab ${statusFilter === "HOAT_DONG" ? "is-active" : ""}`}
+            onClick={() => setStatusFilter("HOAT_DONG")}
           >
-            <UploadOutlined /> Upload file
+            Hoạt động
+            <span className="tk-tab-badge">{countActive}</span>
           </button>
-          <button className="tk-btn tk-primary" disabled={busy} onClick={openCreate}>
-            <PlusOutlined /> Thêm tài khoản
+          <button
+            type="button"
+            role="tab"
+            aria-selected={statusFilter === "NGUNG_HOAT_DONG"}
+            className={`tk-tab ${statusFilter === "NGUNG_HOAT_DONG" ? "is-active" : ""}`}
+            onClick={() => setStatusFilter("NGUNG_HOAT_DONG")}
+          >
+            Ngừng hoạt động
+            <span className="tk-tab-badge">{countInactive}</span>
           </button>
         </div>
-      </header>
 
-{(notice || error) && (
-  <div className="tk-toast-wrap">
-    <div
-      className={`tk-toast ${error ? "tk-toast-error" : "tk-toast-success"}`}
-      role={error ? "alert" : "status"}
-    >
-      <span className="tk-toast-icon" aria-hidden="true">
-        {error ? "!" : "✓"}
-      </span>
+        <div className="tk-card-body">
+          {/* 4 Thẻ thống kê */}
+          <div className="tk-stats-grid">
+            <div className="tk-stat-card">
+              <span className="tk-stat-title">Tổng tài khoản</span>
+              <strong className="tk-stat-value blue">{countAll}</strong>
+              <span className="tk-stat-desc">Tài khoản đã lưu trong hệ thống</span>
+            </div>
 
-      <div className="tk-toast-content">
-        <strong>
-          {error ? "Thao tác chưa hoàn tất" : "Thao tác thành công"}
-        </strong>
+            <div className="tk-stat-card">
+              <span className="tk-stat-title">Đang hoạt động</span>
+              <strong className="tk-stat-value green">{countActive}</strong>
+              <span className="tk-stat-desc">Tài khoản được phép đăng nhập</span>
+            </div>
 
-        <p>{error || notice}</p>
-      </div>
+            <div className="tk-stat-card">
+              <span className="tk-stat-title">Ngừng hoạt động</span>
+              <strong className="tk-stat-value orange">{countInactive}</strong>
+              <span className="tk-stat-desc">Tài khoản đã ngừng truy cập</span>
+            </div>
 
-      <button
-        type="button"
-        className="tk-toast-close"
-        aria-label="Đóng thông báo"
-        onClick={() => {
-          setNotice("");
-          setError("");
-        }}
-      >
-        ×
-      </button>
-    </div>
-  </div>
-)}
-
-      <div className="tk-list">
-        <div className="tk-filters">
-          <div className="tk-search">
-            <SearchOutlined />
-            <input
-              aria-label="Tìm tài khoản"
-              placeholder="Tìm mã, họ tên, email, số điện thoại..."
-              value={search}
-              onChange={event => setSearch(event.target.value)}
-            />
+            <div className="tk-stat-card">
+              <span className="tk-stat-title">Vai trò hiện hành</span>
+              <strong className="tk-stat-value purple">{countRoles}</strong>
+              <span className="tk-stat-desc">Nhóm vai trò của hệ thống</span>
+            </div>
           </div>
 
-          <select aria-label="Lọc vai trò" value={roleFilter} onChange={event => setRoleFilter(event.target.value)}>
-            <option value="">Tất cả vai trò</option>
-            {ACCOUNT_ROLES.map(role => <option key={role.value} value={role.value}>{role.label}</option>)}
-            {Array.from(new Set(users.map(user => user.vai_tro)))
-              .filter(role => !ACCOUNT_ROLES.some(item => item.value === role))
-              .map(role => <option key={role} value={role}>{roleLabel(role)}</option>)}
-          </select>
+          {/* Thông báo thông tin nếu có */}
+          {(notice || error) && (
+            <div className="tk-toast-wrap">
+              <div
+                className={`tk-toast ${error ? "tk-toast-error" : "tk-toast-success"}`}
+                role={error ? "alert" : "status"}
+              >
+                <span className="tk-toast-icon" aria-hidden="true">
+                  {error ? "!" : "✓"}
+                </span>
 
-          <select aria-label="Lọc trạng thái" value={statusFilter} onChange={event => setStatusFilter(event.target.value)}>
-            <option value="">Tất cả trạng thái</option>
-            <option value="HOAT_DONG">Hoạt động</option>
-            <option value="NGUNG_HOAT_DONG">Ngưng hoạt động</option>
-          </select>
+                <div className="tk-toast-content">
+                  <strong>{error ? "Thao tác chưa hoàn tất" : "Thao tác thành công"}</strong>
+                  <p>{error || notice}</p>
+                </div>
 
-          <button className="tk-icon-btn" title="Làm mới" aria-label="Làm mới" disabled={busy || loading} onClick={() => void refresh()}>
-            <ReloadOutlined />
-          </button>
-        </div>
+                <button
+                  type="button"
+                  className="tk-toast-close"
+                  aria-label="Đóng thông báo"
+                  onClick={() => {
+                    setNotice("");
+                    setError("");
+                  }}
+                >
+                  ×
+                </button>
+              </div>
+            </div>
+          )}
 
-        <div className="tk-table-scroll">
-          <table className="tk-table">
-            <thead>
-              <tr>
-                <th>Tài khoản</th>
-                <th>Vai trò</th>
-                <th>Thông tin liên hệ</th>
-                <th>Trạng thái</th>
-                <th className="tk-center">Thao tác</th>
-              </tr>
-            </thead>
-            <tbody>
-              {loading ? (
-                <tr><td colSpan={5} className="tk-empty">Đang tải tài khoản...</td></tr>
-              ) : !visible.length ? (
-                <tr><td colSpan={5} className="tk-empty">Không có tài khoản phù hợp.</td></tr>
-              ) : visible.map(user => (
-                <tr key={user.ma_nguoi_dung}>
-                  <td>
-                    <div className="tk-person">
-                      <span className="tk-avatar">{user.ho_ten.trim().charAt(0).toUpperCase()}</span>
-                      <div><strong>{user.ho_ten}</strong><small>{user.ma_nguoi_dung}</small></div>
-                    </div>
-                  </td>
-                  <td>{roleLabel(user.vai_tro)}</td>
-                  <td><div className="tk-contact"><span>{user.email || "Chưa có email"}</span><small>{user.so_dien_thoai || "Chưa có số điện thoại"}</small></div></td>
-                  <td><StatusBadge value={user.trang_thai} /></td>
-                  <td>
-                    <div className="tk-actions">
-                      <button className="tk-icon-btn" title="Xem chi tiết" aria-label={`Xem ${user.ma_nguoi_dung}`} disabled={busy} onClick={() => void openUser("view", user)}><EyeOutlined /></button>
-                      <button className="tk-icon-btn" title="Cập nhật" aria-label={`Sửa ${user.ma_nguoi_dung}`} disabled={busy} onClick={() => void openUser("edit", user)}><EditOutlined /></button>
-                      <button className="tk-icon-btn tk-delete-icon" title="Xóa" aria-label={`Xóa ${user.ma_nguoi_dung}`} disabled={busy || user.ma_nguoi_dung.toLowerCase() === "admin" || user.ma_nguoi_dung === currentId} onClick={() => void openUser("delete", user)}><DeleteOutlined /></button>
-                    </div>
-                  </td>
-                </tr>
+          {/* Danh sách tài khoản Section */}
+          <div className="tk-section-head">
+            <div className="tk-section-head-left">
+              <h3>Danh sách tài khoản</h3>
+              <p>Quản lý người dùng, vai trò và thông tin liên hệ.</p>
+            </div>
+
+            <div className="tk-toolbar">
+              <button
+                type="button"
+                className="tk-btn-secondary"
+                disabled={busy}
+                onClick={() => {
+                  setFileName("");
+                  setImportRows([]);
+                  setImportReport([]);
+                  setModalError("");
+                  setModal("upload");
+                }}
+              >
+                <UploadOutlined /> Upload file
+              </button>
+
+              <button
+                type="button"
+                className="tk-btn-secondary"
+                disabled={busy}
+                onClick={() => void download("export")}
+              >
+                <FileExcelOutlined /> Xuất Excel
+              </button>
+
+              <button
+                type="button"
+                className="tk-btn-primary"
+                disabled={busy}
+                onClick={openCreate}
+              >
+                <PlusOutlined /> Thêm tài khoản
+              </button>
+            </div>
+          </div>
+
+          {/* Bộ lọc và tìm kiếm */}
+          <div className="tk-filter-row">
+            <div className="tk-search-box">
+              <SearchOutlined className="tk-search-icon" />
+              <input
+                aria-label="Tìm tài khoản"
+                placeholder="Tìm mã, họ tên, email, số điện thoại..."
+                value={search}
+                onChange={event => setSearch(event.target.value)}
+              />
+            </div>
+
+            <select
+              className="tk-select"
+              aria-label="Lọc vai trò"
+              value={roleFilter}
+              onChange={event => setRoleFilter(event.target.value)}
+            >
+              <option value="">Tất cả vai trò</option>
+              {ACCOUNT_ROLES.map(role => (
+                <option key={role.value} value={role.value}>
+                  {role.label}
+                </option>
               ))}
-            </tbody>
-          </table>
-        </div>
+              {Array.from(new Set(users.map(user => user.vai_tro)))
+                .filter(role => !ACCOUNT_ROLES.some(item => item.value === role))
+                .map(role => (
+                  <option key={role} value={role}>
+                    {roleLabel(role)}
+                  </option>
+                ))}
+            </select>
 
-        <footer className="tk-pagination">
-          <span>
-            {filtered.length
-              ? `Hiển thị ${(currentPage - 1) * PAGE_SIZE + 1}–${Math.min(currentPage * PAGE_SIZE, filtered.length)} / ${filtered.length} tài khoản`
-              : "0 tài khoản"}
-          </span>
-          <div>
-            <button className="tk-btn" disabled={currentPage <= 1} onClick={() => setPage(currentPage - 1)}>Trước</button>
-            <span>Trang {currentPage} / {totalPages}</span>
-            <button className="tk-btn" disabled={currentPage >= totalPages} onClick={() => setPage(currentPage + 1)}>Sau</button>
+            <button
+              type="button"
+              className="tk-btn-reload"
+              title="Làm mới"
+              aria-label="Làm mới"
+              disabled={busy || loading}
+              onClick={() => void refresh()}
+            >
+              <ReloadOutlined spin={loading} />
+            </button>
           </div>
-        </footer>
+
+          {/* Bảng dữ liệu */}
+          <div className="tk-table-container">
+            <table className="tk-table">
+              <thead>
+                <tr>
+                  <th style={{ width: "26%" }}>Tài khoản</th>
+                  <th style={{ width: "20%" }}>Vai trò</th>
+                  <th style={{ width: "28%" }}>Thông tin liên hệ</th>
+                  <th style={{ width: "14%" }}>Trạng thái</th>
+                  <th style={{ width: "12%", textAlign: "center" }}>Thao tác</th>
+                </tr>
+              </thead>
+              <tbody>
+                {loading ? (
+                  <tr>
+                    <td colSpan={5} className="tk-empty">
+                      Đang tải tài khoản...
+                    </td>
+                  </tr>
+                ) : !visible.length ? (
+                  <tr>
+                    <td colSpan={5} className="tk-empty">
+                      Không có tài khoản phù hợp.
+                    </td>
+                  </tr>
+                ) : (
+                  visible.map(user => (
+                    <tr key={user.ma_nguoi_dung}>
+                      {/* Cột Tài khoản: avatar tròn + tên + mã */}
+                      <td>
+                        <div className="tk-account-info">
+                          <span
+                            className="tk-avatar-circle"
+                            style={{
+                              background:
+                                user.vai_tro === "ADMIN"
+                                  ? "#1e40af"
+                                  : user.vai_tro === "QUAN_LY_BAN_HANG"
+                                  ? "#7c3aed"
+                                  : user.vai_tro === "QUAN_LY_MUA_HANG"
+                                  ? "#7c3aed"
+                                  : "#2563eb",
+                            }}
+                          >
+                            {user.ho_ten.charAt(0).toUpperCase()}
+                          </span>
+                          <div className="tk-account-text">
+                            <strong className="tk-user-name">{user.ho_ten}</strong>
+                            <span className="tk-user-code">{user.ma_nguoi_dung}</span>
+                          </div>
+                        </div>
+                      </td>
+
+                      {/* Cột Vai trò */}
+                      <td className="tk-role-cell">
+                        {roleLabel(user.vai_tro)}
+                      </td>
+
+                      {/* Cột Thông tin liên hệ */}
+                      <td>
+                        <div className="tk-contact-info">
+                          <span className="tk-contact-email">
+                            {user.email || "—"}
+                          </span>
+                          <span className="tk-contact-phone">
+                            {user.so_dien_thoai || "—"}
+                          </span>
+                        </div>
+                      </td>
+
+                      {/* Cột Trạng thái */}
+                      <td>
+                        <span
+                          className={`tk-status-badge ${
+                            user.trang_thai === "HOAT_DONG" ? "active" : "inactive"
+                          }`}
+                        >
+                          <span className="tk-dot" />
+                          {user.trang_thai === "HOAT_DONG"
+                            ? "Hoạt động"
+                            : "Ngừng hoạt động"}
+                        </span>
+                      </td>
+
+                      {/* Cột Thao tác */}
+                      <td style={{ textAlign: "center" }}>
+                        <div className="tk-action-group">
+                          <button
+                            type="button"
+                            className="tk-action-btn"
+                            title="Xem chi tiết"
+                            aria-label={`Xem ${user.ma_nguoi_dung}`}
+                            disabled={busy}
+                            onClick={() => void openUser("view", user)}
+                          >
+                            <EyeOutlined />
+                          </button>
+                          <button
+                            type="button"
+                            className="tk-action-btn"
+                            title="Cập nhật"
+                            aria-label={`Sửa ${user.ma_nguoi_dung}`}
+                            disabled={busy}
+                            onClick={() => void openUser("edit", user)}
+                          >
+                            <EditOutlined />
+                          </button>
+                          <button
+                            type="button"
+                            className="tk-action-btn danger"
+                            title="Xóa"
+                            aria-label={`Xóa ${user.ma_nguoi_dung}`}
+                            disabled={
+                              busy ||
+                              user.ma_nguoi_dung.toLowerCase() === "admin" ||
+                              user.ma_nguoi_dung === currentId
+                            }
+                            onClick={() => void openUser("delete", user)}
+                          >
+                            <DeleteOutlined />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
+
+          {/* Phân trang */}
+          <footer className="tk-pagination">
+            <span className="tk-pagination-text">
+              {filtered.length
+                ? `Hiển thị ${(currentPage - 1) * PAGE_SIZE + 1}–${Math.min(
+                    currentPage * PAGE_SIZE,
+                    filtered.length
+                  )} / ${filtered.length} tài khoản`
+                : "0 tài khoản"}
+            </span>
+            <div className="tk-page-nav">
+              <button
+                type="button"
+                className="tk-page-btn"
+                disabled={currentPage <= 1}
+                onClick={() => setPage(currentPage - 1)}
+              >
+                Trước
+              </button>
+              <span className="tk-page-info">
+                Trang {currentPage}/{totalPages}
+              </span>
+              <button
+                type="button"
+                className="tk-page-btn"
+                disabled={currentPage >= totalPages}
+                onClick={() => setPage(currentPage + 1)}
+              >
+                Sau
+              </button>
+            </div>
+          </footer>
+        </div>
       </div>
 
       {modal && (
         <dialog
           ref={dialogRef}
-          className="tk-dialog"
+          className={`tk-dialog ${modal === "delete" ? "tk-dialog-confirm" : ""}`}
           aria-labelledby="tk-modal-title"
           onCancel={event => {
             event.preventDefault();
             closeModal();
           }}
         >
-          <div className="tk-modal-head">
-            <div>
-              <span className="tk-eyebrow">MILANO COFFEE</span>
-              <h3 id="tk-modal-title">{modalTitle[modal]}</h3>
-            </div>
-            <button className="tk-icon-btn" aria-label="Đóng" disabled={busy} onClick={closeModal}>✕</button>
-          </div>
+          {modal !== "delete" && (
+            <>
+              <div className="tk-modal-head">
+                <div>
+                  <span className="tk-eyebrow">MILANO COFFEE</span>
+                  <h3 id="tk-modal-title">{modalTitle[modal]}</h3>
+                </div>
+                <button className="tk-icon-btn" aria-label="Đóng" disabled={busy} onClick={closeModal}>✕</button>
+              </div>
 
-          {modalError && <div className="tk-message tk-error tk-modal-message" role="alert">{modalError}</div>}
+              {modalError && <div className="tk-message tk-error tk-modal-message" role="alert">{modalError}</div>}
+            </>
+          )}
 
           {(modal === "create" || modal === "edit") && (
             <form onSubmit={event => void handleSave(event)}>
@@ -646,25 +872,46 @@ export default function QuanLyTaiKhoanPage() {
             </>
           )}
 
+          {/* Hộp xác nhận xóa: gọn, có icon, tên đối tượng và 2 nút cùng hàng */}
           {modal === "delete" && selected && (
-            <>
-              <div className="tk-modal-body">
-                <div className="tk-warning">
+            <div className="tk-confirm">
+              <div className="tk-confirm-body">
+                <span className="tk-confirm-icon" aria-hidden="true">
                   <DeleteOutlined />
-                  <div><strong>Xác nhận xóa tài khoản</strong><p>Tài khoản sẽ bị xóa khỏi hệ thống. Thao tác này không thể hoàn tác trên giao diện.</p></div>
+                </span>
+                <h3 id="tk-modal-title">Xóa tài khoản?</h3>
+                <div className="tk-confirm-name">
+                  {selected.ho_ten} ({selected.ma_nguoi_dung})
                 </div>
-                <dl className="tk-details">
-                  {detail("Mã tài khoản", selected.ma_nguoi_dung)}
-                  {detail("Họ và tên", selected.ho_ten)}
-                  {detail("Vai trò", roleLabel(selected.vai_tro))}
-                </dl>
-                <p className="tk-hint">Nếu cần giữ người thực hiện trong lịch sử, hãy cập nhật trạng thái thành “Ngưng hoạt động” thay vì xóa.</p>
+                <p className="tk-confirm-text">Không thể hoàn tác.</p>
+
+                {modalError && (
+                  <div className="tk-message tk-error" role="alert">
+                    {modalError}
+                  </div>
+                )}
               </div>
-              <div className="tk-modal-footer">
-                <button className="tk-btn" disabled={busy} onClick={closeModal}>Hủy</button>
-                <button className="tk-btn tk-danger" disabled={busy || Boolean(protectedUser)} onClick={() => void handleDelete()}>{busy ? "Đang xóa..." : "Xóa tài khoản"}</button>
+
+              <div className="tk-confirm-actions">
+                <button
+                  type="button"
+                  className="tk-btn"
+                  autoFocus
+                  disabled={busy}
+                  onClick={closeModal}
+                >
+                  Hủy
+                </button>
+                <button
+                  type="button"
+                  className="tk-btn tk-danger"
+                  disabled={busy || Boolean(protectedUser)}
+                  onClick={() => void handleDelete()}
+                >
+                  <DeleteOutlined /> {busy ? "Đang xóa..." : "Xóa"}
+                </button>
               </div>
-            </>
+            </div>
           )}
 
           {modal === "upload" && (

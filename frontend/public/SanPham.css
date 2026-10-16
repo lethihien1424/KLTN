@@ -1,0 +1,1023 @@
+/* frontend/public/SanPham.css - Milano Coffee Product Management */
+
+
+/* frontend/public/SanPham.css - Milano Coffee Product Management */
+
+.sp-page {
+    color: #1e293b;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    font-size: 13.5px;
+    line-height: 1.5;
+    box-sizing: border-box;
+}
+
+.sp-page *,
+.sp-page *::before,
+.sp-page *::after,
+.sp-dialog,
+.sp-dialog * {
+    box-sizing: border-box;
+}
+
+
+/* Card Wrapper bao bọc toàn bộ nội dung */
+
+.sp-card-wrapper {
+    background: #ffffff;
+    border-radius: 20px;
+    border: 1px solid #e2e8f0;
+    box-shadow: 0 1px 3px rgba(15, 23, 42, 0.04);
+    padding: 0;
+    overflow: hidden;
+}
+
+
+/* Header band */
+
+.sp-page-header {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    padding: 24px 28px;
+    background: #e6eefc;
+    border-bottom: 1px solid #d0def6;
+}
+
+.sp-header-icon {
+    width: 48px;
+    height: 48px;
+    flex-shrink: 0;
+    display: grid;
+    place-items: center;
+    border-radius: 14px;
+    background: #2563eb;
+    color: #ffffff;
+    font-size: 22px;
+    box-shadow: 0 6px 14px rgba(37, 99, 235, 0.25);
+}
+
+.sp-header-text h2 {
+    margin: 0;
+    font-size: 24px;
+    line-height: 1.25;
+    font-weight: 700;
+    color: #0f172a;
+}
+
+.sp-header-text p {
+    margin: 4px 0 0;
+    font-size: 14px;
+    color: #3f4f6b;
+}
+
+.sp-card-body {
+    padding: 24px 28px 28px;
+}
+
+
+/* Tabs lọc trạng thái */
+
+.sp-tabs {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    border-bottom: 1px solid #e2e8f0;
+    margin-bottom: 0;
+    padding: 0 24px;
+    background: #ffffff;
+}
+
+.sp-tab {
+    background: transparent;
+    border: none;
+    outline: none;
+    height: 52px;
+    padding: 0 18px;
+    font-family: inherit;
+    font-size: 13.5px;
+    font-weight: 500;
+    color: #64748b;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    position: relative;
+    transition: all 0.15s ease;
+    border-bottom: 2px solid transparent;
+    margin-bottom: -1px;
+}
+
+.sp-tab:hover {
+    color: #1e293b;
+}
+
+.sp-tab.is-active {
+    color: #2563eb;
+    font-weight: 600;
+    border-bottom: 2px solid #2563eb;
+}
+
+.sp-tab-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 20px;
+    height: 20px;
+    padding: 0 6px;
+    border-radius: 999px;
+    font-size: 11px;
+    font-weight: 600;
+    line-height: 1;
+}
+
+.sp-tab.is-active .sp-tab-badge {
+    background: #eff6ff;
+    color: #2563eb;
+}
+
+.sp-tab:not(.is-active) .sp-tab-badge {
+    background: #f1f5f9;
+    color: #64748b;
+}
+
+
+/* 4 Thẻ thống kê */
+
+.sp-stats-grid {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 16px;
+    margin-bottom: 24px;
+}
+
+.sp-stat-card {
+    border: 1px solid #eef2f6;
+    border-radius: 12px;
+    padding: 18px 20px;
+    background: #ffffff;
+    display: flex;
+    flex-direction: column;
+    transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.sp-stat-card:hover {
+    border-color: #e2e8f0;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.03);
+}
+
+.sp-stat-title {
+    font-size: 12px;
+    font-weight: 500;
+    color: #64748b;
+    margin-bottom: 6px;
+}
+
+.sp-stat-value {
+    font-size: 28px;
+    font-weight: 700;
+    line-height: 1.2;
+    margin-bottom: 4px;
+}
+
+.sp-stat-value.blue {
+    color: #2563eb;
+}
+
+.sp-stat-value.green {
+    color: #16a34a;
+}
+
+.sp-stat-value.orange {
+    color: #ea580c;
+}
+
+.sp-stat-value.purple {
+    color: #7c3aed;
+}
+
+.sp-stat-desc {
+    font-size: 11.5px;
+    color: #94a3b8;
+}
+
+
+/* Danh sách Section Header */
+
+.sp-section-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 16px;
+    flex-wrap: wrap;
+    gap: 14px;
+}
+
+.sp-section-head-left h3 {
+    margin: 0 0 3px 0;
+    font-size: 15px;
+    font-weight: 700;
+    color: #0f172a;
+}
+
+.sp-section-head-left p {
+    margin: 0;
+    font-size: 12.5px;
+    color: #64748b;
+}
+
+.sp-toolbar {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+.sp-btn-secondary {
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    background: #ffffff;
+    color: #334155;
+    font-family: inherit;
+    font-size: 13px;
+    font-weight: 500;
+    padding: 8px 14px;
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    cursor: pointer;
+    transition: all 0.15s ease;
+    white-space: nowrap;
+}
+
+.sp-btn-secondary:hover:not(:disabled) {
+    background: #f8fafc;
+    border-color: #cbd5e1;
+    color: #0f172a;
+}
+
+.sp-btn-secondary:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.sp-btn-primary {
+    border: none;
+    border-radius: 8px;
+    background: #2563eb;
+    color: #ffffff;
+    font-family: inherit;
+    font-size: 13px;
+    font-weight: 600;
+    padding: 8px 16px;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    cursor: pointer;
+    transition: background 0.15s ease;
+    white-space: nowrap;
+}
+
+.sp-btn-primary:hover:not(:disabled) {
+    background: #1d4ed8;
+}
+
+.sp-btn-primary:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+
+/* Bộ lọc & Tìm kiếm */
+
+.sp-filter-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 16px;
+    flex-wrap: wrap;
+}
+
+.sp-search-box {
+    flex: 1;
+    min-width: 240px;
+    height: 38px;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    background: #ffffff;
+    display: flex;
+    align-items: center;
+    padding: 0 12px;
+    gap: 8px;
+    transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.sp-search-box:focus-within {
+    border-color: #2563eb;
+    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.08);
+}
+
+.sp-search-icon {
+    color: #94a3b8;
+    font-size: 14px;
+    flex-shrink: 0;
+}
+
+.sp-search-box input {
+    width: 100%;
+    border: none;
+    outline: none;
+    background: transparent;
+    font-family: inherit;
+    font-size: 13px;
+    color: #0f172a;
+}
+
+.sp-search-box input::placeholder {
+    color: #94a3b8;
+}
+
+.sp-select {
+    height: 38px;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    background: #ffffff;
+    color: #334155;
+    font-family: inherit;
+    font-size: 13px;
+    padding: 0 12px;
+    min-width: 150px;
+    outline: none;
+    cursor: pointer;
+    transition: border-color 0.15s ease;
+}
+
+.sp-select:focus {
+    border-color: #2563eb;
+    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.08);
+}
+
+.sp-btn-reload {
+    width: 38px;
+    height: 38px;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    background: #ffffff;
+    color: #64748b;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    flex-shrink: 0;
+    transition: all 0.15s ease;
+}
+
+.sp-btn-reload:hover:not(:disabled) {
+    background: #f8fafc;
+    color: #0f172a;
+    border-color: #cbd5e1;
+}
+
+.sp-btn-reload:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+
+/* Bảng Dữ Liệu */
+
+.sp-table-container {
+    width: 100%;
+    border: 1px solid #eef2f6;
+    border-radius: 10px;
+    overflow-x: auto;
+    margin-bottom: 16px;
+    background: #ffffff;
+}
+
+.sp-table {
+    width: 100%;
+    border-collapse: collapse;
+    text-align: left;
+}
+
+.sp-table th {
+    background: #f8fafc;
+    color: #64748b;
+    font-size: 12px;
+    font-weight: 600;
+    padding: 12px 18px;
+    border-bottom: 1px solid #eef2f6;
+    white-space: nowrap;
+}
+
+.sp-table td {
+    padding: 14px 18px;
+    border-bottom: 1px solid #f1f5f9;
+    font-size: 13px;
+    vertical-align: middle;
+}
+
+.sp-table tbody tr:last-child td {
+    border-bottom: none;
+}
+
+.sp-table tbody tr:hover {
+    background: #fafcff;
+}
+
+.sp-empty {
+    text-align: center;
+    padding: 36px 18px !important;
+    color: #94a3b8;
+    font-size: 13.5px;
+}
+
+
+/* Cột Sản phẩm: Mã đậm ở trên, Tên nhỏ ở dưới */
+
+.sp-product-info {
+    display: flex;
+    flex-direction: column;
+}
+
+.sp-product-code {
+    font-size: 13.5px;
+    font-weight: 700;
+    color: #0f172a;
+    line-height: 1.3;
+}
+
+.sp-product-name {
+    font-size: 12.5px;
+    color: #64748b;
+    margin-top: 2px;
+}
+
+
+/* Cột Nhóm sản phẩm: Badge con nhộng xám */
+
+.sp-group-badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 4px 12px;
+    border-radius: 999px;
+    background: #f1f5f9;
+    color: #334155;
+    font-size: 12px;
+    font-weight: 500;
+    white-space: nowrap;
+}
+
+
+/* Cột Khối lượng, Đơn giá, Tiền tệ */
+
+.sp-weight-text {
+    font-size: 13px;
+    font-weight: 500;
+    color: #334155;
+}
+
+.sp-price-text {
+    font-size: 13.5px;
+    font-weight: 700;
+    color: #2563eb;
+}
+
+.sp-currency-text {
+    font-size: 12.5px;
+    color: #64748b;
+}
+
+
+/* Cột Trạng thái - Badge viên thuốc */
+
+.sp-status-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 12px;
+    border-radius: 999px;
+    font-size: 12px;
+    font-weight: 500;
+    line-height: 1.2;
+    white-space: nowrap;
+}
+
+.sp-status-badge.active {
+    background: #f0fdf4;
+    color: #15803d;
+}
+
+.sp-status-badge.active .sp-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: #22c55e;
+}
+
+.sp-status-badge.inactive {
+    background: #fef2f2;
+    color: #b91c1c;
+}
+
+.sp-status-badge.inactive .sp-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: #ef4444;
+}
+
+
+/* Cột Thao tác */
+
+.sp-action-group {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    justify-content: center;
+}
+
+.sp-action-btn {
+    width: 32px;
+    height: 32px;
+    border: 1px solid #e2e8f0;
+    border-radius: 6px;
+    background: #ffffff;
+    color: #64748b;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    padding: 0;
+    transition: all 0.15s ease;
+    font-size: 13px;
+}
+
+.sp-action-btn:hover:not(:disabled) {
+    border-color: #cbd5e1;
+    background: #f8fafc;
+    color: #0f172a;
+}
+
+.sp-action-btn.danger {
+    border-color: #fecaca;
+    color: #ef4444;
+}
+
+.sp-action-btn.danger:hover:not(:disabled) {
+    border-color: #fca5a5;
+    background: #fef2f2;
+    color: #dc2626;
+}
+
+.sp-action-btn:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+}
+
+
+/* Phân trang (Pagination) */
+
+.sp-pagination {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-top: 4px;
+    font-size: 12.5px;
+    color: #64748b;
+    flex-wrap: wrap;
+    gap: 12px;
+}
+
+.sp-pagination-text {
+    color: #64748b;
+    font-size: 12.5px;
+}
+
+.sp-page-nav {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.sp-page-btn {
+    border: 1px solid #e2e8f0;
+    border-radius: 6px;
+    background: #ffffff;
+    color: #334155;
+    font-family: inherit;
+    font-size: 12.5px;
+    padding: 4px 12px;
+    cursor: pointer;
+    transition: all 0.15s ease;
+}
+
+.sp-page-btn:hover:not(:disabled) {
+    background: #f8fafc;
+    border-color: #cbd5e1;
+}
+
+.sp-page-btn:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+}
+
+.sp-page-info {
+    font-size: 12.5px;
+    color: #334155;
+    font-weight: 500;
+    padding: 0 4px;
+}
+
+
+/* Toast Thông Báo */
+
+.sp-toast-wrap {
+    margin-bottom: 16px;
+}
+
+.sp-toast {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 16px;
+    border-radius: 8px;
+    font-size: 13px;
+}
+
+.sp-toast-success {
+    background: #f0fdf4;
+    border: 1px solid #bbf7d0;
+    color: #166534;
+}
+
+.sp-toast-error {
+    background: #fef2f2;
+    border: 1px solid #fecaca;
+    color: #991b1b;
+}
+
+.sp-toast-icon {
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    display: grid;
+    place-items: center;
+    font-weight: 700;
+    font-size: 12px;
+    flex-shrink: 0;
+}
+
+.sp-toast-success .sp-toast-icon {
+    background: #dcfce7;
+    color: #16a34a;
+}
+
+.sp-toast-error .sp-toast-icon {
+    background: #fee2e2;
+    color: #dc2626;
+}
+
+.sp-toast-content {
+    flex: 1;
+}
+
+.sp-toast-content strong {
+    display: block;
+    font-size: 13px;
+    font-weight: 600;
+    margin-bottom: 2px;
+}
+
+.sp-toast-content p {
+    margin: 0;
+    font-size: 12.5px;
+}
+
+.sp-toast-close {
+    background: none;
+    border: none;
+    font-size: 16px;
+    line-height: 1;
+    cursor: pointer;
+    color: inherit;
+    opacity: 0.7;
+}
+
+.sp-toast-close:hover {
+    opacity: 1;
+}
+
+
+/* Modal Dialog */
+
+.sp-dialog {
+    border: none;
+    border-radius: 16px;
+    padding: 0;
+    width: min(580px, 94vw);
+    background: #ffffff;
+    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
+    color: #0f172a;
+}
+
+.sp-dialog::backdrop {
+    background: rgba(15, 23, 42, 0.45);
+    backdrop-filter: blur(2px);
+}
+
+.sp-dialog-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    padding: 20px 24px;
+    background: #e6eefc;
+    border-bottom: 1px solid #d0def6;
+}
+
+.sp-dialog-header h2 {
+    margin: 0 0 2px 0;
+    font-size: 18px;
+    font-weight: 700;
+    color: #0f172a;
+}
+
+.sp-dialog-header p {
+    margin: 0;
+    font-size: 12.5px;
+    color: #64748b;
+}
+
+.sp-dialog-header button {
+    width: 36px;
+    height: 36px;
+    flex-shrink: 0;
+    border: 1px solid #d0def6;
+    border-radius: 10px;
+    background: #ffffff;
+    color: #475569;
+    display: grid;
+    place-items: center;
+    cursor: pointer;
+    font-size: 13px;
+}
+
+.sp-dialog-header button:hover {
+    background: #f8fafc;
+    color: #0f172a;
+}
+
+.sp-form-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 16px;
+    padding: 24px;
+    max-height: 65vh;
+    overflow-y: auto;
+}
+
+.sp-form-grid label {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    font-size: 13px;
+    font-weight: 600;
+    color: #334155;
+}
+
+.sp-form-grid label.sp-full {
+    grid-column: span 2;
+}
+
+.sp-label-text {
+    display: inline-flex;
+    align-items: baseline;
+    gap: 3px;
+}
+
+.sp-label-text i {
+    font-style: normal;
+    color: #dc2626;
+    font-weight: 700;
+}
+
+.sp-form-grid input,
+.sp-form-grid select {
+    width: 100%;
+    height: 42px;
+    border: 1px solid #d5dce8;
+    border-radius: 10px;
+    padding: 0 12px;
+    font-family: inherit;
+    font-size: 14px;
+    color: #0f172a;
+    background: #ffffff;
+    outline: none;
+}
+
+.sp-form-grid input:read-only,
+.sp-form-grid input:disabled,
+.sp-form-grid select:disabled {
+    background: #f8fafc;
+    color: #475569;
+    cursor: default;
+}
+
+.sp-form-grid input:focus,
+.sp-form-grid select:focus {
+    border-color: #2563eb;
+    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.08);
+}
+
+.sp-dialog-footer {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 10px;
+    padding: 16px 24px;
+    border-top: 1px solid #edf2f7;
+    background: #f8fafc;
+    border-bottom-left-radius: 16px;
+    border-bottom-right-radius: 16px;
+}
+
+.sp-dialog-footer button {
+    border: 1px solid #e2e8f0;
+    border-radius: 10px;
+    background: #ffffff;
+    color: #334155;
+    font-family: inherit;
+    font-size: 14px;
+    font-weight: 600;
+    height: 42px;
+    padding: 0 20px;
+    cursor: pointer;
+}
+
+.sp-dialog-footer button:hover:not(:disabled) {
+    background: #f8fafc;
+}
+
+.sp-dialog-footer button:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+.sp-dialog-footer button.sp-primary {
+    background: #2563eb;
+    border-color: #2563eb;
+    color: #ffffff;
+    font-weight: 600;
+}
+
+.sp-dialog-footer button.sp-primary:hover:not(:disabled) {
+    background: #1d4ed8;
+}
+
+.sp-dialog-footer button.sp-danger {
+    background: #dc2626;
+    border-color: #dc2626;
+    color: #ffffff;
+    font-weight: 600;
+}
+
+.sp-dialog-footer button.sp-danger:hover:not(:disabled) {
+    background: #b91c1c;
+}
+
+.sp-error {
+    margin: 12px 24px 0;
+    padding: 10px 14px;
+    border: 1px solid #fecaca;
+    border-radius: 8px;
+    background: #fef2f2;
+    color: #991b1b;
+    font-size: 12.5px;
+}
+
+
+/* Form error (cùng phong cách với hộp xác nhận) */
+
+.sp-form-error {
+    margin: 0 24px 16px;
+}
+
+
+/* Delete confirm dialog */
+
+.sp-dialog.sp-dialog-confirm {
+    width: min(400px, 94vw);
+    border-radius: 20px;
+}
+
+.sp-confirm-body {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    padding: 32px 24px 20px;
+}
+
+.sp-confirm-icon {
+    width: 56px;
+    height: 56px;
+    border-radius: 50%;
+    display: grid;
+    place-items: center;
+    background: #fff1f2;
+    color: #dc2626;
+    font-size: 24px;
+    margin-bottom: 16px;
+}
+
+.sp-confirm-body h2 {
+    margin: 0 0 12px;
+    font-size: 20px;
+    font-weight: 700;
+    color: #0f172a;
+}
+
+.sp-confirm-name {
+    max-width: 100%;
+    padding: 7px 14px;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    background: #f8fafc;
+    color: #0f172a;
+    font-size: 14px;
+    font-weight: 600;
+    overflow-wrap: anywhere;
+}
+
+.sp-confirm-text {
+    margin: 12px 0 0;
+    font-size: 13.5px;
+    color: #64748b;
+}
+
+.sp-confirm-body .sp-error {
+    width: 100%;
+    margin: 14px 0 0;
+    text-align: left;
+}
+
+.sp-confirm-actions {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    padding: 0 24px 24px;
+}
+
+.sp-confirm-actions button {
+    height: 44px;
+    border-radius: 10px;
+    border: 1px solid #d5dce8;
+    background: #ffffff;
+    color: #334155;
+    font-family: inherit;
+    font-size: 14px;
+    font-weight: 600;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    cursor: pointer;
+}
+
+.sp-confirm-actions button:hover:not(:disabled) {
+    background: #f8fafc;
+}
+
+.sp-confirm-actions button.sp-danger {
+    background: #dc2626;
+    border-color: #dc2626;
+    color: #ffffff;
+}
+
+.sp-confirm-actions button.sp-danger:hover:not(:disabled) {
+    background: #b91c1c;
+    border-color: #b91c1c;
+}
+
+.sp-confirm-actions button:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+@media (max-width: 720px) {
+    .sp-stats-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+    .sp-form-grid {
+        grid-template-columns: 1fr;
+    }
+    .sp-form-grid label.sp-full {
+        grid-column: auto;
+    }
+    .sp-page-header,
+    .sp-card-body {
+        padding-left: 18px;
+        padding-right: 18px;
+    }
+}

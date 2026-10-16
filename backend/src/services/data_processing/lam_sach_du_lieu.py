@@ -1,15 +1,13 @@
 ### backend/src/services/data_processing/lam_sach_du_lieu.py
-from datetime import datetime
 from decimal import Decimal
-from zoneinfo import ZoneInfo
 
 import pandas as pd
-from sqlalchemy import select, tuple_
+from pydantic import ValidationError
 from sqlalchemy.orm import Session
 
-from src.models.ke_hoach_san_xuat_model import KeHoachSanXuat
-from src.models.lich_su_tieu_thu_model import LichSuTieuThu
-from src.models.san_pham_model import SanPham
+from src.schemas.du_lieu_ban_hang_schema import (
+    DuLieuBanHangCreateRequest,
+)
 from src.services.data_processing.kiem_tra_du_lieu import (
     is_empty,
     to_boolean,
@@ -18,233 +16,412 @@ from src.services.data_processing.kiem_tra_du_lieu import (
     to_integer,
     to_string,
 )
+from src.services.data_processing.template_validator import (
+    validate_columns,
+)
 
 
 def lam_sach_don_hang(
     dataframe: pd.DataFrame,
     db: Session,
 ) -> pd.DataFrame:
+    validate_columns(
+        dataframe=dataframe,
+        required_columns={
+            "ma_don_hang",
+            "ma_san_pham",
+            "ngay_ban",
+            "so_luong",
+            "trang_thai_don_hang",
+        },
+        optional_columns={
+            "gia_goc",
+            "muc_giam_gia",
+            "gia_ban_sau_giam",
+            "co_khuyen_mai",
+            "chuong_trinh_km",
+            "ma_ctkm",
+            "kenh_ban_hang",
+            "ma_ngay_le",
+        },
+    )
+
+    mapping = {
+        "CHO_GIAO_HANG": "CHO_GIAO_HANG",
+        "CHỜ_GIAO_HÀNG": "CHO_GIAO_HANG",
+        "CHỜ_GIAO_HANG": "CHO_GIAO_HANG",
+        "DA_GIAO_HANG": "DA_GIAO_HANG",
+        "ĐÃ_GIAO_HÀNG": "DA_GIAO_HANG",
+        "ĐÃ_GIAO_HANG": "DA_GIAO_HANG",
+    }
+
     rows = []
     seen = set()
 
     for _, source in dataframe.iterrows():
-        row_number = int(source["_row_number"])
+        number = int(source["_row_number"])
 
-        ma_don_hang = to_string(
-            source["ma_don_hang"],
-            "ma_don_hang",
-            row_number,
-        )
-        ma_san_pham = to_string(
-            source["ma_san_pham"],
-            "ma_san_pham",
-            row_number,
-        )
-
-        key = (ma_don_hang, ma_san_pham)
-        if key in seen:
-            raise ValueError(
-                f"Dòng {row_number}: đơn {ma_don_hang}, "
-                f"sản phẩm {ma_san_pham} bị lặp trong file."
-            )
-        seen.add(key)
-
-        status = to_string(
+        raw_status = to_string(
             source["trang_thai_don_hang"],
             "trang_thai_don_hang",
-            row_number,
+            number,
         )
-        status = status.upper().replace(" ", "_")
 
-        if status in {"ĐÃ_GIAO_HÀNG", "ĐÃ_GIAO_HANG"}:
-            status = "DA_GIAO_HANG"
-        elif status in {"CHỜ_GIAO_HÀNG", "CHỜ_GIAO_HANG"}:
-            status = "CHO_GIAO_HANG"
+        normalized = "_".join(raw_status.upper().split())
+        order_status = mapping.get(normalized)
 
-        if status not in {"DA_GIAO_HANG", "CHO_GIAO_HANG"}:
+        if order_status is None:
             raise ValueError(
-                f"Dòng {row_number}: trạng thái đơn hàng không hợp lệ."
+                f"Dòng {number}: trạng thái đơn không hợp lệ."
             )
 
-        ngay = to_date(
-            source["ngay_don_hang"],
-            "ngay_don_hang",
-            row_number,
-        )
+        raw_discount = source.get("muc_giam_gia")
 
-        hom_nay = datetime.now(
-            ZoneInfo("Asia/Ho_Chi_Minh")
-        ).date()
-
-        if status == "DA_GIAO_HANG" and ngay > hom_nay:
-            raise ValueError(
-                f"Dòng {row_number}: đơn đã giao "
-                "không thể có ngày tương lai."
-            )
-
-        so_luong = to_integer(
-            source["so_luong"],
-            "so_luong",
-            row_number,
-        )
-        if so_luong <= 0:
-            raise ValueError(
-                f"Dòng {row_number}: so_luong phải lớn hơn 0."
-            )
-
-        cleaned = source.to_dict()
-        cleaned.update(
-            ma_don_hang=ma_don_hang,
-            ma_san_pham=ma_san_pham,
-            ngay_don_hang=ngay,
-            so_luong=so_luong,
-            trang_thai_don_hang=status,
-        )
-
-        if status == "DA_GIAO_HANG":
-            gia_goc = to_decimal(
-                source.get("gia_goc"),
-                "gia_goc",
-                row_number,
-                required=False,
-            )
-            gia_sau_giam = to_decimal(
-                source.get("gia_ban_sau_giam"),
-                "gia_ban_sau_giam",
-                row_number,
+        if (
+            isinstance(raw_discount, str)
+            and raw_discount.strip().endswith("%")
+        ):
+            discount = to_decimal(
+                raw_discount.strip()[:-1],
+                "muc_giam_gia",
+                number,
+            ) / Decimal("100")
+        else:
+            discount = to_decimal(
+                raw_discount,
+                "muc_giam_gia",
+                number,
                 required=False,
             )
 
-            raw_discount = source.get("muc_giam_gia")
-            if (
-                isinstance(raw_discount, str)
-                and raw_discount.strip().endswith("%")
-            ):
-                muc_giam = (
-                    to_decimal(
-                        raw_discount.strip()[:-1],
-                        "muc_giam_gia",
-                        row_number,
-                    )
-                    / 100
-                )
-            else:
-                muc_giam = to_decimal(
-                    raw_discount,
-                    "muc_giam_gia",
-                    row_number,
+        if discount is None:
+            discount = Decimal("0")
+
+        campaign = to_string(
+            source.get("chuong_trinh_km"),
+            "chuong_trinh_km",
+            number,
+            required=False,
+        )
+
+        campaign_code = to_string(
+            source.get("ma_ctkm"),
+            "ma_ctkm",
+            number,
+            required=False,
+        )
+
+        raw_promotion = source.get("co_khuyen_mai")
+
+        promotion = (
+            discount > 0
+            or campaign is not None
+            or campaign_code is not None
+        ) if is_empty(raw_promotion) else to_boolean(
+            raw_promotion,
+            "co_khuyen_mai",
+            number,
+        )
+
+
+        try:
+            payload = DuLieuBanHangCreateRequest(
+                ma_don_hang=to_string(
+                    source["ma_don_hang"],
+                    "ma_don_hang",
+                    number,
+                ),
+                ma_san_pham=to_string(
+                    source["ma_san_pham"],
+                    "ma_san_pham",
+                    number,
+                ),
+                ngay_ban=to_date(
+                    source["ngay_ban"],
+                    "ngay_ban",
+                    number,
+                ),
+                ngay_giao_hang=None,
+                so_luong=to_integer(
+                    source["so_luong"],
+                    "so_luong",
+                    number,
+                ),
+                trang_thai_don_hang=order_status,
+                gia_goc=to_decimal(
+                    source.get("gia_goc"),
+                    "gia_goc",
+                    number,
                     required=False,
-                )
-
-            if muc_giam is None:
-                muc_giam = Decimal("0")
-
-            if not Decimal("0") <= muc_giam <= Decimal("1"):
-                raise ValueError(
-                    f"Dòng {row_number}: muc_giam_gia "
-                    "phải từ 0 đến 1."
-                )
-
-            if (
-                (gia_goc is not None and gia_goc < 0)
-                or (
-                    gia_sau_giam is not None
-                    and gia_sau_giam < 0
-                )
-            ):
-                raise ValueError(
-                    f"Dòng {row_number}: giá không được âm."
-                )
-
-            if gia_goc is not None and gia_sau_giam is not None:
-                gia_ky_vong = (
-                    gia_goc * (1 - muc_giam)
-                ).quantize(Decimal("0.01"))
-
-                if abs(gia_sau_giam - gia_ky_vong) > Decimal("0.01"):
-                    raise ValueError(
-                        f"Dòng {row_number}: gia_ban_sau_giam "
-                        "không khớp giá gốc và mức giảm."
-                    )
-
-            raw_promo = source.get("co_khuyen_mai")
-            co_khuyen_mai = (
-                False
-                if is_empty(raw_promo)
-                else to_boolean(
-                    raw_promo,
-                    "co_khuyen_mai",
-                    row_number,
-                )
+                ),
+                muc_giam_gia=discount,
+                gia_ban_sau_giam=to_decimal(
+                    source.get("gia_ban_sau_giam"),
+                    "gia_ban_sau_giam",
+                    number,
+                    required=False,
+                ),
+                co_khuyen_mai=promotion,
+                chuong_trinh_km=campaign,
+                ma_ctkm=campaign_code,
+                kenh_ban_hang=to_string(
+                    source.get("kenh_ban_hang"),
+                    "kenh_ban_hang",
+                    number,
+                    required=False,
+                ),
+                ma_ngay_le=to_string(
+                    source.get("ma_ngay_le"),
+                    "ma_ngay_le",
+                    number,
+                    required=False,
+                ),
             )
 
-            if muc_giam > 0 and not co_khuyen_mai:
-                raise ValueError(
-                    f"Dòng {row_number}: có giảm giá nhưng "
-                    "co_khuyen_mai là FALSE."
-                )
-
-            cleaned.update(
-                gia_goc=gia_goc,
-                muc_giam_gia=muc_giam,
-                gia_ban_sau_giam=gia_sau_giam,
-                co_khuyen_mai=co_khuyen_mai,
-            )
-
-        rows.append(cleaned)
-
-    keys = [
-        (row["ma_don_hang"], row["ma_san_pham"])
-        for row in rows
-    ]
-    product_ids = {
-        row["ma_san_pham"]
-        for row in rows
-    }
-
-    existing_products = set(
-        db.execute(
-            select(SanPham.ma_san_pham).where(
-                SanPham.ma_san_pham.in_(product_ids)
-            )
-        ).scalars()
-    )
-
-    missing_products = product_ids - existing_products
-    if missing_products:
-        raise ValueError(
-            "Mã sản phẩm không tồn tại: "
-            + ", ".join(sorted(missing_products))
-            + "."
-        )
-
-    # Kiểm tra ở CẢ HAI bảng, tránh cùng một đơn tồn tại
-    # một lần dưới dạng đã giao và một lần dưới dạng chờ.
-    for model in (LichSuTieuThu, KeHoachSanXuat):
-        existing_orders = set(
-            db.execute(
-                select(
-                    model.ma_don_hang,
-                    model.ma_san_pham,
-                ).where(
-                    tuple_(
-                        model.ma_don_hang,
-                        model.ma_san_pham,
-                    ).in_(keys)
-                )
-            ).all()
-        )
-
-        if existing_orders:
-            order_id, product_id = sorted(
-                existing_orders
-            )[0]
+        except ValidationError as exc:
             raise ValueError(
-                f"Đơn {order_id}, sản phẩm {product_id} "
-                "đã có trong cơ sở dữ liệu."
+                f"Dòng {number}: "
+                + "; ".join(
+                    item["msg"]
+                    for item in exc.errors()
+                )
+            ) from exc
+
+        key = (
+            payload.ma_don_hang,
+            payload.ma_san_pham,
+        )
+
+        if key in seen:
+            raise ValueError(
+                f"Dòng {number}: đơn {key[0]}, "
+                f"sản phẩm {key[1]} bị lặp trong file."
             )
 
-    return pd.DataFrame(
-        rows,
-        columns=dataframe.columns,
+        seen.add(key)
+
+        values = payload.model_dump()
+        values["_row_number"] = number
+        rows.append(values)
+
+    return pd.DataFrame(rows, dtype=object)
+
+
+# =====================================================
+# LÀM SẠCH CHƯƠNG TRÌNH KHUYẾN MÃI
+# =====================================================
+
+CTKM_COLUMNS = [
+    "ma_ctkm",
+    "ma_ctkm_goc",
+    "ten_ctkm",
+    "ngay_bat_dau",
+    "ngay_ket_thuc",
+    "so_luong_dat_quy_dinh",
+    "hinh_thuc_uu_dai",
+    "muc_giam_phan_tram",
+    "ma_san_pham_ap_dung",
+    "trang_thai",
+]
+
+CTKM_STATUSES = {
+    "SAP_DIEN_RA",
+    "DANG_DIEN_RA",
+    "KET_THUC",
+    "HUY",
+}
+
+
+def _ctkm_text(
+    source,
+    column: str,
+    row_number: int,
+    max_length: int,
+    required: bool = True,
+):
+    value = to_string(
+        source.get(column),
+        column,
+        row_number,
+        required=required,
     )
+
+    if value is not None and len(value) > max_length:
+        raise ValueError(
+            f"Dòng {row_number}: cột '{column}' "
+            f"vượt quá {max_length} ký tự."
+        )
+
+    return value
+
+
+def _ctkm_products(
+    value,
+    row_number: int,
+) -> set[str]:
+    raw = to_string(
+        value,
+        "ma_san_pham_ap_dung",
+        row_number,
+    )
+
+    codes = [code.strip() for code in raw.split(",")]
+
+    if any(not code for code in codes):
+        raise ValueError(
+            f"Dòng {row_number}: danh sách sản phẩm "
+            "có mã trống hoặc dấu phẩy thừa."
+        )
+
+    if any(len(code) > 20 for code in codes):
+        raise ValueError(
+            f"Dòng {row_number}: mã sản phẩm "
+            "vượt quá 20 ký tự."
+        )
+
+    if len(codes) != len(set(codes)):
+        raise ValueError(
+            f"Dòng {row_number}: mã sản phẩm "
+            "bị lặp trong danh sách áp dụng."
+        )
+
+    return set(codes)
+
+
+def lam_sach_ctkm(
+    dataframe: pd.DataFrame,
+) -> list[dict]:
+    validate_columns(
+        dataframe=dataframe,
+        required_columns=set(CTKM_COLUMNS),
+    )
+
+    actual_columns = [
+        column
+        for column in dataframe.columns
+        if column != "_row_number"
+    ]
+
+    if actual_columns != CTKM_COLUMNS:
+        raise ValueError(
+            "File CTKM sai thứ tự cột. "
+            "Thứ tự đúng: "
+            + ", ".join(CTKM_COLUMNS)
+        )
+
+    cleaned = []
+    seen = set()
+
+    for _, source in dataframe.iterrows():
+        number = int(source["_row_number"])
+
+        code = _ctkm_text(
+            source, "ma_ctkm", number, 30
+        )
+
+        if code in seen:
+            raise ValueError(
+                f"Dòng {number}: mã CTKM {code} "
+                "bị lặp trong file."
+            )
+
+        seen.add(code)
+
+        start = to_date(
+            source["ngay_bat_dau"],
+            "ngay_bat_dau",
+            number,
+        )
+
+        end = to_date(
+            source["ngay_ket_thuc"],
+            "ngay_ket_thuc",
+            number,
+        )
+
+        if end < start:
+            raise ValueError(
+                f"Dòng {number}: ngày kết thúc "
+                "trước ngày bắt đầu."
+            )
+
+        quantity = to_integer(
+            source["so_luong_dat_quy_dinh"],
+            "so_luong_dat_quy_dinh",
+            number,
+        )
+
+        if quantity <= 0:
+            raise ValueError(
+                f"Dòng {number}: số lượng đặt "
+                "quy định phải lớn hơn 0."
+            )
+
+        method = _ctkm_text(
+            source, "hinh_thuc_uu_dai", number, 30
+        ).upper()
+
+        if method != "GIAM_PHAN_TRAM":
+            raise ValueError(
+                f"Dòng {number}: chỉ hỗ trợ "
+                "GIAM_PHAN_TRAM."
+            )
+
+        discount = to_decimal(
+            source["muc_giam_phan_tram"],
+            "muc_giam_phan_tram",
+            number,
+        )
+
+        if not Decimal("0") < discount <= Decimal("100"):
+            raise ValueError(
+                f"Dòng {number}: mức giảm phải "
+                "lớn hơn 0 và không vượt quá 100%."
+            )
+
+        if discount != discount.quantize(
+            Decimal("0.01")
+        ):
+            raise ValueError(
+                f"Dòng {number}: mức giảm chỉ "
+                "được tối đa 2 chữ số thập phân."
+            )
+
+        status = _ctkm_text(
+            source, "trang_thai", number, 30
+        ).upper()
+
+        if status not in CTKM_STATUSES:
+            raise ValueError(
+                f"Dòng {number}: trạng thái "
+                f"CTKM '{status}' không hợp lệ."
+            )
+
+        products = _ctkm_products(
+            source["ma_san_pham_ap_dung"],
+            number,
+        )
+
+        cleaned.append({
+            "_row_number": number,
+            "ma_ctkm": code,
+            "ma_ctkm_goc": _ctkm_text(
+                source,
+                "ma_ctkm_goc",
+                number,
+                150,
+                required=False,
+            ),
+            "ten_ctkm": _ctkm_text(
+                source, "ten_ctkm", number, 200
+            ),
+            "ngay_bat_dau": start,
+            "ngay_ket_thuc": end,
+            "so_luong_dat_quy_dinh": quantity,
+            "hinh_thuc_uu_dai": method,
+            "muc_giam_phan_tram": discount,
+            "ma_san_pham_ap_dung": products,
+            "trang_thai": status,
+        })
+
+    return cleaned

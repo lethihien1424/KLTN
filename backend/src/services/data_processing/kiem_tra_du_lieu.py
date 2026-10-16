@@ -10,13 +10,13 @@ def is_empty(value) -> bool:
     if value is None:
         return True
 
-    try:
-        if pd.isna(value):
-            return True
-    except (TypeError, ValueError):
-        pass
+    if isinstance(value, str):
+        return not value.strip()
 
-    return isinstance(value, str) and not value.strip()
+    try:
+        return bool(pd.isna(value))
+    except (TypeError, ValueError):
+        return False
 
 
 def to_string(
@@ -28,7 +28,7 @@ def to_string(
     if is_empty(value):
         if required:
             raise ValueError(
-                f"Dòng {row_number}: cột '{column}' không được để trống."
+                f"Dòng {row_number}: '{column}' không được trống."
             )
         return None
 
@@ -44,7 +44,7 @@ def to_decimal(
     if is_empty(value):
         if required:
             raise ValueError(
-                f"Dòng {row_number}: cột '{column}' không được để trống."
+                f"Dòng {row_number}: '{column}' không được trống."
             )
         return None
 
@@ -55,8 +55,6 @@ def to_decimal(
         if isinstance(value, str):
             raw = value.strip()
 
-            # Chấp nhận 1234.50 hoặc 1,234.50.
-            # Không đoán định dạng như 1.234,50.
             pattern = (
                 r"[+-]?"
                 r"(?:\d+|\d{1,3}(?:,\d{3})+)"
@@ -64,7 +62,7 @@ def to_decimal(
             )
 
             if not re.fullmatch(pattern, raw):
-                raise ValueError("Định dạng số không hợp lệ.")
+                raise ValueError("Sai định dạng số.")
 
             value = raw.replace(",", "")
 
@@ -77,7 +75,7 @@ def to_decimal(
 
     except (InvalidOperation, ValueError, TypeError) as exc:
         raise ValueError(
-            f"Dòng {row_number}: cột '{column}' phải là số hợp lệ."
+            f"Dòng {row_number}: '{column}' phải là số hợp lệ."
         ) from exc
 
 
@@ -86,15 +84,11 @@ def to_integer(
     column: str,
     row_number: int,
 ) -> int:
-    result = to_decimal(
-        value=value,
-        column=column,
-        row_number=row_number,
-    )
+    result = to_decimal(value, column, row_number)
 
     if result != result.to_integral_value():
         raise ValueError(
-            f"Dòng {row_number}: cột '{column}' phải là số nguyên."
+            f"Dòng {row_number}: '{column}' phải là số nguyên."
         )
 
     return int(result)
@@ -107,10 +101,9 @@ def to_date(
 ) -> date:
     if is_empty(value):
         raise ValueError(
-            f"Dòng {row_number}: cột '{column}' không được để trống."
+            f"Dòng {row_number}: '{column}' không được trống."
         )
 
-    # Excel thường được pandas đọc thành date hoặc datetime.
     if isinstance(value, datetime):
         return value.date()
 
@@ -118,20 +111,22 @@ def to_date(
         return value
 
     if isinstance(value, str):
-        raw = value.strip()
-
-        for date_format in ("%d/%m/%Y", "%d-%m-%Y"):
+        for pattern in (
+            "%d/%m/%Y",
+            "%d-%m-%Y",
+            "%Y-%m-%d",
+        ):
             try:
                 return datetime.strptime(
-                    raw,
-                    date_format,
+                    value.strip(),
+                    pattern,
                 ).date()
             except ValueError:
                 continue
 
     raise ValueError(
-        f"Dòng {row_number}: cột '{column}' phải theo định dạng "
-        "DD/MM/YYYY hoặc DD-MM-YYYY."
+        f"Dòng {row_number}: '{column}' phải có định dạng "
+        "DD/MM/YYYY, DD-MM-YYYY hoặc YYYY-MM-DD."
     )
 
 
@@ -145,20 +140,23 @@ def to_boolean(
 
     if is_empty(value):
         raise ValueError(
-            f"Dòng {row_number}: cột '{column}' không được để trống."
+            f"Dòng {row_number}: '{column}' không được trống."
         )
 
     normalized = str(value).strip().lower()
 
-    if normalized in {"true", "1", "có", "co", "yes", "y"}:
+    if normalized in {
+        "true", "1", "1.0", "có", "co", "yes", "y",
+    }:
         return True
 
-    if normalized in {"false", "0", "không", "khong", "no", "n"}:
+    if normalized in {
+        "false", "0", "0.0", "không", "khong", "no", "n",
+    }:
         return False
 
     raise ValueError(
-        f"Dòng {row_number}: cột '{column}' "
-        "phải là TRUE/FALSE hoặc Có/Không."
+        f"Dòng {row_number}: '{column}' phải là TRUE/FALSE."
     )
 
 
@@ -169,11 +167,10 @@ def validate_choice(
     row_number: int,
 ) -> str:
     if value not in allowed_values:
-        choices = ", ".join(sorted(allowed_values))
-
         raise ValueError(
-            f"Dòng {row_number}: cột '{column}' không hợp lệ; "
-            f"chọn một trong {choices}."
+            f"Dòng {row_number}: '{column}' chỉ nhận "
+            + ", ".join(sorted(allowed_values))
+            + "."
         )
 
     return value

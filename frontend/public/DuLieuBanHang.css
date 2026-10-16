@@ -1,0 +1,512 @@
+/* D:\KLTN\KLTN\frontend\public\DuLieuBanHang.css*/
+
+
+/* D:\KLTN\KLTN\frontend\public\DuLieuBanHang.css*/
+
+.bh-page {
+    color: #172033;
+}
+
+.bh-card {
+    background: #fff;
+    border: 1px solid #e2e8f0;
+    border-radius: 20px;
+    box-shadow: 0 1px 3px rgba(15, 23, 42, 0.04);
+    overflow: hidden;
+}
+
+.bh-page-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px 24px;
+    flex-wrap: wrap;
+    padding: 22px 28px;
+    background: #e6eefc;
+    border-bottom: 1px solid #d0def6;
+}
+
+.bh-header-main {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    min-width: 0;
+}
+
+.bh-header-icon {
+    width: 48px;
+    height: 48px;
+    flex-shrink: 0;
+    display: grid;
+    place-items: center;
+    border-radius: 14px;
+    background: #2563eb;
+    color: #fff;
+    font-size: 22px;
+    box-shadow: 0 6px 14px rgba(37, 99, 235, 0.25);
+}
+
+.bh-header-text h2 {
+    margin: 0;
+    font-size: 24px;
+    line-height: 1.25;
+    font-weight: 700;
+    color: #0f172a;
+}
+
+.bh-header-text p {
+    margin: 4px 0 0;
+    font-size: 14px;
+    color: #3f4f6b;
+}
+
+.bh-section-head {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 14px 20px;
+    flex-wrap: wrap;
+    padding: 22px 20px 4px;
+}
+
+.bh-section-title h3 {
+    margin: 0 0 3px;
+    font-size: 16px;
+    font-weight: 700;
+    color: #0f172a;
+}
+
+.bh-section-title p {
+    margin: 0;
+    font-size: 13px;
+    color: #64748b;
+}
+
+.bh-toolbar {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+.bh-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    min-height: 38px;
+    padding: 8px 14px;
+    border: 1px solid #dce3ed;
+    border-radius: 8px;
+    background: #fff;
+    color: #334155;
+    font: inherit;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    white-space: nowrap;
+}
+
+.bh-btn:hover:not(:disabled) {
+    background: #f8fafc;
+    border-color: #94a3b8;
+}
+
+.bh-btn.bh-primary {
+    background: #2563eb;
+    color: #fff;
+    border-color: #2563eb;
+}
+
+.bh-btn.bh-primary:hover:not(:disabled) {
+    background: #1d4ed8;
+}
+
+.bh-btn:disabled {
+    opacity: 0.55;
+    cursor: not-allowed;
+}
+
+.bh-filters {
+    display: flex;
+    gap: 12px;
+    align-items: center;
+    flex-wrap: wrap;
+    padding: 16px 20px 18px;
+}
+
+.bh-filters input,
+.bh-filters select {
+    min-height: 40px;
+    padding: 9px 12px;
+    border: 1px solid #dce3ed;
+    border-radius: 8px;
+    background: #fff;
+    color: #334155;
+    font: inherit;
+    font-size: 14px;
+}
+
+.bh-filters input {
+    flex: 1;
+    min-width: 230px;
+}
+
+.bh-table-wrap {
+    max-width: 100%;
+    overflow: auto;
+}
+
+.bh-table {
+    width: 100%;
+    min-width: 1550px;
+    border-collapse: separate;
+    border-spacing: 0;
+    font-size: 14px;
+}
+
+.bh-table th,
+.bh-table td {
+    padding: 14px 16px;
+    text-align: left;
+    vertical-align: middle;
+    border-bottom: 1px solid #edf1f6;
+}
+
+.bh-table th {
+    background: #f8fafc;
+    color: #64748b;
+    font-size: 12px;
+    font-weight: 700;
+    white-space: nowrap;
+}
+
+.bh-table td {
+    background: #fff;
+}
+
+.bh-table tbody tr:hover td {
+    background: #f8fbff;
+}
+
+.bh-table td:nth-child(2) {
+    min-width: 240px;
+}
+
+.bh-table td:nth-child(7) {
+    min-width: 160px;
+    max-width: 240px;
+    overflow-wrap: anywhere;
+}
+
+.bh-table .bh-number {
+    text-align: right;
+    white-space: nowrap;
+    font-variant-numeric: tabular-nums;
+}
+
+.bh-amount {
+    color: #1d4ed8;
+    font-weight: 700;
+}
+
+.bh-muted {
+    color: #8792a2;
+    font-size: 12px;
+    margin-top: 4px;
+}
+
+.bh-status {
+    display: inline-flex;
+    padding: 5px 10px;
+    border-radius: 999px;
+    font-size: 12px;
+    font-weight: 600;
+    white-space: nowrap;
+}
+
+.bh-status.pending {
+    background: #fff4df;
+    color: #b77912;
+}
+
+.bh-status.delivered {
+    background: #e8f7ef;
+    color: #15804a;
+}
+
+.bh-table .bh-action-cell {
+    position: sticky;
+    right: 0;
+    min-width: 108px;
+    z-index: 1;
+    box-shadow: -4px 0 10px rgba(15, 23, 42, 0.04);
+}
+
+.bh-table th.bh-action-cell {
+    background: #f8fafc;
+}
+
+.bh-actions {
+    display: flex;
+    gap: 8px;
+}
+
+.bh-icon-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 34px;
+    height: 34px;
+    border: 1px solid #dbe5f3;
+    border-radius: 8px;
+    color: #2563eb;
+    background: #eff6ff;
+    cursor: pointer;
+    font-size: 16px;
+}
+
+.bh-icon-btn:hover {
+    background: #dbeafe;
+}
+
+.bh-icon-btn.edit {
+    background: #fff7ed;
+    color: #c26a15;
+    border-color: #fed7aa;
+}
+
+.bh-icon-btn.locked,
+.bh-icon-btn.locked:hover {
+    background: #f1f5f9;
+    color: #94a3b8;
+    border-color: #e2e8f0;
+    cursor: not-allowed;
+}
+
+.bh-icon-btn.edit:hover {
+    background: #ffedd5;
+}
+
+.bh-empty {
+    padding: 36px !important;
+    text-align: center !important;
+    color: #94a3b8;
+}
+
+.bh-alert {
+    margin: 14px 20px;
+    padding: 12px 14px;
+    border: 1px solid;
+    border-radius: 8px;
+    font-size: 14px;
+    line-height: 1.5;
+}
+
+.bh-alert.error {
+    background: #fff1f2;
+    color: #b42335;
+    border-color: #fecdd3;
+}
+
+.bh-alert.success {
+    background: #ecfdf5;
+    color: #15804a;
+    border-color: #bbf7d0;
+}
+
+.bh-alert .bh-btn {
+    margin-left: 10px;
+}
+
+.bh-pagination {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 16px;
+    padding: 18px 20px;
+    color: #64748b;
+    font-size: 14px;
+    flex-wrap: wrap;
+}
+
+.bh-pagination>div {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.bh-dialog {
+    width: min(780px, calc(100vw - 32px));
+    max-height: 90vh;
+    padding: 0;
+    border: none;
+    border-radius: 20px;
+    color: #172033;
+    background: #fff;
+    overflow: auto;
+    box-shadow: 0 24px 80px rgba(15, 23, 42, 0.25);
+}
+
+.bh-dialog::backdrop {
+    background: rgba(15, 23, 42, 0.45);
+}
+
+.bh-dialog-head {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 16px;
+    align-items: center;
+    padding: 20px 26px;
+    background: #e6eefc;
+    border-bottom: 1px solid #d0def6;
+}
+
+.bh-dialog-head h2 {
+    margin: 0;
+    font-size: 21px;
+    font-weight: 700;
+}
+
+.bh-dialog-head p {
+    margin: 4px 0 0;
+    color: #3f4f6b;
+    font-size: 13px;
+}
+
+.bh-close {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+    flex-shrink: 0;
+    border: 1px solid #d0def6;
+    border-radius: 10px;
+    color: #475569;
+    background: #fff;
+    cursor: pointer;
+}
+
+.bh-close:hover {
+    background: #f8fafc;
+}
+
+.bh-dialog-body {
+    padding: 24px 26px;
+}
+
+.bh-fieldset {
+    margin: 0;
+    padding: 0;
+    border: none;
+    min-width: 0;
+}
+
+.bh-form-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 20px;
+}
+
+.bh-field {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    min-width: 0;
+}
+
+.bh-field>span {
+    display: inline-flex;
+    align-items: baseline;
+    gap: 3px;
+    font-size: 14px;
+    font-weight: 600;
+    color: #475569;
+}
+
+.bh-field>span i {
+    font-style: normal;
+    font-weight: 700;
+    color: #dc2626;
+}
+
+.bh-field input,
+.bh-field select {
+    box-sizing: border-box;
+    width: 100%;
+    min-height: 43px;
+    padding: 10px 12px;
+    border: 1px solid #dce3ed;
+    border-radius: 8px;
+    outline: none;
+    background: #fff;
+    color: #172033;
+    font: inherit;
+    font-size: 14px;
+}
+
+.bh-field input:focus,
+.bh-field select:focus,
+.bh-filters input:focus,
+.bh-filters select:focus {
+    border-color: #60a5fa;
+    outline: 3px solid rgba(59, 130, 246, 0.1);
+}
+
+.bh-field input[readonly],
+.bh-field input:disabled,
+.bh-field select:disabled {
+    background: #f8fafc;
+    color: #475569;
+    opacity: 1;
+}
+
+.bh-field .bh-total {
+    font-weight: 700;
+    color: #1d4ed8;
+    background: #eff6ff;
+}
+
+.bh-field small {
+    color: #94a3b8;
+    font-size: 12px;
+}
+
+.bh-dialog-body .bh-alert {
+    margin: 18px 0 0;
+}
+
+.bh-dialog-foot {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+    padding: 18px 26px;
+    border-top: 1px solid #edf1f6;
+    background: #fafbfd;
+}
+
+@media (max-width: 640px) {
+    .bh-form-grid {
+        grid-template-columns: 1fr;
+        gap: 16px;
+    }
+    .bh-page-header {
+        padding: 18px;
+    }
+    .bh-dialog-head,
+    .bh-dialog-body,
+    .bh-dialog-foot {
+        padding-left: 18px;
+        padding-right: 18px;
+    }
+    .bh-toolbar {
+        width: 100%;
+    }
+    .bh-filters input,
+    .bh-filters select {
+        width: 100%;
+        min-width: 0;
+    }
+}

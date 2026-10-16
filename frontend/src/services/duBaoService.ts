@@ -1,7 +1,25 @@
 /// D:\KLTN\KLTN\frontend\src\services\duBaoService.ts
+/// D:\KLTN\KLTN\frontend\src\services\duBaoService.ts
 import { getToken } from "./authService";
 
-export type SoTuanDuBao = 4 | 8;
+export type SoTuanDuBao = 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8;
+
+export interface SanPhamDuBao {
+  ma: string;
+  ten: string;
+}
+
+export type LoaiKyTruoc =
+  | "THUC_TE_TUAN_TRUOC"
+  | "THUC_TE_GAN_NHAT"
+  | "DU_BAO_TUAN_TRUOC"
+  | "CHUA_CO_DU_LIEU";
+
+export interface YeuToDuBao {
+  ten: string;
+  so_luong: number;
+  dien_giai: string;
+}
 
 export interface ChiTietDuBao {
   tu_ngay: string;
@@ -9,11 +27,35 @@ export interface ChiTietDuBao {
   so_luong_du_bao: number;
   can_duoi: number;
   can_tren: number;
+  ky_truoc?: number | null;
+  loai_ky_truoc?: LoaiKyTruoc;
+  ky_truoc_tu_ngay?: string | null;
+  chenh_lech?: number | null;
+  ty_le_thay_doi?: number | null;
+  cung_ky?: number | null;
+  ngay_le?: string[];
+  chuong_trinh_km?: string | null;
+  muc_giam_gia?: number;
+  so_luong_du_bao_kg?: number | null;
+  yeu_to?: YeuToDuBao[];
 }
 
 export interface DuBaoSanPham {
   ma_san_pham: string;
+  ten_san_pham?: string;
   ket_qua: ChiTietDuBao[];
+  tong_du_bao?: number;
+  tong_ky_truoc?: number | null;
+  loai_tong_ky_truoc?: string;
+  tong_ky_truoc_tu_ngay?: string | null;
+  tong_ky_truoc_den_ngay?: string | null;
+  chenh_lech?: number | null;
+  ty_le_thay_doi?: number | null;
+  phan_loai?: string;
+  dien_giai?: string;
+  yeu_to?: YeuToDuBao[];
+  cau_hinh?: Record<string, unknown>;
+  canh_bao?: string[];
 }
 
 export interface ChiTietBacktest {
@@ -40,14 +82,36 @@ export interface DanhGiaMoHinh {
   chi_tiet: ChiTietBacktest[];
 }
 
+export interface SoSanhMoHinh {
+  ma_san_pham: string;
+  prophet_mae: number;
+  seasonal_naive_mae: number;
+  prophet_rmse: number;
+  seasonal_naive_rmse: number;
+  prophet_smape: number;
+  seasonal_naive_smape: number;
+  prophet_wape: number | null;
+  seasonal_naive_wape: number | null;
+  mo_hinh_tot_hon_theo_mae: string;
+  chenh_lech_mae: number;
+  ty_le_cai_thien_mae: number | null;
+  dien_giai: string;
+}
+
 export interface DuBaoResponse {
   ma_lich_su_du_bao: string;
   ngay_chay: string;
   so_tuan_du_bao: SoTuanDuBao;
   thoi_gian_chay: string;
   tong_san_pham: number;
+  ngay_bat_dau_huan_luyen?: string | null;
+  ngay_ket_thuc_huan_luyen?: string | null;
+  ngay_du_lieu_cuoi?: string | null;
   danh_gia_mo_hinh: DanhGiaMoHinh[];
   ket_qua: DuBaoSanPham[];
+  so_sanh_mo_hinh?: SoSanhMoHinh[];
+  canh_bao?: string[];
+  ghi_chu_danh_gia?: string;
 }
 
 export interface LichSuDuBao {
@@ -59,358 +123,26 @@ export interface LichSuDuBao {
   nguoi_thuc_hien: string | null;
   ho_ten_nguoi_thuc_hien: string | null;
   trang_thai: string;
+  tong_san_pham?: number;
+  kieu_du_bao?: string;
+}
+
+export interface KhuyenMaiDuKien {
+  ma_san_pham: string;
+  tu_ngay: string;
+  chuong_trinh_km: string;
+  muc_giam_gia: number;
+}
+
+export interface YeuCauDuBao {
+  so_tuan_du_bao: SoTuanDuBao;
+  ma_san_pham?: string[] | null;
+  khuyen_mai?: KhuyenMaiDuKien[];
 }
 
 const API_BASE_URL = `${
-  (import.meta.env.VITE_API_URL || "http://localhost:8000")
-    .replace(/\/+$/, "")
-}/api`;
-
-const DATA_ERROR =
-  "Dữ liệu dự báo trả về không đúng cấu trúc.";
-
-function docObject(
-  value: unknown,
-): Record<string, unknown> {
-  if (
-    value === null ||
-    typeof value !== "object" ||
-    Array.isArray(value)
-  ) {
-    throw new Error(DATA_ERROR);
-  }
-
-  return value as Record<string, unknown>;
-}
-
-function docMang(value: unknown): unknown[] {
-  if (!Array.isArray(value)) {
-    throw new Error(DATA_ERROR);
-  }
-
-  return value;
-}
-
-function docChuoi(value: unknown): string {
-  if (typeof value !== "string") {
-    throw new Error(DATA_ERROR);
-  }
-
-  return value;
-}
-
-function docChuoiNullable(
-  value: unknown,
-): string | null {
-  return value == null ? null : docChuoi(value);
-}
-
-function docSo(value: unknown): number {
-  if (
-    typeof value !== "number" ||
-    !Number.isFinite(value)
-  ) {
-    throw new Error(DATA_ERROR);
-  }
-
-  return value;
-}
-
-function docSoNguyen(
-  value: unknown,
-  minimum = 0,
-): number {
-  const number = docSo(value);
-
-  if (
-    !Number.isInteger(number) ||
-    number < minimum
-  ) {
-    throw new Error(DATA_ERROR);
-  }
-
-  return number;
-}
-
-function docSoTuan(value: unknown): SoTuanDuBao {
-  if (value !== 4 && value !== 8) {
-    throw new Error(DATA_ERROR);
-  }
-
-  return value;
-}
-
-function docNgay(value: unknown): string {
-  const text = docChuoi(value);
-
-  if (!/^\d{4}-\d{2}-\d{2}$/.test(text)) {
-    throw new Error(DATA_ERROR);
-  }
-
-  const date = new Date(`${text}T00:00:00Z`);
-
-  if (
-    !Number.isFinite(date.getTime()) ||
-    date.toISOString().slice(0, 10) !== text
-  ) {
-    throw new Error(DATA_ERROR);
-  }
-
-  return text;
-}
-
-function docNgayNullable(
-  value: unknown,
-): string | null {
-  return value == null ? null : docNgay(value);
-}
-
-function docThoiGian(value: unknown): string {
-  const text = docChuoi(value);
-
-  if (!Number.isFinite(Date.parse(text))) {
-    throw new Error(DATA_ERROR);
-  }
-
-  return text;
-}
-
-function docChiTietDuBao(
-  value: unknown,
-): ChiTietDuBao {
-  const row = docObject(value);
-
-  const start = docNgay(row.tu_ngay);
-  const end = docNgay(row.den_ngay);
-  const quantity = docSoNguyen(row.so_luong_du_bao);
-  const lower = docSoNguyen(row.can_duoi);
-  const upper = docSoNguyen(row.can_tren);
-
-  if (
-    start > end ||
-    lower > quantity ||
-    upper < quantity
-  ) {
-    throw new Error(DATA_ERROR);
-  }
-
-  return {
-    tu_ngay: start,
-    den_ngay: end,
-    so_luong_du_bao: quantity,
-    can_duoi: lower,
-    can_tren: upper,
-  };
-}
-
-function docSanPham(
-  value: unknown,
-  soTuan: SoTuanDuBao,
-): DuBaoSanPham {
-  const row = docObject(value);
-
-  const weeks = docMang(row.ket_qua)
-    .map(docChiTietDuBao)
-    .sort((a, b) => a.tu_ngay.localeCompare(b.tu_ngay));
-
-  const starts = new Set(
-    weeks.map(week => week.tu_ngay),
-  );
-
-  if (
-    weeks.length !== soTuan ||
-    starts.size !== weeks.length
-  ) {
-    throw new Error(DATA_ERROR);
-  }
-
-  return {
-    ma_san_pham: docChuoi(row.ma_san_pham),
-    ket_qua: weeks,
-  };
-}
-
-function docBacktest(
-  value: unknown,
-): ChiTietBacktest {
-  const row = docObject(value);
-
-  return {
-    fold: docSoNguyen(row.fold),
-    tu_ngay: docNgay(row.tu_ngay),
-    den_ngay: docNgay(row.den_ngay),
-    thuc_te: docSo(row.thuc_te),
-    du_bao: docSo(row.du_bao),
-    sai_so: docSo(row.sai_so),
-    sai_so_tuyet_doi: docSo(row.sai_so_tuyet_doi),
-  };
-}
-
-function docDanhGia(
-  value: unknown,
-  soTuan: SoTuanDuBao,
-): DanhGiaMoHinh {
-  const row = docObject(value);
-  const horizon = docSoNguyen(row.horizon, 1);
-
-  if (horizon !== soTuan) {
-    throw new Error(DATA_ERROR);
-  }
-
-  return {
-    ma_san_pham: docChuoi(row.ma_san_pham),
-    mo_hinh: docChuoi(row.mo_hinh),
-    horizon,
-    so_fold: docSoNguyen(row.so_fold),
-    so_diem_danh_gia: docSoNguyen(row.so_diem_danh_gia),
-
-    chu_ky:
-      row.chu_ky == null
-        ? null
-        : docSoNguyen(row.chu_ky, 1),
-
-    mae: docSo(row.mae),
-    rmse: docSo(row.rmse),
-
-    wape:
-      row.wape == null
-        ? null
-        : docSo(row.wape),
-
-    smape: docSo(row.smape),
-
-    chi_tiet:
-      row.chi_tiet == null
-        ? []
-        : docMang(row.chi_tiet).map(docBacktest),
-  };
-}
-
-function docResponse(
-  value: unknown,
-  expectedWeeks?: SoTuanDuBao,
-): DuBaoResponse {
-  const row = docObject(value);
-  const weeks = docSoTuan(row.so_tuan_du_bao);
-
-  if (
-    expectedWeeks !== undefined &&
-    weeks !== expectedWeeks
-  ) {
-    throw new Error(DATA_ERROR);
-  }
-
-  const products = docMang(row.ket_qua).map(
-    product => docSanPham(product, weeks),
-  );
-
-  const productIds = new Set(
-    products.map(product => product.ma_san_pham),
-  );
-
-  const totalProducts = docSoNguyen(row.tong_san_pham);
-
-  if (
-    productIds.size !== products.length ||
-    totalProducts !== products.length
-  ) {
-    throw new Error(DATA_ERROR);
-  }
-
-  return {
-    ma_lich_su_du_bao: docChuoi(row.ma_lich_su_du_bao),
-    ngay_chay: docNgay(row.ngay_chay),
-    so_tuan_du_bao: weeks,
-    thoi_gian_chay: docThoiGian(row.thoi_gian_chay),
-    tong_san_pham: totalProducts,
-
-    danh_gia_mo_hinh: docMang(
-      row.danh_gia_mo_hinh,
-    ).map(score => docDanhGia(score, weeks)),
-
-    ket_qua: products,
-  };
-}
-
-function docLichSu(
-  value: unknown,
-): LichSuDuBao {
-  const row = docObject(value);
-
-  const start = docNgayNullable(
-    row.ngay_bat_dau_huan_luyen,
-  );
-
-  const end = docNgayNullable(
-    row.ngay_ket_thuc_huan_luyen,
-  );
-
-  if (start && end && start > end) {
-    throw new Error(DATA_ERROR);
-  }
-
-  return {
-    ma_lich_su_du_bao: docChuoi(row.ma_lich_su_du_bao),
-    thoi_gian_chay: docThoiGian(row.thoi_gian_chay),
-    ngay_bat_dau_huan_luyen: start,
-    ngay_ket_thuc_huan_luyen: end,
-    so_tuan_du_bao: docSoTuan(row.so_tuan_du_bao),
-
-    nguoi_thuc_hien: docChuoiNullable(
-      row.nguoi_thuc_hien,
-    ),
-
-    ho_ten_nguoi_thuc_hien: docChuoiNullable(
-      row.ho_ten_nguoi_thuc_hien,
-    ),
-
-    trang_thai: docChuoi(row.trang_thai),
-  };
-}
-
-function layThongBaoLoi(
-  body: unknown,
-  status: number,
-  isRun: boolean,
-): string {
-  if (status === 401) {
-    return "Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.";
-  }
-
-  if (status === 403) {
-    return isRun
-      ? "Tài khoản của bạn không có quyền chạy dự báo."
-      : "Tài khoản của bạn không có quyền xem dữ liệu dự báo.";
-  }
-
-  if (status === 422 && isRun) {
-    return "Vui lòng chọn kỳ dự báo 4 hoặc 8 tuần.";
-  }
-
-  if (
-    body !== null &&
-    typeof body === "object" &&
-    !Array.isArray(body)
-  ) {
-    const row = body as Record<string, unknown>;
-
-    if (
-      typeof row.detail === "string" &&
-      row.detail.trim() &&
-      row.detail !== "Not Found"
-    ) {
-      return row.detail;
-    }
-  }
-
-  if (status === 404) {
-    return "Chưa tìm thấy dữ liệu dự báo.";
-  }
-
-  return isRun
-    ? "Không thể chạy dự báo lúc này. Vui lòng thử lại."
-    : "Không thể tải dữ liệu dự báo. Vui lòng thử lại.";
-}
+  import.meta.env.VITE_API_URL || "http://localhost:8000"
+}`.replace(/\/+$/, "") + "/api";
 
 async function requestDuBao(
   path: string,
@@ -420,14 +152,14 @@ async function requestDuBao(
 
   if (!token) {
     throw new Error(
-      "Không tìm thấy phiên đăng nhập. Vui lòng đăng nhập lại.",
+      "Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.",
     );
   }
 
   const headers = new Headers(options.headers);
   headers.set("Authorization", `Bearer ${token}`);
 
-  if (options.body != null) {
+  if (options.body !== undefined) {
     headers.set("Content-Type", "application/json");
   }
 
@@ -439,65 +171,193 @@ async function requestDuBao(
       headers,
     });
   } catch (cause) {
-    if (options.signal?.aborted) {
+    if (cause instanceof DOMException && cause.name === "AbortError") {
       throw cause;
     }
 
     throw new Error(
-      "Không thể kết nối tới máy chủ. Vui lòng kiểm tra kết nối mạng.",
+      "Không thể kết nối backend. Kiểm tra Docker và cổng 8000.",
     );
   }
 
-  const isRun = options.method === "POST";
+  const contentType =
+    response.headers.get("content-type") || "";
 
-  if (response.status === 204 && response.ok) {
-    return null;
-  }
+  let body: unknown = null;
 
-  let body: unknown;
-
-  try {
-    body = await response.json();
-  } catch {
-    if (options.signal?.aborted) {
-      throw new Error("Yêu cầu đã được hủy.");
+  if (response.status !== 204) {
+    if (contentType.includes("application/json")) {
+      body = await response.json();
+    } else {
+      body = await response.text();
     }
-
-    if (!response.ok) {
-      throw new Error(
-        layThongBaoLoi(null, response.status, isRun),
-      );
-    }
-
-    throw new Error(DATA_ERROR);
   }
 
   if (!response.ok) {
-    throw new Error(
-      layThongBaoLoi(body, response.status, isRun),
-    );
+    let message = `Yêu cầu thất bại (${response.status}).`;
+
+    if (body && typeof body === "object") {
+      const detail = (body as { detail?: unknown }).detail;
+
+      if (typeof detail === "string") {
+        message = detail;
+      } else if (Array.isArray(detail)) {
+        message = detail
+          .map(item =>
+            typeof item?.msg === "string"
+              ? item.msg
+              : JSON.stringify(item),
+          )
+          .join("; ");
+      }
+    } else if (typeof body === "string" && body.trim()) {
+      message = body;
+    }
+
+    throw new Error(message);
   }
 
   return body;
+}
+
+function isObject(
+  value: unknown,
+): value is Record<string, unknown> {
+  return (
+    value !== null &&
+    typeof value === "object" &&
+    !Array.isArray(value)
+  );
+}
+
+function readForecast(value: unknown): DuBaoResponse {
+  if (!isObject(value)) {
+    throw new Error("Backend trả về kết quả dự báo không hợp lệ.");
+  }
+
+  if (
+    !Array.isArray(value.ket_qua) ||
+    !Array.isArray(value.danh_gia_mo_hinh) ||
+    typeof value.so_tuan_du_bao !== "number" ||
+    value.so_tuan_du_bao < 1 ||
+    value.so_tuan_du_bao > 8
+  ) {
+    throw new Error(
+      "Kết quả dự báo thiếu danh sách sản phẩm hoặc tuần dự báo.",
+    );
+  }
+
+  for (const item of value.ket_qua) {
+    if (
+      !isObject(item) ||
+      typeof item.ma_san_pham !== "string" ||
+      !Array.isArray(item.ket_qua)
+    ) {
+      throw new Error(
+        "Kết quả dự báo có dữ liệu sản phẩm không hợp lệ.",
+      );
+    }
+
+    for (const week of item.ket_qua) {
+      if (
+        !isObject(week) ||
+        typeof week.tu_ngay !== "string" ||
+        typeof week.den_ngay !== "string" ||
+        typeof week.so_luong_du_bao !== "number"
+      ) {
+        throw new Error(
+          "Kết quả dự báo có dữ liệu tuần không hợp lệ.",
+        );
+      }
+    }
+  }
+
+  return value as unknown as DuBaoResponse;
+}
+
+export async function laySanPhamDuBao(
+  signal?: AbortSignal,
+): Promise<SanPhamDuBao[]> {
+  const body = await requestDuBao("/du-bao/san-pham", {
+    signal,
+  });
+
+  if (!Array.isArray(body)) {
+    throw new Error(
+      "API danh sách sản phẩm trả về không đúng cấu trúc.",
+    );
+  }
+
+  return body.map(item => {
+    if (
+      !isObject(item) ||
+      typeof item.ma !== "string" ||
+      typeof item.ten !== "string"
+    ) {
+      throw new Error(
+        "Danh sách sản phẩm có dữ liệu không hợp lệ.",
+      );
+    }
+
+    return {
+      ma: item.ma,
+      ten: item.ten,
+    };
+  });
 }
 
 export async function duBaoNhuCau(
   soTuan: SoTuanDuBao,
   signal?: AbortSignal,
 ): Promise<DuBaoResponse> {
-  if (soTuan !== 4 && soTuan !== 8) {
-    throw new Error("Chỉ hỗ trợ dự báo 4 hoặc 8 tuần.");
+  return chayDuBaoTheoYeuCau(
+    {
+      so_tuan_du_bao: soTuan,
+      ma_san_pham: null,
+      khuyen_mai: [],
+    },
+    signal,
+  );
+}
+
+export async function chayDuBaoTheoYeuCau(
+  request: YeuCauDuBao,
+  signal?: AbortSignal,
+): Promise<DuBaoResponse> {
+  const weeks = request.so_tuan_du_bao;
+
+  if (!Number.isInteger(weeks) || weeks < 1 || weeks > 8) {
+    throw new Error("Chỉ được dự báo từ 1 đến 8 tuần.");
+  }
+
+  if (
+    request.ma_san_pham !== null &&
+    request.ma_san_pham !== undefined &&
+    (!Array.isArray(request.ma_san_pham) ||
+      request.ma_san_pham.length === 0)
+  ) {
+    throw new Error("Vui lòng chọn ít nhất một sản phẩm.");
   }
 
   const body = await requestDuBao("/du-bao/nhu-cau", {
     method: "POST",
     signal,
     body: JSON.stringify({
-      so_tuan_du_bao: soTuan,
+      so_tuan_du_bao: weeks,
+      ma_san_pham: request.ma_san_pham ?? null,
+      khuyen_mai: request.khuyen_mai ?? [],
     }),
   });
 
-  return docResponse(body, soTuan);
+  const result = readForecast(body);
+
+  if (result.so_tuan_du_bao !== weeks) {
+    throw new Error(
+      "Số tuần backend trả về không khớp yêu cầu.",
+    );
+  }
+
+  return result;
 }
 
 export async function layLichSuDuBao(
@@ -507,43 +367,23 @@ export async function layLichSuDuBao(
     signal,
   });
 
-  const history = docMang(body).map(docLichSu);
-
-  const ids = new Set(
-    history.map(item => item.ma_lich_su_du_bao),
-  );
-
-  if (ids.size !== history.length) {
-    throw new Error(DATA_ERROR);
+  if (!Array.isArray(body)) {
+    throw new Error("Không đọc được lịch sử dự báo.");
   }
 
-  return history.sort(
-    (a, b) =>
-      Date.parse(b.thoi_gian_chay) -
-      Date.parse(a.thoi_gian_chay),
-  );
+  return body as LichSuDuBao[];
 }
 
 export async function layChiTietDuBao(
-  id: string,
+  maLichSu: string,
   signal?: AbortSignal,
 ): Promise<DuBaoResponse> {
-  if (!id.trim()) {
-    throw new Error("Thiếu mã lần dự báo.");
-  }
-
   const body = await requestDuBao(
-    `/du-bao/lich-su/${encodeURIComponent(id)}`,
+    `/du-bao/lich-su/${encodeURIComponent(maLichSu)}`,
     { signal },
   );
 
-  const result = docResponse(body);
-
-  if (result.ma_lich_su_du_bao !== id) {
-    throw new Error(DATA_ERROR);
-  }
-
-  return result;
+  return readForecast(body);
 }
 
 export async function layDuBaoMoiNhat(
@@ -553,5 +393,5 @@ export async function layDuBaoMoiNhat(
     signal,
   });
 
-  return body === null ? null : docResponse(body);
+  return body === null ? null : readForecast(body);
 }

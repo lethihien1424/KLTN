@@ -1,8 +1,10 @@
+///D:\KLTN\KLTN\frontend\src\pages\dashboard\DashboardPageQL.tsx
 import {
   DatabaseOutlined,
   FileDoneOutlined,
   LineChartOutlined,
   PieChartOutlined,
+  ShoppingOutlined,
   TruckOutlined,
 } from "@ant-design/icons";
 
@@ -47,6 +49,11 @@ const config: DashboardConfig = {
       id: "ton-kho-nguyen-lieu",
       label: "Tồn kho nguyên liệu",
       icon: <DatabaseOutlined />,
+    },
+    {
+      id: "quan-ly-san-pham",
+      label: "Quản lý sản phẩm",
+      icon: <ShoppingOutlined />,
     },
     {
       id: "nha-cung-cap",

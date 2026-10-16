@@ -52,13 +52,7 @@ class TonKhoNguyenLieu(Base):
         nullable=False,
     )
 
-    ton_kho_kha_dung = Column(
-        Numeric(14, 2),
-        Computed(
-            "ton_kho_thuc_te - so_luong_book",
-            persisted=True,
-        ),
-    )
+   
 
     trang_thai = Column(
         String(30),

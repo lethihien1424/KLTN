@@ -1,26 +1,30 @@
-### D:\KLTN\KLTN\backend\src\routes\api_router.py
+###D:\KLTN\KLTN\backend\src\routes\api_router.py
 from fastapi import APIRouter
 
-from src.routes.auth_routes import (
-    router as auth_router,
-)
+from src.routes.auth_routes import router as auth_router
 from src.routes.password_reset_routes import (
     router as password_reset_router,
 )
 from src.routes.tai_khoan_routes import (
     router as tai_khoan_router,
 )
+from src.routes.phan_quyen_routes import (
+    router as phan_quyen_router,
+)
+from src.routes.san_pham_routes import (
+    router as san_pham_router,
+)
 from src.routes.import_routes import (
     router as import_router,
+)
+from src.routes.du_lieu_ban_hang_routes import (
+    router as du_lieu_ban_hang_router,
 )
 from src.routes.du_bao_routes import (
     router as du_bao_router,
 )
-
 from src.routes.don_mua_routes import (
     router as don_mua_router,
-)
-from src.routes.don_mua_routes import (
     receipt_router as don_mua_receipt_router,
 )
 from src.routes.cong_thuc_routes import (
@@ -52,15 +56,17 @@ from src.routes.dashboard_routes import (
 )
 
 
-api_router = APIRouter(
-    prefix="/api",
-)
+api_router = APIRouter(prefix="/api")
 
 api_router.include_router(auth_router)
 api_router.include_router(password_reset_router)
 
 api_router.include_router(tai_khoan_router)
+api_router.include_router(phan_quyen_router)
+api_router.include_router(san_pham_router)
+
 api_router.include_router(import_router)
+api_router.include_router(du_lieu_ban_hang_router)
 api_router.include_router(du_bao_router)
 
 api_router.include_router(nguyen_lieu_router)
@@ -72,13 +78,8 @@ api_router.include_router(nguyen_lieu_ncc_router)
 api_router.include_router(don_mua_router)
 api_router.include_router(don_mua_receipt_router)
 
-api_router.include_router(
-    nhu_cau_nguyen_lieu_router
-)
-api_router.include_router(
-    goi_y_nha_cung_cap_router
-)
-api_router.include_router(
-    de_xuat_nhap_hang_router
-)
+api_router.include_router(nhu_cau_nguyen_lieu_router)
+api_router.include_router(goi_y_nha_cung_cap_router)
+api_router.include_router(de_xuat_nhap_hang_router)
+
 api_router.include_router(dashboard_router)

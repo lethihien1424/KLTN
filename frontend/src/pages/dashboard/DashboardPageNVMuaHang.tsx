@@ -1,3 +1,4 @@
+///D:\KLTN\KLTN\frontend\src\pages\dashboard\DashboardPageNVMuaHang.tsx
 import DashboardBase, {
   type DashboardConfig,
 } from "../../components/dashboard/DashboardBase";
@@ -85,4 +86,4 @@ export default function DashboardPageNVMuaHang({
       onLogout={onLogout}
     />
   );
-}
+}

@@ -23,6 +23,8 @@ import {
 } from "../../services/taiKhoanService";
 
 import QuanLyTaiKhoanPage from "../tai-khoan/QuanLyTaiKhoanPage";
+import PhanQuyenPage from "../auth/PhanQuyenPage";
+import SanPhamPage from "../san-pham/SanPhamPage";
 
 type Props = {
   user: User;
@@ -214,6 +216,14 @@ if (otherActiveCount > 0) {
     renderCustomContent: activeMenu => {
       if (activeMenu === "quan-ly-tai-khoan") {
         return <QuanLyTaiKhoanPage />;
+      }
+
+      if (activeMenu === "phan-quyen") {
+        return <PhanQuyenPage />;
+      }
+
+      if (activeMenu === "quan-ly-san-pham") {
+        return <SanPhamPage />;
       }
 
       if (activeMenu === "tong-quan") {
@@ -625,14 +635,6 @@ if (otherActiveCount > 0) {
         string,
         { title: string; description: string }
       > = {
-        "phan-quyen": {
-          title: "Phân quyền",
-          description: "Quản lý vai trò và quyền truy cập hệ thống.",
-        },
-        "quan-ly-san-pham": {
-          title: "Quản lý sản phẩm",
-          description: "Danh sách sản phẩm của hệ thống.",
-        },
         "xem-nhat-ky-hoat-dong": {
           title: "Nhật ký hoạt động",
           description: "Các thao tác được ghi nhận trong hệ thống.",

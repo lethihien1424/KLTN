@@ -1,60 +1,15 @@
+###D:\KLTN\KLTN\backend\src\repositories\tieu_thu_repository.py
+
 from datetime import date
 
+from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from src.models.ke_hoach_san_xuat_model import (
-    KeHoachSanXuat,
-)
-from src.models.lich_su_tieu_thu_model import (
-    LichSuTieuThu,
-)
+from src.models.ke_hoach_san_xuat_model import KeHoachSanXuat
+from src.models.lich_su_tieu_thu_model import LichSuTieuThu
 
 
 class TieuThuRepository:
-
-    @staticmethod
-    def get_lich_su_tieu_thu(
-        db: Session,
-        ma_san_pham: str,
-        ngay_chay: date,
-    ):
-        return (
-            db.query(LichSuTieuThu)
-            .filter(
-                LichSuTieuThu.ma_san_pham
-                == ma_san_pham,
-                LichSuTieuThu.ngay_ban
-                < ngay_chay,
-                LichSuTieuThu.trang_thai_san_xuat
-                == "DA_SAN_XUAT",
-            )
-            .order_by(
-                LichSuTieuThu.ngay_ban.asc()
-            )
-            .all()
-        )
-
-    @staticmethod
-    def get_ke_hoach_san_xuat_qua_khu(
-        db: Session,
-        ma_san_pham: str,
-        ngay_chay: date,
-    ):
-        return (
-            db.query(KeHoachSanXuat)
-            .filter(
-                KeHoachSanXuat.ma_san_pham
-                == ma_san_pham,
-                KeHoachSanXuat.ngay_don_hang
-                < ngay_chay,
-                KeHoachSanXuat.trang_thai_san_xuat
-                == "CHO_SAN_XUAT",
-            )
-            .order_by(
-                KeHoachSanXuat.ngay_don_hang.asc()
-            )
-            .all()
-        )
 
     @staticmethod
     def get_nhu_cau_qua_khu(
@@ -63,75 +18,81 @@ class TieuThuRepository:
         ngay_chay: date,
     ) -> list[dict]:
 
-        lich_su = (
-            TieuThuRepository.get_lich_su_tieu_thu(
-                db=db,
-                ma_san_pham=ma_san_pham,
-                ngay_chay=ngay_chay,
+        statement = (
+            select(
+                LichSuTieuThu.ma_lich_su,
+                LichSuTieuThu.ma_don_hang,
+                LichSuTieuThu.ma_san_pham,
+                LichSuTieuThu.ngay_ban.label(
+                    "ngay_ban"
+                ),
+                LichSuTieuThu.so_luong_ban.label(
+                    "so_luong"
+                ),
+                LichSuTieuThu.trang_thai_don_hang.label(
+                    "trang_thai_don_hang"
+                ),
+            )
+            .where(
+                LichSuTieuThu.ma_san_pham == ma_san_pham,
+                LichSuTieuThu.trang_thai_don_hang.in_(
+                    ["DA_GIAO_HANG", "CHO_GIAO_HANG"]
+                ),
+                LichSuTieuThu.ngay_ban.is_not(None),
+                LichSuTieuThu.ngay_ban < ngay_chay,
+            )
+            .order_by(
+                LichSuTieuThu.ngay_ban,
+                LichSuTieuThu.ma_don_hang,
             )
         )
 
-        ke_hoach = (
-            TieuThuRepository
-            .get_ke_hoach_san_xuat_qua_khu(
-                db=db,
-                ma_san_pham=ma_san_pham,
-                ngay_chay=ngay_chay,
+        return [
+            dict(row)
+            for row in db.execute(statement).mappings().all()
+        ]
+
+    @staticmethod
+    def get_lich_su_tieu_thu(
+        db: Session,
+        ma_san_pham: str,
+        ngay_chay: date,
+    ) -> list[LichSuTieuThu]:
+
+        statement = (
+            select(LichSuTieuThu)
+            .where(
+                LichSuTieuThu.ma_san_pham == ma_san_pham,
+                LichSuTieuThu.trang_thai_don_hang.in_(
+                    ["DA_GIAO_HANG", "CHO_GIAO_HANG"]
+                ),
+                LichSuTieuThu.ngay_ban.is_not(None),
+                LichSuTieuThu.ngay_ban < ngay_chay,
+            )
+            .order_by(
+                LichSuTieuThu.ngay_ban,
+                LichSuTieuThu.ma_don_hang,
             )
         )
 
-        du_lieu = []
-        khoa_da_co = set()
+        return list(db.scalars(statement).all())
 
-        for item in lich_su:
-            khoa = (
-                item.ma_don_hang,
-                item.ma_san_pham,
+    @staticmethod
+    def get_ke_hoach_san_xuat_qua_khu(
+        db: Session,
+        ma_san_pham: str,
+        ngay_chay: date,
+    ) -> list[KeHoachSanXuat]:
+
+        statement = (
+            select(KeHoachSanXuat)
+            .where(
+                KeHoachSanXuat.ma_san_pham == ma_san_pham,
+                KeHoachSanXuat.ngay_ban < ngay_chay,
+                KeHoachSanXuat.trang_thai_san_xuat
+                == "CHO_SAN_XUAT",
             )
-
-            if khoa in khoa_da_co:
-                continue
-
-            khoa_da_co.add(khoa)
-
-            du_lieu.append(
-                {
-                    "ma_don_hang": item.ma_don_hang,
-                    "ma_san_pham": item.ma_san_pham,
-                    "ngay": item.ngay_ban,
-                    "so_luong": item.so_luong_ban,
-                    "nguon": "LICH_SU_TIEU_THU",
-                }
-            )
-
-        for item in ke_hoach:
-            khoa = (
-                item.ma_don_hang,
-                item.ma_san_pham,
-            )
-
-            # Phòng trường hợp dữ liệu bất thường
-            # xuất hiện ở cả hai bảng.
-            if khoa in khoa_da_co:
-                continue
-
-            khoa_da_co.add(khoa)
-
-            du_lieu.append(
-                {
-                    "ma_don_hang": item.ma_don_hang,
-                    "ma_san_pham": item.ma_san_pham,
-                    "ngay": item.ngay_don_hang,
-                    "so_luong": item.so_luong,
-                    "nguon": "KE_HOACH_SAN_XUAT",
-                }
-            )
-
-        du_lieu.sort(
-            key=lambda x: (
-                x["ngay"],
-                x["ma_don_hang"],
-            )
+            .order_by(KeHoachSanXuat.ngay_ban)
         )
 
-        return du_lieu
+        return list(db.scalars(statement).all())

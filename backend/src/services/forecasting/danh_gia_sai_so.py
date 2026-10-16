@@ -3,186 +3,150 @@ import numpy as np
 
 
 class DanhGiaSaiSo:
-    """
-    Tính các chỉ số đánh giá sai số dự báo.
-    """
 
     @staticmethod
     def _chuan_hoa(
         thuc_te,
         du_bao,
     ) -> tuple[np.ndarray, np.ndarray]:
+
         actual = np.asarray(
             thuc_te,
             dtype=float,
-        )
+        ).reshape(-1)
 
-        forecast = np.asarray(
+        predicted = np.asarray(
             du_bao,
             dtype=float,
-        )
-
-        if actual.ndim != 1:
-            actual = actual.reshape(-1)
-
-        if forecast.ndim != 1:
-            forecast = forecast.reshape(-1)
+        ).reshape(-1)
 
         if len(actual) == 0:
             raise ValueError(
                 "Không có dữ liệu thực tế để đánh giá."
             )
 
-        if len(actual) != len(forecast):
+        if len(actual) != len(predicted):
             raise ValueError(
-                "Số lượng giá trị thực tế và dự báo "
-                "phải bằng nhau."
+                "Số điểm thực tế và dự báo phải bằng nhau."
             )
 
         if (
-            np.isnan(actual).any()
-            or np.isnan(forecast).any()
+            not np.isfinite(actual).all()
+            or not np.isfinite(predicted).all()
         ):
             raise ValueError(
-                "Dữ liệu đánh giá có giá trị NaN."
+                "Dữ liệu đánh giá phải là số hữu hạn."
             )
 
-        return actual, forecast
-
-    @staticmethod
-    def mae(
-        thuc_te,
-        du_bao,
-    ) -> float:
-        actual, forecast = (
-            DanhGiaSaiSo._chuan_hoa(
-                thuc_te,
-                du_bao,
+        if (actual < 0).any():
+            raise ValueError(
+                "Nhu cầu thực tế không được âm."
             )
-        )
 
-        return float(
-            np.mean(
-                np.abs(
-                    actual - forecast
-                )
-            )
-        )
-
-    @staticmethod
-    def rmse(
-        thuc_te,
-        du_bao,
-    ) -> float:
-        actual, forecast = (
-            DanhGiaSaiSo._chuan_hoa(
-                thuc_te,
-                du_bao,
-            )
-        )
-
-        return float(
-            np.sqrt(
-                np.mean(
-                    (
-                        actual
-                        - forecast
-                    )
-                    ** 2
-                )
-            )
-        )
-
-    @staticmethod
-    def wape(
-        thuc_te,
-        du_bao,
-    ) -> float | None:
-        actual, forecast = (
-            DanhGiaSaiSo._chuan_hoa(
-                thuc_te,
-                du_bao,
-            )
-        )
-
-        mau_so = np.sum(
-            np.abs(actual)
-        )
-
-        if mau_so == 0:
-            return None
-
-        return float(
-            (
-                np.sum(
-                    np.abs(
-                        actual - forecast
-                    )
-                )
-                / mau_so
-            )
-            * 100
-        )
-
-    @staticmethod
-    def smape(
-        thuc_te,
-        du_bao,
-    ) -> float:
-        actual, forecast = (
-            DanhGiaSaiSo._chuan_hoa(
-                thuc_te,
-                du_bao,
-            )
-        )
-
-        mau_so = (
-            np.abs(actual)
-            + np.abs(forecast)
-        )
-
-        ty_le = np.divide(
-            2
-            * np.abs(
-                actual - forecast
-            ),
-            mau_so,
-            out=np.zeros_like(
-                actual,
-                dtype=float,
-            ),
-            where=mau_so != 0,
-        )
-
-        return float(
-            np.mean(ty_le)
-            * 100
-        )
+        return actual, predicted
 
     @staticmethod
     def tinh_tat_ca(
         thuc_te,
         du_bao,
     ) -> dict:
-        """
-        Tính toàn bộ chỉ số đánh giá.
-        """
+
+        actual, predicted = (
+            DanhGiaSaiSo._chuan_hoa(
+                thuc_te,
+                du_bao,
+            )
+        )
+
+        error = actual - predicted
+        absolute_error = np.abs(error)
+
+        mae = float(
+            np.mean(absolute_error)
+        )
+
+        rmse = float(
+            np.sqrt(
+                np.mean(error ** 2)
+            )
+        )
+
+        actual_total = float(
+            np.sum(np.abs(actual))
+        )
+
+        wape = (
+            float(
+                np.sum(absolute_error)
+                / actual_total
+                * 100
+            )
+            if actual_total > 0
+            else None
+        )
+
+        denominator = (
+            np.abs(actual)
+            + np.abs(predicted)
+        )
+
+        smape_values = np.divide(
+            200 * absolute_error,
+            denominator,
+            out=np.zeros_like(
+                absolute_error,
+                dtype=float,
+            ),
+            where=denominator > 0,
+        )
+
+        smape = float(
+            np.mean(smape_values)
+        )
 
         return {
-            "mae": DanhGiaSaiSo.mae(
-                thuc_te,
-                du_bao,
-            ),
-            "rmse": DanhGiaSaiSo.rmse(
-                thuc_te,
-                du_bao,
-            ),
-            "wape": DanhGiaSaiSo.wape(
-                thuc_te,
-                du_bao,
-            ),
-            "smape": DanhGiaSaiSo.smape(
-                thuc_te,
-                du_bao,
-            ),
+            "mae": mae,
+            "rmse": rmse,
+            "wape": wape,
+            "smape": smape,
         }
+
+    @staticmethod
+    def mae(
+        thuc_te,
+        du_bao,
+    ) -> float:
+        return DanhGiaSaiSo.tinh_tat_ca(
+            thuc_te,
+            du_bao,
+        )["mae"]
+
+    @staticmethod
+    def rmse(
+        thuc_te,
+        du_bao,
+    ) -> float:
+        return DanhGiaSaiSo.tinh_tat_ca(
+            thuc_te,
+            du_bao,
+        )["rmse"]
+
+    @staticmethod
+    def wape(
+        thuc_te,
+        du_bao,
+    ) -> float | None:
+        return DanhGiaSaiSo.tinh_tat_ca(
+            thuc_te,
+            du_bao,
+        )["wape"]
+
+    @staticmethod
+    def smape(
+        thuc_te,
+        du_bao,
+    ) -> float:
+        return DanhGiaSaiSo.tinh_tat_ca(
+            thuc_te,
+            du_bao,
+        )["smape"]

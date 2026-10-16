@@ -1,4 +1,5 @@
 ####D:\KLTN\KLTN\backend\src\routes\import_routes.py
+
 from fastapi import (
     APIRouter,
     Depends,
@@ -128,9 +129,7 @@ async def import_nguyen_lieu_ncc(
     db: Session = Depends(get_db),
 ):
     return await execute_import(
-        import_type=(
-            "nguyen_lieu_nha_cung_cap"
-        ),
+        import_type="nguyen_lieu_nha_cung_cap",
         file=file,
         current_user=current_user,
         db=db,
@@ -169,6 +168,29 @@ async def import_ngay_le(
 ):
     return await execute_import(
         import_type="ngay_le",
+        file=file,
+        current_user=current_user,
+        db=db,
+    )
+
+
+# =====================================================
+# IMPORT CHUONG TRINH KHUYEN MAI - MOI
+# =====================================================
+
+@router.post(
+    "/ctkm",
+    response_model=ImportResponse,
+)
+async def import_ctkm(
+    file: UploadFile = File(...),
+    current_user: User = Depends(
+        get_current_user
+    ),
+    db: Session = Depends(get_db),
+):
+    return await execute_import(
+        import_type="ctkm",
         file=file,
         current_user=current_user,
         db=db,

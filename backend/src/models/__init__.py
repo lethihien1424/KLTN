@@ -1,11 +1,14 @@
 ###D:\KLTN\KLTN\backend\src\models\__init__.py
 from src.models.user_model import User
+
 from src.models.nhat_ky_hoat_dong_model import (
     NhatKyHoatDong,
 )
 
 from src.models.san_pham_model import SanPham
+
 from src.models.nguyen_lieu_model import NguyenLieu
+
 from src.models.ton_kho_nguyen_lieu_model import (
     TonKhoNguyenLieu,
 )
@@ -13,6 +16,7 @@ from src.models.ton_kho_nguyen_lieu_model import (
 from src.models.nha_cung_cap_model import (
     NhaCungCap,
 )
+
 from src.models.nguyen_lieu_nha_cung_cap_model import (
     NguyenLieuNhaCungCap,
 )
@@ -20,6 +24,7 @@ from src.models.nguyen_lieu_nha_cung_cap_model import (
 from src.models.ngay_le_model import NgayLe
 
 from src.models.cong_thuc_model import CongThuc
+
 from src.models.chi_tiet_cong_thuc_model import (
     ChiTietCongThuc,
 )
@@ -43,8 +48,21 @@ from src.models.chi_tiet_lich_su_du_bao import (
 from src.models.danh_gia_mo_hinh import (
     DanhGiaMoHinh,
 )
+
 from src.models.password_reset_model import (
     PasswordResetRequest,
+)
+
+from src.models.phan_quyen_model import (
+    NhomQuyen,
+    NhomQuyenVaiTro,
+    ChiTietNhomQuyen,
+)
+
+
+from src.models.ctkm_model import (
+    ChuongTrinhKhuyenMai,
+    ChiTietCTKM,
 )
 
 __all__ = [
@@ -64,4 +82,9 @@ __all__ = [
     "ChiTietLichSuDuBao",
     "DanhGiaMoHinh",
     "PasswordResetRequest",
+    "NhomQuyen",
+    "NhomQuyenVaiTro",
+    "ChiTietNhomQuyen",
+    "ChuongTrinhKhuyenMai",
+    "ChiTietCTKM",
 ]

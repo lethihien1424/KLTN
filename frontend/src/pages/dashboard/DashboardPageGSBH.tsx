@@ -1,3 +1,4 @@
+///D:\KLTN\KLTN\frontend\src\pages\dashboard\DashboardPageGSBH.tsx
 import {
   LineChartOutlined,
   PieChartOutlined,
@@ -8,8 +9,9 @@ import DashboardBase, {
   type DashboardConfig,
 } from "../../components/dashboard/DashboardBase";
 
-import type { User } from "../../services/authService";
+import DuLieuBanHangPage from "../ban-hang/DuLieuBanHangPage";
 
+import type { User } from "../../services/authService";
 
 type Props = {
   user: User;
@@ -34,42 +36,37 @@ const config: DashboardConfig = {
       id: "nhap-du-lieu-ban-hang",
       label: "Nhập dữ liệu bán hàng",
       icon: <ShoppingCartOutlined />,
+      permission: "du_lieu_ban_hang",
     },
     {
       id: "du-bao-nhu-cau",
       label: "Dự báo nhu cầu",
       icon: <LineChartOutlined />,
+      permission: "du_bao_nhu_cau",
     },
   ],
 
-  // Chưa có API số liệu tổng quan trong đoạn code đã gửi.
   stats: [],
 
   tableTitle: "Dữ liệu bán hàng",
 
   columns: [
-    {
-      key: "code",
-      label: "Mã đơn hàng",
-    },
-    {
-      key: "name",
-      label: "Tên sản phẩm",
-    },
-    {
-      key: "detail",
-      label: "Số lượng tiêu thụ",
-    },
-    {
-      key: "status",
-      label: "Trạng thái",
-    },
+    { key: "code", label: "Mã đơn hàng" },
+    { key: "name", label: "Tên sản phẩm" },
+    { key: "detail", label: "Số lượng tiêu thụ" },
+    { key: "status", label: "Trạng thái" },
   ],
 
-  // Điền dữ liệu từ API khi kết nối bảng bán hàng.
   rows: [],
-};
 
+  renderCustomContent: activeMenu => {
+    if (activeMenu === "nhap-du-lieu-ban-hang") {
+      return <DuLieuBanHangPage />;
+    }
+
+    return null;
+  },
+};
 
 export default function DashboardPageGSBH({
   user,

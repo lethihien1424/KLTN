@@ -1,10 +1,12 @@
 ###D:\KLTN\KLTN\backend\src\models\ke_hoach_san_xuat_model.py
+
 from sqlalchemy import (
     Column,
     Date,
     FetchedValue,
     ForeignKey,
     Integer,
+    Numeric,
     String,
     UniqueConstraint,
 )
@@ -26,7 +28,7 @@ class KeHoachSanXuat(Base):
         nullable=False,
     )
 
-    ngay_don_hang = Column(
+    ngay_ban = Column(
         Date,
         nullable=False,
     )
@@ -40,6 +42,11 @@ class KeHoachSanXuat(Base):
     so_luong = Column(
         Integer,
         nullable=False,
+    )
+
+    gia_goc = Column(
+        Numeric(15, 2),
+        nullable=True,
     )
 
     trang_thai_san_xuat = Column(

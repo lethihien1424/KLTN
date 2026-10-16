@@ -1,332 +1,11 @@
 # ##D:\KLTN\KLTN\backend\src\services\forecasting\backtesting.py
-# import numpy as np
-# import pandas as pd
+import math
 
-# from src.services.forecasting.danh_gia_sai_so import DanhGiaSaiSo
-# from src.services.forecasting.prophet_co_ban import ProphetCoBan
-# from src.services.forecasting.seasonal_naive import SeasonalNaive
-
-
-# class Backtesting:
-#     """Expanding-window backtesting theo tuần."""
-
-#     SO_TUAN_TRAIN_TOI_THIEU = SeasonalNaive.CHU_KY
-
-#     @staticmethod
-#     def tinh_so_fold_phu_hop(
-#         df: pd.DataFrame,
-#         horizon: int,
-#         so_fold_toi_da: int = 3,
-#         so_tuan_train_toi_thieu: int = SO_TUAN_TRAIN_TOI_THIEU,
-#     ) -> int:
-#         Backtesting._kiem_tra_horizon(horizon)
-
-#         if so_fold_toi_da <= 0:
-#             raise ValueError("Số fold tối đa phải lớn hơn 0.")
-
-#         if so_tuan_train_toi_thieu < SeasonalNaive.CHU_KY:
-#             raise ValueError(
-#                 f"Số tuần train tối thiểu không được nhỏ hơn "
-#                 f"{SeasonalNaive.CHU_KY}."
-#             )
-
-#         so_tuan_co_the_test = len(df) - so_tuan_train_toi_thieu
-
-#         if so_tuan_co_the_test < horizon:
-#             return 0
-
-#         so_fold_co_the = so_tuan_co_the_test // horizon
-
-#         return min(so_fold_toi_da, so_fold_co_the)
-
-#     @staticmethod
-#     def danh_gia_prophet(
-#         df: pd.DataFrame,
-#         holidays: pd.DataFrame | None,
-#         horizon: int,
-#         so_fold: int,
-#     ) -> dict:
-#         Backtesting._kiem_tra_du_lieu(df, horizon, so_fold)
-
-#         du_bao_tat_ca = []
-#         thuc_te_tat_ca = []
-#         chi_tiet_backtest = []
-
-#         vi_tri_test_dau = len(df) - horizon * so_fold
-
-#         for fold in range(so_fold):
-#             train_end = vi_tri_test_dau + fold * horizon
-#             test_end = train_end + horizon
-
-#             train = (
-#                 df.iloc[:train_end]
-#                 .copy()
-#                 .reset_index(drop=True)
-#             )
-#             test = (
-#                 df.iloc[train_end:test_end]
-#                 .copy()
-#                 .reset_index(drop=True)
-#             )
-
-#             ngay_bat_dau_du_bao = (
-#                 pd.Timestamp(train["ds"].max())
-#                 + pd.Timedelta(weeks=1)
-#             )
-
-#             model = ProphetCoBan.huan_luyen(
-#                 df=train,
-#                 holidays=holidays,
-#             )
-
-#             forecast = ProphetCoBan.du_bao(
-#                 model=model,
-#                 ngay_bat_dau_du_bao=ngay_bat_dau_du_bao,
-#                 so_tuan_du_bao=horizon,
-#             )
-
-#             Backtesting._kiem_tra_ngay_test(
-#                 test=test,
-#                 forecast=forecast,
-#             )
-
-#             thuc_te = test["y"].to_numpy(dtype=float)
-#             du_bao = (
-#                 forecast["yhat"]
-#                 .clip(lower=0)
-#                 .to_numpy(dtype=float)
-#             )
-
-#             Backtesting._them_chi_tiet(
-#                 chi_tiet=chi_tiet_backtest,
-#                 fold=fold,
-#                 test=test,
-#                 thuc_te=thuc_te,
-#                 du_bao=du_bao,
-#             )
-
-#             thuc_te_tat_ca.extend(thuc_te.tolist())
-#             du_bao_tat_ca.extend(du_bao.tolist())
-
-#         chi_so = DanhGiaSaiSo.tinh_tat_ca(
-#             thuc_te=thuc_te_tat_ca,
-#             du_bao=du_bao_tat_ca,
-#         )
-
-#         return {
-#             "mo_hinh": "PROPHET",
-#             "horizon": horizon,
-#             "so_fold": so_fold,
-#             "so_diem_danh_gia": len(thuc_te_tat_ca),
-#             "chu_ky": None,
-#             **chi_so,
-#             "chi_tiet": chi_tiet_backtest,
-#         }
-
-#     @staticmethod
-#     def danh_gia_seasonal_naive(
-#         df: pd.DataFrame,
-#         horizon: int,
-#         so_fold: int,
-#         chu_ky: int = SeasonalNaive.CHU_KY,
-#     ) -> dict:
-#         Backtesting._kiem_tra_du_lieu(df, horizon, so_fold)
-
-#         if chu_ky != SeasonalNaive.CHU_KY:
-#             raise ValueError(
-#                 f"Chu kỳ Seasonal Naive phải là "
-#                 f"{SeasonalNaive.CHU_KY} tuần."
-#             )
-
-#         du_bao_tat_ca = []
-#         thuc_te_tat_ca = []
-#         chi_tiet_backtest = []
-
-#         vi_tri_test_dau = len(df) - horizon * so_fold
-
-#         for fold in range(so_fold):
-#             train_end = vi_tri_test_dau + fold * horizon
-#             test_end = train_end + horizon
-
-#             train = (
-#                 df.iloc[:train_end]
-#                 .copy()
-#                 .reset_index(drop=True)
-#             )
-#             test = (
-#                 df.iloc[train_end:test_end]
-#                 .copy()
-#                 .reset_index(drop=True)
-#             )
-
-#             du_bao = SeasonalNaive.du_bao(
-#                 df=train,
-#                 so_tuan_du_bao=horizon,
-#                 chu_ky=chu_ky,
-#             )
-
-#             thuc_te = test["y"].to_numpy(dtype=float)
-
-#             if len(thuc_te) != len(du_bao):
-#                 raise ValueError(
-#                     "Số điểm thực tế và dự báo "
-#                     "Seasonal Naive không khớp."
-#                 )
-
-#             Backtesting._them_chi_tiet(
-#                 chi_tiet=chi_tiet_backtest,
-#                 fold=fold,
-#                 test=test,
-#                 thuc_te=thuc_te,
-#                 du_bao=du_bao,
-#             )
-
-#             thuc_te_tat_ca.extend(thuc_te.tolist())
-#             du_bao_tat_ca.extend(du_bao.tolist())
-
-#         chi_so = DanhGiaSaiSo.tinh_tat_ca(
-#             thuc_te=thuc_te_tat_ca,
-#             du_bao=du_bao_tat_ca,
-#         )
-
-#         return {
-#             "mo_hinh": "SEASONAL_NAIVE",
-#             "horizon": horizon,
-#             "chu_ky": chu_ky,
-#             "so_fold": so_fold,
-#             "so_diem_danh_gia": len(thuc_te_tat_ca),
-#             **chi_so,
-#             "chi_tiet": chi_tiet_backtest,
-#         }
-
-#     @staticmethod
-#     def co_the_danh_gia_seasonal_naive(
-#         df: pd.DataFrame,
-#         horizon: int,
-#         chu_ky: int = SeasonalNaive.CHU_KY,
-#         so_fold: int = 1,
-#     ) -> bool:
-#         if horizon not in (4, 8) or so_fold <= 0:
-#             return False
-
-#         so_tuan_train_fold_dau = len(df) - horizon * so_fold
-#         return so_tuan_train_fold_dau >= chu_ky
-
-#     @staticmethod
-#     def _them_chi_tiet(
-#         chi_tiet: list[dict],
-#         fold: int,
-#         test: pd.DataFrame,
-#         thuc_te: np.ndarray,
-#         du_bao: np.ndarray,
-#     ) -> None:
-#         if len(thuc_te) != len(du_bao):
-#             raise ValueError(
-#                 "Số điểm thực tế và dự báo không khớp."
-#             )
-
-#         for i in range(len(test)):
-#             ngay_test = pd.Timestamp(
-#                 test.iloc[i]["ds"]
-#             ).normalize()
-
-#             gia_tri_thuc_te = float(thuc_te[i])
-#             gia_tri_du_bao = float(du_bao[i])
-
-#             chi_tiet.append({
-#                 "fold": fold + 1,
-#                 "tu_ngay": ngay_test.date(),
-#                 "den_ngay": (
-#                     ngay_test + pd.Timedelta(days=6)
-#                 ).date(),
-#                 "thuc_te": gia_tri_thuc_te,
-#                 "du_bao": gia_tri_du_bao,
-#                 "sai_so": gia_tri_du_bao - gia_tri_thuc_te,
-#                 "sai_so_tuyet_doi": abs(
-#                     gia_tri_thuc_te - gia_tri_du_bao
-#                 ),
-#             })
-
-#     @staticmethod
-#     def _kiem_tra_ngay_test(
-#         test: pd.DataFrame,
-#         forecast: pd.DataFrame,
-#     ) -> None:
-#         ngay_test = pd.DatetimeIndex(
-#             pd.to_datetime(test["ds"]).dt.normalize()
-#         )
-#         ngay_du_bao = pd.DatetimeIndex(
-#             pd.to_datetime(forecast["ds"]).dt.normalize()
-#         )
-
-#         if not ngay_du_bao.equals(ngay_test):
-#             raise ValueError(
-#                 "Backtesting bị lệch tuần giữa dữ liệu thực tế "
-#                 "và dữ liệu dự báo."
-#             )
-
-#     @staticmethod
-#     def _kiem_tra_horizon(horizon: int) -> None:
-#         if horizon not in (4, 8):
-#             raise ValueError(
-#                 "Horizon chỉ được là 4 hoặc 8 tuần."
-#             )
-
-#     @staticmethod
-#     def _kiem_tra_du_lieu(
-#         df: pd.DataFrame,
-#         horizon: int,
-#         so_fold: int,
-#     ) -> None:
-#         Backtesting._kiem_tra_horizon(horizon)
-
-#         if df.empty or not {"ds", "y"}.issubset(df.columns):
-#             raise ValueError(
-#                 "Dữ liệu backtesting phải có cột ds, y "
-#                 "và không được rỗng."
-#             )
-
-#         if so_fold <= 0:
-#             raise ValueError("Số fold phải lớn hơn 0.")
-
-#         ngay = pd.to_datetime(df["ds"], errors="coerce")
-#         nhu_cau = pd.to_numeric(
-#             df["y"],
-#             errors="coerce",
-#         ).to_numpy(dtype=float)
-
-#         if ngay.isna().any():
-#             raise ValueError(
-#                 "Dữ liệu backtesting có ngày không hợp lệ."
-#             )
-
-#         if not np.isfinite(nhu_cau).all() or (nhu_cau < 0).any():
-#             raise ValueError(
-#                 "Nhu cầu phải là số hữu hạn không âm."
-#             )
-
-#         if ngay.duplicated().any() or not ngay.is_monotonic_increasing:
-#             raise ValueError(
-#                 "Dữ liệu tuần phải có ngày duy nhất "
-#                 "và được sắp xếp tăng dần."
-#             )
-
-#         so_tuan_test = horizon * so_fold
-#         so_tuan_train = len(df) - so_tuan_test
-
-#         if so_tuan_train < SeasonalNaive.CHU_KY:
-#             raise ValueError(
-#                 f"Mỗi fold cần tối thiểu "
-#                 f"{SeasonalNaive.CHU_KY} tuần train "
-#                 "để đánh giá Seasonal Naive m=52."
-#             )
 import numpy as np
 import pandas as pd
 
-from src.services.forecasting.danh_gia_sai_so import (
-    DanhGiaSaiSo,
-)
 from src.services.forecasting.prophet_co_ban import (
+    TEN_HOI_QUY_KM,
     ProphetCoBan,
 )
 from src.services.forecasting.seasonal_naive import (
@@ -335,466 +14,416 @@ from src.services.forecasting.seasonal_naive import (
 
 
 class Backtesting:
-    """
-    Expanding-window backtesting.
-
-    Mỗi fold:
-    - train bằng dữ liệu quá khứ
-    - dự báo horizon tuần tiếp theo
-    - so sánh forecast với actual
-    """
-
-    # Cùng tập train cho Prophet và Seasonal Naive m=52.
-    SO_TUAN_TRAIN_TOI_THIEU = 52
+    MIN_TRAIN_WEEKS = 8
+    SEASONAL_PERIOD = 52
 
     @staticmethod
-    def tinh_so_fold_phu_hop(
+    def _validate(
         df: pd.DataFrame,
         horizon: int,
-        so_fold_toi_da: int = 3,
-        so_tuan_train_toi_thieu: int = 52,
-    ) -> int:
-
-        if horizon not in (4, 8):
+        so_tuan_dem: int = 1,
+    ) -> pd.DataFrame:
+        if not isinstance(so_tuan_dem, int) or so_tuan_dem < 0:
+            raise ValueError("Số tuần đệm phải là số nguyên không âm.")
+        if not isinstance(horizon, int) or not 1 <= horizon <= 8:
             raise ValueError(
-                "Horizon backtesting phải "
-                "4 hoặc 8 tuần."
+                "Horizon phải là số nguyên từ 1 đến 8."
             )
 
-        if so_fold_toi_da <= 0:
+        if not {"ds", "y"}.issubset(df.columns):
             raise ValueError(
-                "Số fold tối đa phải lớn hơn 0."
+                "Dữ liệu kiểm thử cần có ds và y."
             )
 
-        so_tuan = len(df)
+        columns = ["ds", "y"]
 
-        # Một tuần đang diễn ra nằm giữa train và test.
-        so_tuan_co_the_test = so_tuan - so_tuan_train_toi_thieu - 1
+        if TEN_HOI_QUY_KM in df.columns:
+            columns.append(TEN_HOI_QUY_KM)
 
-        if so_tuan_co_the_test < horizon:
-            return 0
+        data = df[columns].copy()
+        data["ds"] = pd.to_datetime(data["ds"])
+        data["y"] = pd.to_numeric(data["y"], errors="raise")
 
-        so_fold_co_the = (
-            so_tuan_co_the_test
-            // horizon
+        if TEN_HOI_QUY_KM in data.columns:
+            data[TEN_HOI_QUY_KM] = (
+                pd.to_numeric(
+                    data[TEN_HOI_QUY_KM], errors="raise"
+                )
+                .fillna(0.0)
+                .clip(0.0, 1.0)
+            )
+
+        data = data.sort_values("ds").reset_index(drop=True)
+
+        if (
+            data["ds"].duplicated().any()
+            or data["y"].isna().any()
+            or not np.isfinite(data["y"].to_numpy()).all()
+            or (data["y"] < 0).any()
+        ):
+            raise ValueError(
+                "Dữ liệu backtesting không hợp lệ."
+            )
+
+        if len(data) < Backtesting.MIN_TRAIN_WEEKS + so_tuan_dem + horizon:
+            raise ValueError(
+                "Không đủ dữ liệu cho huấn luyện và kiểm thử."
+            )
+
+        expected = pd.date_range(
+            start=data["ds"].iloc[0],
+            periods=len(data),
+            freq="W-MON",
         )
 
-        return min(
-            so_fold_toi_da,
-            so_fold_co_the,
+        if not data["ds"].equals(pd.Series(expected)):
+            raise ValueError(
+                "Dữ liệu phải liên tục theo tuần thứ Hai."
+            )
+
+        return data
+
+    @staticmethod
+    def _hoi_quy(frame: pd.DataFrame) -> pd.Series | None:
+        if TEN_HOI_QUY_KM not in frame.columns:
+            return None
+
+        return pd.Series(
+            frame[TEN_HOI_QUY_KM].to_numpy(dtype=float),
+            index=pd.DatetimeIndex(frame["ds"]),
         )
 
     @staticmethod
-    def danh_gia_prophet(
+    def _folds(
+        n: int,
+        horizon: int,
+        so_fold_toi_da: int,
+        min_train: int,
+        so_tuan_dem: int = 1,
+    ) -> list[int]:
+        if so_fold_toi_da < 1:
+            raise ValueError("Số fold phải lớn hơn 0.")
+
+        origins = []
+
+        # Các khoảng test không chồng lấn nhau.
+        for fold_index in range(so_fold_toi_da):
+            train_end = n - horizon * (fold_index + 1) - so_tuan_dem
+
+            if train_end < min_train:
+                break
+
+            origins.append(train_end)
+
+        return sorted(origins)
+
+    @staticmethod
+    def _metrics(
+        actual,
+        predicted,
+    ) -> dict:
+        y = np.asarray(actual, dtype=float)
+        yhat = np.asarray(predicted, dtype=float)
+
+        if y.shape != yhat.shape or y.size == 0:
+            raise ValueError(
+                "Dữ liệu thực tế và dự báo không khớp."
+            )
+
+        if (
+            not np.isfinite(y).all()
+            or not np.isfinite(yhat).all()
+        ):
+            raise ValueError(
+                "Chỉ số đánh giá chứa giá trị không hợp lệ."
+            )
+
+        errors = y - yhat
+        absolute_errors = np.abs(errors)
+
+        mae = float(np.mean(absolute_errors))
+        rmse = float(np.sqrt(np.mean(errors ** 2)))
+
+        denominator_wape = float(np.sum(np.abs(y)))
+
+        wape = (
+            float(
+                np.sum(absolute_errors)
+                / denominator_wape
+                * 100
+            )
+            if denominator_wape > 0
+            else None
+        )
+
+        denominator_smape = np.abs(y) + np.abs(yhat)
+
+        # Quy ước: thực tế và dự báo cùng bằng 0 -> sai số 0.
+        smape_terms = np.divide(
+            2.0 * absolute_errors,
+            denominator_smape,
+            out=np.zeros_like(absolute_errors),
+            where=denominator_smape > 0,
+        )
+
+        smape = float(np.mean(smape_terms) * 100)
+
+        return {
+            "mae": mae,
+            "rmse": rmse,
+            "wape": wape,
+            "smape": smape,
+        }
+
+    @staticmethod
+    def _candidate_configs(
+        train_length: int,
+        dung_khuyen_mai: bool = False,
+    ) -> list[dict]:
+        candidates = []
+
+        yearly_options = (
+            [False, True] if train_length >= 104 else [False]
+        )
+
+        for yearly in yearly_options:
+            for changepoint in (0.05, 0.1):
+                candidates.append({
+                    "changepoint_prior_scale": changepoint,
+                    "seasonality_prior_scale": 10.0,
+                    "holidays_prior_scale": 10.0,
+                    "yearly_seasonality": yearly,
+                    "khuyen_mai": bool(dung_khuyen_mai),
+                })
+
+        return candidates
+
+    @staticmethod
+    def chon_cau_hinh(
         df: pd.DataFrame,
         holidays: pd.DataFrame | None,
         horizon: int,
-        so_fold: int,
+        dung_khuyen_mai: bool = False,
+        so_tuan_dem: int = 1,
     ) -> dict:
+        """
+        Chọn cấu hình bằng validation ở cuối phần dữ liệu truyền vào.
 
-        Backtesting._kiem_tra_du_lieu(
-            df=df,
-            horizon=horizon,
-            so_fold=so_fold,
+        Khi được gọi trong outer backtest, hàm này chỉ nhìn thấy
+        outer training set, tránh dùng dữ liệu outer test để chọn
+        cấu hình.
+        """
+        data = Backtesting._validate(df, horizon, so_tuan_dem)
+
+        candidates = Backtesting._candidate_configs(
+            len(data), dung_khuyen_mai
         )
 
-        du_bao_tat_ca = []
-        thuc_te_tat_ca = []
+        validation_weeks = horizon
+        train_end = len(data) - validation_weeks - so_tuan_dem
 
-        # Dùng để debug từng điểm backtest.
-        chi_tiet_backtest = []
+        if train_end < Backtesting.MIN_TRAIN_WEEKS:
+            return candidates[0]
 
-        tong_so_tuan_test = (
-            horizon * so_fold
-        )
+        train = data.iloc[:train_end].copy()
+        validation = data.iloc[train_end + so_tuan_dem:].copy()
 
-        vi_tri_train_dau = len(df) - tong_so_tuan_test - 1
+        best_config = None
+        best_mae = math.inf
 
-        for fold in range(so_fold):
+        for config in candidates:
+            if (
+                config["yearly_seasonality"]
+                and len(train) < 104
+            ):
+                continue
 
-            train_end = (
-                vi_tri_train_dau
-                + fold * horizon
-            )
-
-            test_start = train_end + 1
-            test_end = test_start + horizon
-
-            train = (
-                df.iloc[:train_end]
-                .copy()
-                .reset_index(drop=True)
-            )
-
-            test = (
-                df.iloc[
-                    test_start:test_end
-                ]
-                .copy()
-                .reset_index(drop=True)
-            )
-
-            # Bỏ tuần hiện tại chưa hoàn chỉnh; bắt đầu từ tuần sau.
-            ngay_bat_dau_du_bao = (
-                pd.Timestamp(
-                    train["ds"].max()
-                )
-                + pd.Timedelta(
-                    weeks=2
-                )
-            )
-
-            model = (
-                ProphetCoBan.huan_luyen(
+            try:
+                model = ProphetCoBan.huan_luyen(
                     df=train,
                     holidays=holidays,
+                    cau_hinh=config,
+                    co_khoang=False,
                 )
+
+                result = ProphetCoBan.du_bao_tai_ngay(
+                    model,
+                    validation["ds"],
+                    khuyen_mai=Backtesting._hoi_quy(validation),
+                )
+
+                predictions = np.maximum(
+                    result["yhat"].to_numpy(dtype=float),
+                    0.0,
+                )
+
+                score = Backtesting._metrics(
+                    validation["y"].to_numpy(),
+                    predictions,
+                )["mae"]
+
+                if score < best_mae:
+                    best_mae = score
+                    best_config = dict(config)
+
+            except (ValueError, RuntimeError):
+                continue
+
+        if best_config is None:
+            raise ValueError(
+                "Không thể huấn luyện cấu hình Prophet hợp lệ."
             )
 
-            forecast = (
-                ProphetCoBan.du_bao(
-                    model=model,
-                    ngay_bat_dau_du_bao=(
-                        ngay_bat_dau_du_bao
-                    ),
-                    so_tuan_du_bao=horizon,
-                )
-            )
-
-            thuc_te = (
-                test["y"]
-                .to_numpy(
-                    dtype=float
-                )
-            )
-
-            # Prophet có thể cho giá trị âm.
-            # Nhu cầu không thể âm nên chặn về 0.
-            du_bao = (
-                forecast["yhat"]
-                .clip(lower=0)
-                .to_numpy(
-                    dtype=float
-                )
-            )
-
-            if len(thuc_te) != len(du_bao):
-                raise ValueError(
-                    "Số điểm thực tế và dự báo "
-                    "trong backtesting không khớp."
-                )
-
-            # Kiểm tra ngày test và ngày forecast
-            # phải khớp tuyệt đối.
-            for i in range(len(test)):
-
-                ngay_test = (
-                    pd.Timestamp(
-                        test.iloc[i]["ds"]
-                    )
-                    .normalize()
-                )
-
-                ngay_forecast = (
-                    pd.Timestamp(
-                        forecast.iloc[i]["ds"]
-                    )
-                    .normalize()
-                )
-
-                if ngay_test != ngay_forecast:
-                    raise ValueError(
-                        "Backtesting bị lệch tuần: "
-                        f"actual={ngay_test.date()}, "
-                        f"forecast={ngay_forecast.date()}."
-                    )
-
-                tu_ngay = (
-                    ngay_test.date()
-                )
-
-                den_ngay = (
-                    ngay_test
-                    + pd.Timedelta(days=6)
-                ).date()
-
-                chi_tiet_backtest.append(
-                    {
-                        "fold": fold + 1,
-                        "tu_ngay": tu_ngay,
-                        "den_ngay": den_ngay,
-                        "thuc_te": float(
-                            thuc_te[i]
-                        ),
-                        "du_bao": float(
-                            du_bao[i]
-                        ),
-                        "sai_so": float(
-                            du_bao[i]
-                            - thuc_te[i]
-                        ),
-                        "sai_so_tuyet_doi": float(
-                            abs(
-                                thuc_te[i]
-                                - du_bao[i]
-                            )
-                        ),
-                    }
-                )
-
-            thuc_te_tat_ca.extend(
-                thuc_te.tolist()
-            )
-
-            du_bao_tat_ca.extend(
-                du_bao.tolist()
-            )
-
-        chi_so = (
-            DanhGiaSaiSo.tinh_tat_ca(
-                thuc_te=thuc_te_tat_ca,
-                du_bao=du_bao_tat_ca,
-            )
-        )
-
-        return {
-            "mo_hinh": "PROPHET",
-            "horizon": horizon,
-            "so_fold": so_fold,
-            "so_diem_danh_gia": len(
-                thuc_te_tat_ca
-            ),
-            "chu_ky": None,
-            **chi_so,
-            "chi_tiet": chi_tiet_backtest,
-        }
+        return best_config
 
     @staticmethod
-    def danh_gia_seasonal_naive(
+    def danh_gia_hai_mo_hinh(
         df: pd.DataFrame,
+        holidays: pd.DataFrame | None,
         horizon: int,
-        chu_ky: int,
-        so_fold: int,
-    ) -> dict:
+        so_fold_toi_da: int = 4,
+        dung_khuyen_mai: bool = False,
+        so_tuan_dem: int = 1,
+    ) -> tuple[list[dict], list[dict]]:
+        """
+        So sánh Prophet và Seasonal Naive trên cùng các fold.
 
-        Backtesting._kiem_tra_du_lieu(
-            df=df,
+        Seasonal Naive dùng chu kỳ 52 tuần nên mỗi fold phải có
+        tối thiểu 52 tuần train. Nếu dữ liệu không đủ, không tạo
+        chỉ số giả.
+        """
+        data = Backtesting._validate(df, horizon, so_tuan_dem)
+
+        origins = Backtesting._folds(
+            n=len(data),
             horizon=horizon,
-            so_fold=so_fold,
-        )
-
-        du_bao_tat_ca = []
-        thuc_te_tat_ca = []
-        chi_tiet_backtest = []
-
-        tong_so_tuan_test = (
-            horizon * so_fold
-        )
-
-        vi_tri_train_dau = len(df) - tong_so_tuan_test - 1
-
-        for fold in range(so_fold):
-
-            train_end = (
-                vi_tri_train_dau
-                + fold * horizon
-            )
-
-            test_start = train_end + 1
-            test_end = test_start + horizon
-
-            train = (
-                df.iloc[:train_end]
-                .copy()
-                .reset_index(drop=True)
-            )
-
-            test = (
-                df.iloc[
-                    test_start:test_end
-                ]
-                .copy()
-                .reset_index(drop=True)
-            )
-
-            if len(train) < chu_ky:
-                raise ValueError(
-                    "Không đủ dữ liệu train cho "
-                    f"Seasonal Naive chu kỳ "
-                    f"{chu_ky} tuần."
-                )
-
-            du_bao = (
-                SeasonalNaive.du_bao(
-                    df=train,
-                    so_tuan_du_bao=horizon + 1,
-                    chu_ky=chu_ky,
-                )
-            )[1:]
-
-            thuc_te = (
-                test["y"]
-                .to_numpy(
-                    dtype=float
-                )
-            )
-
-            if len(thuc_te) != len(du_bao):
-                raise ValueError(
-                    "Số điểm thực tế và dự báo "
-                    "Seasonal Naive không khớp."
-                )
-
-            for i in range(len(test)):
-
-                ngay_test = (
-                    pd.Timestamp(
-                        test.iloc[i]["ds"]
-                    )
-                    .normalize()
-                )
-
-                tu_ngay = (
-                    ngay_test.date()
-                )
-
-                den_ngay = (
-                    ngay_test
-                    + pd.Timedelta(days=6)
-                ).date()
-
-                chi_tiet_backtest.append(
-                    {
-                        "fold": fold + 1,
-                        "tu_ngay": tu_ngay,
-                        "den_ngay": den_ngay,
-                        "thuc_te": float(
-                            thuc_te[i]
-                        ),
-                        "du_bao": float(
-                            du_bao[i]
-                        ),
-                        "sai_so": float(
-                            du_bao[i]
-                            - thuc_te[i]
-                        ),
-                        "sai_so_tuyet_doi": float(
-                            abs(
-                                thuc_te[i]
-                                - du_bao[i]
-                            )
-                        ),
-                    }
-                )
-
-            thuc_te_tat_ca.extend(
-                thuc_te.tolist()
-            )
-
-            du_bao_tat_ca.extend(
-                du_bao.tolist()
-            )
-
-        chi_so = (
-            DanhGiaSaiSo.tinh_tat_ca(
-                thuc_te=thuc_te_tat_ca,
-                du_bao=du_bao_tat_ca,
-            )
-        )
-
-        return {
-            "mo_hinh": "SEASONAL_NAIVE",
-            "horizon": horizon,
-            "chu_ky": chu_ky,
-            "so_fold": so_fold,
-            "so_diem_danh_gia": len(
-                thuc_te_tat_ca
+            so_fold_toi_da=so_fold_toi_da,
+            min_train=max(
+                Backtesting.MIN_TRAIN_WEEKS,
+                Backtesting.SEASONAL_PERIOD,
             ),
-            **chi_so,
-            "chi_tiet": chi_tiet_backtest,
+            so_tuan_dem=so_tuan_dem,
+        )
+
+        if not origins:
+            raise ValueError(
+                "Không đủ dữ liệu để so sánh Prophet "
+                "với Seasonal Naive chu kỳ 52 tuần. "
+                f"Cần tối thiểu {52 + so_tuan_dem + horizon} tuần "
+                "lịch sử hoàn chỉnh."
+            )
+
+        predictions_by_model = {
+            "PROPHET": [],
+            "SEASONAL_NAIVE": [],
         }
 
-    @staticmethod
-    def co_the_danh_gia_seasonal_naive(
-        df: pd.DataFrame,
-        horizon: int,
-        chu_ky: int,
-        so_fold: int,
-    ) -> bool:
+        actual_by_model = {
+            "PROPHET": [],
+            "SEASONAL_NAIVE": [],
+        }
 
-        if chu_ky != SeasonalNaive.CHU_KY or horizon not in (4, 8):
-            return False
+        fold_configs = []
 
-        tong_so_tuan_test = (
-            horizon * so_fold
-        )
-
-        so_tuan_train_fold_dau = len(df) - tong_so_tuan_test - 1
-
-        return (
-            so_tuan_train_fold_dau
-            >= chu_ky
-        )
-
-    @staticmethod
-    def _kiem_tra_du_lieu(
-        df: pd.DataFrame,
-        horizon: int,
-        so_fold: int,
-    ) -> None:
-
-        if df.empty:
-            raise ValueError(
-                "Không có dữ liệu để backtesting."
-            )
-
-        if not {
-            "ds",
-            "y",
-        }.issubset(
-            df.columns
+        for fold_number, train_end in enumerate(
+            origins, start=1
         ):
-            raise ValueError(
-                "Dữ liệu backtesting phải "
-                "có cột ds và y."
+            train = data.iloc[:train_end].copy()
+
+            test = data.iloc[
+                train_end + so_tuan_dem:
+                train_end + so_tuan_dem + horizon
+            ].copy()
+
+            actual = test["y"].to_numpy(dtype=float)
+
+            config = Backtesting.chon_cau_hinh(
+                df=train,
+                holidays=holidays,
+                horizon=horizon,
+                dung_khuyen_mai=dung_khuyen_mai,
+                so_tuan_dem=so_tuan_dem,
             )
 
-        ds = pd.to_datetime(df["ds"], errors="coerce")
-        y = pd.to_numeric(df["y"], errors="coerce").to_numpy(dtype=float)
-        if ds.isna().any() or not np.isfinite(y).all() or (y < 0).any():
-            raise ValueError("Ngày hoặc nhu cầu tuần không hợp lệ.")
-        if (
-            not ds.is_monotonic_increasing
-            or ds.duplicated().any()
-            or (ds.dt.weekday != 0).any()
-            or (ds.diff().iloc[1:] != pd.Timedelta(weeks=1)).any()
+            prophet_model = ProphetCoBan.huan_luyen(
+                df=train,
+                holidays=holidays,
+                cau_hinh=config,
+                co_khoang=False,
+            )
+
+            prophet_result = ProphetCoBan.du_bao_tai_ngay(
+                prophet_model,
+                test["ds"],
+                khuyen_mai=Backtesting._hoi_quy(test),
+            )
+
+            prophet_prediction = np.maximum(
+                prophet_result["yhat"].to_numpy(dtype=float),
+                0.0,
+            )
+
+            naive_prediction = SeasonalNaive.du_bao(
+                df=train[["ds", "y"]],
+                so_tuan_du_bao=horizon + so_tuan_dem,
+                chu_ky=Backtesting.SEASONAL_PERIOD,
+            )[-horizon:]
+
+            predictions_by_model["PROPHET"].extend(
+                prophet_prediction.tolist()
+            )
+            predictions_by_model["SEASONAL_NAIVE"].extend(
+                naive_prediction.tolist()
+            )
+
+            for model_name in predictions_by_model:
+                actual_by_model[model_name].extend(
+                    actual.tolist()
+                )
+
+            fold_configs.append({
+                "so_tuan_dem": so_tuan_dem,
+                "fold": fold_number,
+                "tu_ngay": test["ds"].iloc[0].date().isoformat(),
+                "den_ngay": (
+                    test["ds"].iloc[-1]
+                    + pd.Timedelta(days=6)
+                ).date().isoformat(),
+                "so_tuan_train": len(train),
+                "cau_hinh_prophet": config,
+            })
+
+        scores = []
+
+        for model_name in (
+            "PROPHET",
+            "SEASONAL_NAIVE",
         ):
-            raise ValueError(
-                "Các tuần phải liên tục và bắt đầu vào Thứ Hai."
+            metrics = Backtesting._metrics(
+                actual_by_model[model_name],
+                predictions_by_model[model_name],
             )
 
-        if horizon not in (4, 8):
-            raise ValueError(
-                "Horizon backtesting phải "
-                "4 hoặc 8 tuần."
-            )
+            scores.append({
+                "mo_hinh": model_name,
+                "horizon": horizon,
+                "so_fold": len(origins),
+                "so_diem_danh_gia": len(
+                    actual_by_model[model_name]
+                ),
+                "chu_ky": (
+                    Backtesting.SEASONAL_PERIOD
+                    if model_name == "SEASONAL_NAIVE"
+                    else None
+                ),
+                "mae": round(metrics["mae"], 4),
+                "rmse": round(metrics["rmse"], 4),
+                "wape": (
+                    round(metrics["wape"], 4)
+                    if metrics["wape"] is not None
+                    else None
+                ),
+                "smape": round(metrics["smape"], 4),
+            })
 
-        if so_fold <= 0:
-            raise ValueError(
-                "Số fold phải lớn hơn 0."
-            )
-
-        so_tuan_test = (
-            horizon * so_fold
-        )
-
-        so_tuan_train = len(df) - so_tuan_test - 1
-
-        if (
-            so_tuan_train
-            < Backtesting.SO_TUAN_TRAIN_TOI_THIEU
-        ):
-            raise ValueError(
-                "Không đủ dữ liệu để thực hiện "
-                "expanding-window backtesting."
-            )
+        return scores, fold_configs

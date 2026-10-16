@@ -37,11 +37,10 @@ CREATE TABLE users(
     CHECK (
         vai_tro IN (
             'ADMIN',
-            'GIAM_SAT_BAN_HANG',
-            'NHAN_VIEN_KE_HOACH_SAN_XUAT',
-            'NHAN_VIEN_KHO',
+            'NHAN_VIEN_BAN_HANG',
             'NHAN_VIEN_MUA_HANG',
-            'QUAN_LY'
+            'QUAN_LY_BAN_HANG',
+            'QUAN_LY_MUA_HANG'
         )
     ),
 
@@ -93,6 +92,128 @@ CREATE TABLE password_reset_requests (
     reset_token_hash VARCHAR(64),
     reset_expires_at TIMESTAMPTZ,
     requested_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+-- ============================================================
+-- PHÂN QUYỀN
+-- ============================================================
+
+CREATE SEQUENCE nhom_quyen_seq START 1;
+
+-- 1. Thông tin nhóm quyền.
+CREATE TABLE nhom_quyen (
+    ma VARCHAR(20) PRIMARY KEY
+        DEFAULT (
+            'Q' || LPAD(
+                nextval('nhom_quyen_seq')::TEXT,
+                4,
+                '0'
+            )
+        ),
+
+    ten_quyen VARCHAR(100) NOT NULL
+        CHECK (BTRIM(ten_quyen) <> ''),
+
+    dien_giai TEXT,
+
+    nguoi_tao VARCHAR(20),
+    nguoi_cap_nhat VARCHAR(20),
+
+    thoi_gian_tao TIMESTAMPTZ NOT NULL
+        DEFAULT CURRENT_TIMESTAMP,
+
+    thoi_gian_cap_nhat TIMESTAMPTZ NOT NULL
+        DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT fk_nhom_quyen_nguoi_tao
+        FOREIGN KEY (nguoi_tao)
+        REFERENCES users(ma_nguoi_dung)
+        ON UPDATE CASCADE
+        ON DELETE SET NULL,
+
+    CONSTRAINT fk_nhom_quyen_nguoi_cap_nhat
+        FOREIGN KEY (nguoi_cap_nhat)
+        REFERENCES users(ma_nguoi_dung)
+        ON UPDATE CASCADE
+        ON DELETE SET NULL
+);
+
+-- Không cho trùng tên, kể cả khác chữ hoa/thường
+-- hoặc khoảng trắng ở đầu/cuối.
+CREATE UNIQUE INDEX uq_nhom_quyen_ten
+    ON nhom_quyen (LOWER(BTRIM(ten_quyen)));
+
+
+-- 2. Các vai trò được áp dụng nhóm quyền.
+CREATE TABLE nhom_quyen_vai_tro (
+    ma_nhom_quyen VARCHAR(20) NOT NULL,
+
+    vai_tro VARCHAR(50) NOT NULL,
+
+    CONSTRAINT pk_nhom_quyen_vai_tro
+        PRIMARY KEY (ma_nhom_quyen, vai_tro),
+
+    CONSTRAINT fk_nhom_quyen_vai_tro_nhom
+        FOREIGN KEY (ma_nhom_quyen)
+        REFERENCES nhom_quyen(ma)
+        ON UPDATE CASCADE
+        ON DELETE CASCADE,
+
+    CONSTRAINT ck_nhom_quyen_vai_tro
+        CHECK (
+            vai_tro IN (
+                'ADMIN',
+                'QUAN_LY_BAN_HANG',
+                'QUAN_LY_MUA_HANG',
+                'NHAN_VIEN_BAN_HANG',
+                'NHAN_VIEN_MUA_HANG'
+            )
+        )
+);
+
+-- Hỗ trợ tra cứu quyền theo vai trò.
+CREATE INDEX ix_nhom_quyen_vai_tro_vai_tro
+    ON nhom_quyen_vai_tro (vai_tro);
+
+
+-- 3. Các chức năng và thao tác đã được cấp.
+CREATE TABLE chi_tiet_nhom_quyen (
+    ma_nhom_quyen VARCHAR(20) NOT NULL,
+
+    chuc_nang VARCHAR(50) NOT NULL,
+
+    thao_tac VARCHAR(30) NOT NULL,
+
+    CONSTRAINT pk_chi_tiet_nhom_quyen
+        PRIMARY KEY (
+            ma_nhom_quyen,
+            chuc_nang,
+            thao_tac
+        ),
+
+    CONSTRAINT fk_chi_tiet_nhom_quyen_nhom
+        FOREIGN KEY (ma_nhom_quyen)
+        REFERENCES nhom_quyen(ma)
+        ON UPDATE CASCADE
+        ON DELETE CASCADE,
+
+    CONSTRAINT ck_chi_tiet_nhom_quyen_chuc_nang
+        CHECK (BTRIM(chuc_nang) <> ''),
+
+    CONSTRAINT ck_chi_tiet_nhom_quyen_thao_tac
+        CHECK (
+            thao_tac IN (
+                'XEM',
+                'THEM',
+                'SUA',
+                'XOA',
+                'CHAY_DU_BAO',
+                'NHAP_FILE',
+                'DUYET',
+                'TU_CHOI',
+                'XUAT_EXCEL'
+            )
+        )
 );
 
 -- =========================
@@ -188,12 +309,6 @@ CREATE TABLE ton_kho_nguyen_lieu (
             ton_kho_toi_da
             >= ton_kho_an_toan
         ),
-
-    ton_kho_kha_dung NUMERIC(14,2)
-        GENERATED ALWAYS AS (
-            ton_kho_thuc_te
-            - so_luong_book
-        ) STORED,
 
     trang_thai VARCHAR(30) NOT NULL,
 
@@ -444,6 +559,63 @@ CREATE SEQUENCE lich_su_du_bao_seq START 1;
 CREATE SEQUENCE chi_tiet_lich_su_du_bao_seq START 1;
 
 
+-- 1. Bảng chương trình khuyến mãi
+CREATE TABLE IF NOT EXISTS chuong_trinh_khuyen_mai (
+    ma_ctkm VARCHAR(30) PRIMARY KEY,
+    ma_ctkm_goc VARCHAR(150),
+    ten_ctkm VARCHAR(200) NOT NULL,
+    ngay_bat_dau DATE NOT NULL,
+    ngay_ket_thuc DATE NOT NULL,
+    so_luong_dat_quy_dinh INTEGER NOT NULL,
+    hinh_thuc_uu_dai VARCHAR(30) NOT NULL,
+    muc_giam_phan_tram NUMERIC(5,2) NOT NULL,
+    trang_thai VARCHAR(30) NOT NULL,
+
+    CONSTRAINT ck_ctkm_ngay
+        CHECK (ngay_ket_thuc >= ngay_bat_dau),
+
+    CONSTRAINT ck_ctkm_so_luong
+        CHECK (so_luong_dat_quy_dinh > 0),
+
+    CONSTRAINT ck_ctkm_hinh_thuc
+        CHECK (hinh_thuc_uu_dai = 'GIAM_PHAN_TRAM'),
+
+    CONSTRAINT ck_ctkm_muc_giam
+        CHECK (
+            muc_giam_phan_tram > 0
+            AND muc_giam_phan_tram <= 100
+        ),
+
+    CONSTRAINT ck_ctkm_trang_thai
+        CHECK (
+            trang_thai IN (
+                'SAP_DIEN_RA',
+                'DANG_DIEN_RA',
+                'KET_THUC',
+                'HUY'
+            )
+        )
+);
+
+-- 2. Bảng liên kết CTKM với sản phẩm
+CREATE TABLE IF NOT EXISTS chi_tiet_ctkm (
+    ma_ctkm VARCHAR(30) NOT NULL,
+    ma_san_pham VARCHAR(20) NOT NULL,
+
+    CONSTRAINT pk_chi_tiet_ctkm
+        PRIMARY KEY (ma_ctkm, ma_san_pham),
+
+    CONSTRAINT fk_chi_tiet_ctkm_ctkm
+        FOREIGN KEY (ma_ctkm)
+        REFERENCES chuong_trinh_khuyen_mai(ma_ctkm)
+        ON DELETE CASCADE,
+
+    CONSTRAINT fk_chi_tiet_ctkm_san_pham
+        FOREIGN KEY (ma_san_pham)
+        REFERENCES san_pham(ma_san_pham)
+);
+
+
 
 -- =====================================================
 -- LỊCH SỬ TIÊU THỤ
@@ -460,26 +632,33 @@ CREATE TABLE lich_su_tieu_thu (
         ),
 
     ma_don_hang VARCHAR(50) NOT NULL,
+    ma_ctkm VARCHAR(30),
     ma_san_pham VARCHAR(20) NOT NULL,
-
+        -- Đơn đã giao được backend ghi theo luồng bán hàng.
     ngay_ban DATE NOT NULL,
+    -- Ngày giao thực tế; đơn chờ giao để NULL.
+    ngay_giao_hang DATE,
+
+    -- Đơn chờ giao để NULL.
+
 
     so_luong_ban INTEGER NOT NULL
         CHECK (so_luong_ban > 0),
 
-    gia_goc NUMERIC(15,2)
+    -- Đơn giá trước giảm của một sản phẩm.
+    gia_goc NUMERIC(15, 2)
         CHECK (gia_goc >= 0),
 
-    muc_giam_gia NUMERIC(5,4) NOT NULL
+    -- Ví dụ: 0.10 tương ứng giảm 10%.
+    muc_giam_gia NUMERIC(5, 4) NOT NULL
         DEFAULT 0
         CHECK (
             muc_giam_gia BETWEEN 0 AND 1
         ),
 
-    gia_ban_sau_giam NUMERIC(15,2)
-        CHECK (
-            gia_ban_sau_giam >= 0
-        ),
+    -- Đơn giá của một sản phẩm sau giảm.
+    gia_ban_sau_giam NUMERIC(15, 2)
+        CHECK (gia_ban_sau_giam >= 0),
 
     co_khuyen_mai BOOLEAN NOT NULL
         DEFAULT FALSE,
@@ -490,11 +669,27 @@ CREATE TABLE lich_su_tieu_thu (
 
     ma_ngay_le VARCHAR(20),
 
-    trang_thai_san_xuat VARCHAR(30) NOT NULL
-        DEFAULT 'DA_SAN_XUAT'
+    trang_thai_don_hang VARCHAR(30) NOT NULL
+        DEFAULT 'CHO_GIAO_HANG'
         CHECK (
-            trang_thai_san_xuat = 'DA_SAN_XUAT'
+            trang_thai_don_hang IN (
+                'CHO_GIAO_HANG',
+                'DA_GIAO_HANG'
+            )
         ),
+
+    trang_thai_san_xuat VARCHAR(30) NOT NULL
+        DEFAULT 'CHO_SAN_XUAT'
+        CHECK (
+            trang_thai_san_xuat IN (
+                'CHO_SAN_XUAT',
+                'DANG_SAN_XUAT',
+                'DA_SAN_XUAT'
+            )
+        ),
+
+    -- Giữ liên kết với KHSX khi sửa mã đơn hoặc sản phẩm.
+    ma_ke_hoach_nguon VARCHAR(20),
 
     FOREIGN KEY (ma_san_pham)
         REFERENCES san_pham(ma_san_pham),
@@ -502,11 +697,36 @@ CREATE TABLE lich_su_tieu_thu (
     FOREIGN KEY (ma_ngay_le)
         REFERENCES ngay_le(ma_ngay_le)
         ON DELETE SET NULL,
-
+    CONSTRAINT fk_lstt_ctkm
+    FOREIGN KEY (ma_ctkm)
+    REFERENCES chuong_trinh_khuyen_mai(ma_ctkm)
+    ON DELETE RESTRICT,
     UNIQUE (
         ma_don_hang,
         ma_san_pham
     )
+);
+
+CREATE INDEX IF NOT EXISTS ix_ctkm_thoi_gian
+ON chuong_trinh_khuyen_mai (
+    ngay_bat_dau,
+    ngay_ket_thuc
+);
+
+CREATE INDEX IF NOT EXISTS ix_chi_tiet_ctkm_san_pham
+ON chi_tiet_ctkm (ma_san_pham);
+
+CREATE INDEX IF NOT EXISTS ix_lstt_ctkm
+ON lich_su_tieu_thu (ma_ctkm);
+
+CREATE UNIQUE INDEX uq_lstt_ke_hoach_nguon
+ON lich_su_tieu_thu (ma_ke_hoach_nguon)
+WHERE ma_ke_hoach_nguon IS NOT NULL;
+
+CREATE INDEX ix_lstt_trang_thai_ngay
+ON lich_su_tieu_thu (
+    trang_thai_don_hang,
+    ngay_ban
 );
 
 
@@ -526,20 +746,24 @@ CREATE TABLE ke_hoach_san_xuat (
 
     ma_don_hang VARCHAR(50) NOT NULL,
 
-    ngay_don_hang DATE NOT NULL,
+    ngay_ban DATE NOT NULL,
 
     ma_san_pham VARCHAR(20) NOT NULL,
 
     so_luong INTEGER NOT NULL
-        CHECK (
-            so_luong > 0
-        ),
+        CHECK (so_luong > 0),
+
+    -- Khớp với cột trong model KHSX bạn đã gửi.
+    gia_goc NUMERIC(15, 2)
+        CHECK (gia_goc >= 0),
 
     trang_thai_san_xuat VARCHAR(30) NOT NULL
         DEFAULT 'CHO_SAN_XUAT'
         CHECK (
             trang_thai_san_xuat IN (
-                'CHO_SAN_XUAT'
+                'CHO_SAN_XUAT',
+                'DANG_SAN_XUAT',
+                'DA_SAN_XUAT'
             )
         ),
 
@@ -575,9 +799,7 @@ CREATE TABLE lich_su_du_bao (
     ngay_ket_thuc_huan_luyen DATE NOT NULL,
 
     so_tuan_du_bao INTEGER NOT NULL
-        CHECK (
-            so_tuan_du_bao BETWEEN 4 AND 8
-        ),
+    CHECK (so_tuan_du_bao BETWEEN 1 AND 8),
 
     cau_hinh_mo_hinh VARCHAR(50) NOT NULL,
 
@@ -640,9 +862,7 @@ CREATE TABLE danh_gia_mo_hinh (
         ),
 
     horizon INTEGER NOT NULL
-        CHECK (
-            horizon IN (4, 8)
-        ),
+       CHECK (horizon BETWEEN 1 AND 8),
 
     so_fold INTEGER NOT NULL
         CHECK (
