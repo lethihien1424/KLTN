@@ -10,6 +10,7 @@ import {
 
 import DashboardBase, {
   type DashboardConfig,
+  type DashboardWorkspace,
 } from "../../components/dashboard/DashboardBase";
 
 import type { User } from "../../services/authService";
@@ -18,6 +19,7 @@ import type { User } from "../../services/authService";
 type Props = {
   user: User;
   onLogout: () => void | Promise<void>;
+  workspace?: DashboardWorkspace;
 };
 
 const config: DashboardConfig = {
@@ -35,28 +37,28 @@ const config: DashboardConfig = {
       icon: <PieChartOutlined />,
     },
     {
-      id: "du-bao-nhu-cau",
+      id: "du-bao-nhu-cau", permission: "du_bao_nhu_cau",
       label: "Dự báo nhu cầu",
       icon: <LineChartOutlined />,
     },
     {
-      id: "duyet-ke-hoach",
+      id: "duyet-ke-hoach", permission: "ke_hoach_mua_hang",
       label: "Duyệt kế hoạch",
       icon: <FileDoneOutlined />,
       badge: 2,
     },
     {
-      id: "ton-kho-nguyen-lieu",
+      id: "ton-kho-nguyen-lieu", permission: "ton_kho_nguyen_lieu",
       label: "Tồn kho nguyên liệu",
       icon: <DatabaseOutlined />,
     },
     {
-      id: "quan-ly-san-pham",
+      id: "quan-ly-san-pham", permission: "san_pham",
       label: "Quản lý sản phẩm",
       icon: <ShoppingOutlined />,
     },
     {
-      id: "nha-cung-cap",
+      id: "nha-cung-cap", permission: "nha_cung_cap",
       label: "Nhà cung cấp",
       icon: <TruckOutlined />,
     },
@@ -66,30 +68,35 @@ const config: DashboardConfig = {
   stats: [
     {
       label: "KẾ HOẠCH CHỜ DUYỆT",
+      permission: "ke_hoach_mua_hang",
       value: "02",
       note: "Cấp thiết",
       color: "orange",
     },
     {
       label: "CHÍNH XÁC DỰ BÁO",
+      permission: "danh_gia_mo_hinh",
       value: "94.2%",
       note: "↑ 1.2%",
       color: "blue",
     },
     {
       label: "DỰ TRÙ CHI PHÍ T10",
+      permission: "ke_hoach_mua_hang",
       value: "810 Tr",
       note: "VNĐ",
       color: "purple",
     },
     {
       label: "TỒN KHO AN TOÀN",
+      permission: "ton_kho_nguyen_lieu",
       value: "Ổn định",
       note: "(15.2 Tấn)",
       color: "green",
     },
   ],
 
+  tablePermission: "ke_hoach_mua_hang",
   tableTitle: "Kế Hoạch Mua Nguyên Liệu Chờ Phê Duyệt",
 
   columns: [
@@ -130,12 +137,14 @@ const config: DashboardConfig = {
 export default function DashboardPageQL({
   user,
   onLogout,
+  workspace,
 }: Props) {
   return (
     <DashboardBase
       user={user}
       config={config}
       onLogout={onLogout}
+      workspace={workspace}
     />
   );
 }

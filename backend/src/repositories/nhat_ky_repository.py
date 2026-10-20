@@ -1,3 +1,4 @@
+## D:\KLTN\KLTN\backend\src\repositories\nhat_ky_repository.py
 import logging
 
 from sqlalchemy import inspect

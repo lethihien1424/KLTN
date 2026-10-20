@@ -180,8 +180,14 @@ async function requestDuBao(
     );
   }
 
+// <<<<<<< HEAD
   const contentType =
     response.headers.get("content-type") || "";
+// =======
+//   const isRun = options.method === "POST";
+//   if (response.status === 401) window.dispatchEvent(new Event('auth-session-expired'));
+//   if (response.status === 403) window.dispatchEvent(new Event('auth-permissions-refresh'));
+// >>>>>>> origin/hien
 
   let body: unknown = null;
 
@@ -395,3 +401,7 @@ export async function layDuBaoMoiNhat(
 
   return body === null ? null : readForecast(body);
 }
+// =======
+//   return body === null ? null : docResponse(body);
+// }
+// >>>>>>> origin/hien

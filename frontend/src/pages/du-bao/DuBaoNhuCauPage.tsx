@@ -1,4 +1,5 @@
 ///D:\KLTN\KLTN\frontend\src\pages\du-bao\DuBaoNhuCauPage.tsx
+///D:\KLTN\KLTN\frontend\src\pages\du-bao\DuBaoNhuCauPage.tsx
 import {
   useEffect,
   useMemo,
@@ -20,6 +21,16 @@ import {
   type SoTuanDuBao,
   type YeuToDuBao,
 } from "../../services/duBaoService";
+// <<<<<<< HEAD
+// =======
+
+// import { getMe } from "../../services/authService";
+import { useAuth } from "../../auth/AuthContext";
+import { navigate } from "../../routes/navigation";
+
+// import "../../../public/DuBaoNhuCau.css";
+
+// >>>>>>> origin/hien
 type Props = {
   tenSanPham?: Record<string, string>;
   mode?: Tab;
@@ -866,13 +877,25 @@ export default function DuBaoNhuCauPage({
   tenSanPham = {},
   mode = "du-bao",
 }: Props) {
+  const { can } = useAuth();
   const tab = mode;
   const [soTuan, setSoTuan] = useState<SoTuanDuBao>(4);
+// <<<<<<< HEAD
   const [products, setProducts] = useState<SanPhamDuBao[]>([]);
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [productDropdown, setProductDropdown] = useState(false);
   const [weekDropdown, setWeekDropdown] = useState(false);
   const [result, setResult] = useState<DuBaoResponse | null>(null);
+// =======
+
+//   const [accountId, setAccountId] = useState("");
+//   const { can } = useAuth();
+//   const canRun = can('DU_BAO_RUN');
+
+//   const [result, setResult] =
+//     useState<DuBaoResponse | null>(null);
+
+// >>>>>>> origin/hien
   const [history, setHistory] = useState<LichSuDuBao[]>([]);
   const [historyQuery, setHistoryQuery] = useState("");
   const [historyDetail, setHistoryDetail] =
@@ -885,6 +908,7 @@ export default function DuBaoNhuCauPage({
   const [detailLoading, setDetailLoading] = useState(false);
   const [error, setError] = useState("");
   const [historyError, setHistoryError] = useState("");
+// <<<<<<< HEAD
   const productDropdownRef = useRef<HTMLDivElement>(null);
   const weekDropdownRef = useRef<HTMLDivElement>(null);
   const resultAnchorRef = useRef<HTMLDivElement>(null);
@@ -898,6 +922,94 @@ export default function DuBaoNhuCauPage({
     const output = { ...tenSanPham };
     for (const product of products) {
       output[product.ma] = product.ten;
+// =======
+//   const [search, setSearch] = useState("");
+//   const [historyVersion, setHistoryVersion] = useState(0);
+
+//   const mountedRef = useRef(false);
+//   const viewRequestRef = useRef(0);
+
+//   useEffect(() => {
+//     mountedRef.current = true;
+
+//     const controller = new AbortController();
+
+//     async function initialize(): Promise<void> {
+//       try {
+//         const user = await getMe();
+
+//         if (controller.signal.aborted) {
+//           return;
+//         }
+
+//         setAccountId(user.ma_nguoi_dung);
+
+//         const session = getSession(user.ma_nguoi_dung);
+
+//         setResult(session.latest);
+
+//         if (session.latest) {
+//           setSoTuan(session.latest.so_tuan_du_bao);
+//         }
+
+//         /*
+//          * Chuyển chức năng trong lúc đang chạy:
+//          * quay lại sẽ chờ cùng yêu cầu, không chạy thêm lần nữa.
+//          */
+//         if (session.pending) {
+//           setRunning(true);
+
+//           try {
+//             await session.pending;
+//           } catch (cause) {
+//             if (!controller.signal.aborted) {
+//               setError(getErrorMessage(cause));
+//             }
+//           } finally {
+//             if (!controller.signal.aborted) {
+//               setResult(session.latest);
+//               setRunning(false);
+//             }
+//           }
+//         }
+
+//         if (controller.signal.aborted) {
+//           return;
+//         }
+
+//         try {
+//           const latest = await layDuBaoMoiNhat(
+//             controller.signal,
+//           );
+
+//           if (controller.signal.aborted) {
+//             return;
+//           }
+
+//           if (latest) {
+//             keepNewest(session, latest);
+//           }
+
+//           setResult(session.latest);
+
+//           if (session.latest) {
+//             setSoTuan(session.latest.so_tuan_du_bao);
+//           }
+//         } catch (cause) {
+//           if (!controller.signal.aborted) {
+//             setError(getErrorMessage(cause));
+//           }
+//         }
+//       } catch (cause) {
+//         if (!controller.signal.aborted) {
+//           setError(getErrorMessage(cause));
+//         }
+//       } finally {
+//         if (!controller.signal.aborted) {
+//           setInitialLoading(false);
+//         }
+//       }
+// >>>>>>> origin/hien
     }
     return output;
   }, [products, tenSanPham]);
@@ -1295,16 +1407,82 @@ export default function DuBaoNhuCauPage({
                 </p>
               )}
               {!running && !loading && result && (
-                <ForecastResults
-                  key={result.ma_lich_su_du_bao}
-                  result={result}
-                  names={names}
-                />
+                <>
+                  <ForecastResults
+                    key={result.ma_lich_su_du_bao}
+                    result={result}
+                    names={names}
+                  />
+                  {can("nhu_cau_nguyen_lieu:XEM") &&
+                    result.ma_lich_su_du_bao && (
+                      <div
+                        style={{
+                          display: "flex",
+                          justifyContent: "flex-end",
+                          marginTop: 20,
+                        }}
+                      >
+                        <button
+                          type="button"
+                          className="db-button db-primary"
+                          onClick={() =>
+                            navigate("/nhu-cau-nguyen-lieu", {
+                              forecast: result.ma_lich_su_du_bao,
+                            })
+                          }
+                        >
+                          Xem nhu cầu nguyên liệu →
+                        </button>
+                      </div>
+                    )}
+                </>
               )}
+{/* <<<<<<< HEAD */}
               {!running && !loading && !result && (
                 <div className="db-placeholder">
                   <Icon name="chart" size={28} />
                   <h3>Chưa có kết quả dự báo</h3>
+{/* ======= */}
+
+              {/* {running && (
+                <div className="db-loading" role="status">
+                  <span
+                    className="db-spinner"
+                    aria-hidden="true"
+                  />
+
+                  Đang tính toán dự báo. Kết quả sẽ được cập nhật
+                  khi hoàn tất.
+                </div>
+              )}
+
+              {result ? (
+                <>
+                  {soTuan !== result.so_tuan_du_bao && (
+                    <p className="db-note">
+                      Bạn đang chọn {soTuan} tuần. Kết quả bên dưới
+                      thuộc lần dự báo {result.so_tuan_du_bao} tuần.
+                    </p>
+                  )}
+
+                  <ForecastResult
+                    key={result.ma_lich_su_du_bao}
+                    result={result}
+                    tenSanPham={tenSanPham}
+                  />
+                  {can('NHU_CAU_NGUYEN_LIEU_VIEW') && <button className="db-button db-primary" onClick={() => navigate('/nhu-cau', { forecast: result.ma_lich_su_du_bao })}>Xem nhu cầu nguyên liệu →</button>}
+                </>
+              ) : (
+                <div className="db-empty">
+                  <strong>
+                    {initialLoading
+                      ? "Đang tải kết quả dự báo..."
+                      : running
+                        ? "Đang tính toán dự báo..."
+                        : "Chưa có kết quả dự báo"}
+                  </strong>
+
+>>>>>>> origin/hien */}
                   <p>
                     Chọn số tuần và sản phẩm ở trên rồi nhấn Chạy dự
                     báo để xem kết quả.
@@ -1312,6 +1490,35 @@ export default function DuBaoNhuCauPage({
                 </div>
               )}
             </>
+// <<<<<<< HEAD
+// =======
+//           ) : viewResult ? (
+//             <>
+//               <div className="db-view-toolbar">
+//                 <button
+//                   type="button"
+//                   className="db-button"
+//                   onClick={() => setViewResult(null)}
+//                 >
+//                   ← Quay lại lịch sử
+//                 </button>
+
+//                 <span>
+//                   Chi tiết lần dự báo{" "}
+//                   <strong>
+//                     {viewResult.ma_lich_su_du_bao}
+//                   </strong>
+//                 </span>
+//               </div>
+
+//               <ForecastResult
+//                 key={viewResult.ma_lich_su_du_bao}
+//                 result={viewResult}
+//                 tenSanPham={tenSanPham}
+//               />
+//               {can('NHU_CAU_NGUYEN_LIEU_VIEW') && <button className="db-button db-primary" onClick={() => navigate('/nhu-cau', { forecast: viewResult.ma_lich_su_du_bao })}>Xem nhu cầu nguyên liệu →</button>}
+//             </>
+// >>>>>>> origin/hien
           ) : (
             <section className="db-history-section">
               {historyDetail || detailLoading ? (
@@ -1344,11 +1551,35 @@ export default function DuBaoNhuCauPage({
                     </p>
                   )}
                   {!detailLoading && historyDetail && (
-                    <ForecastResults
-                      key={historyDetail.ma_lich_su_du_bao}
-                      result={historyDetail}
-                      names={names}
-                    />
+                    <>
+                      <ForecastResults
+                        key={historyDetail.ma_lich_su_du_bao}
+                        result={historyDetail}
+                        names={names}
+                      />
+                      {can("nhu_cau_nguyen_lieu:XEM") &&
+                        historyDetail.ma_lich_su_du_bao && (
+                          <div
+                            style={{
+                              display: "flex",
+                              justifyContent: "flex-end",
+                              marginTop: 20,
+                            }}
+                          >
+                            <button
+                              type="button"
+                              className="db-button db-primary"
+                              onClick={() =>
+                                navigate("/nhu-cau-nguyen-lieu", {
+                                  forecast: historyDetail.ma_lich_su_du_bao,
+                                })
+                              }
+                            >
+                              Xem nhu cầu nguyên liệu →
+                            </button>
+                          </div>
+                        )}
+                    </>
                   )}
                 </>
               ) : (

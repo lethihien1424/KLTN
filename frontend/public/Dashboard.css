@@ -1,3 +1,5 @@
+/* D:\KLTN\KLTN\frontend\public\Dashboard.css*/
+
 .dashboard-shell {
     display: flex;
     min-height: 100vh;
@@ -1073,4 +1075,21 @@
     .dashboard-demo-label {
         display: none;
     }
+}
+
+
+/* Menu nhóm; giữ nguyên kiểu menu và bố cục cũ. */
+
+.dashboard-nav-children {
+    padding-left: 12px;
+}
+
+.dashboard-nav-chevron {
+    margin-left: auto;
+}
+
+.dashboard-session-error {
+    padding: 10px 16px;
+    background: #fef2f2;
+    color: #991b1b;
 }

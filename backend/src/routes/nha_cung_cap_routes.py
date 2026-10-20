@@ -1,9 +1,75 @@
+# ###D:\KLTN\KLTN\backend\src\routes\nha_cung_cap_routes.py
+# from fastapi import APIRouter, Depends, Query
+# from sqlalchemy.orm import Session
+
+# from src.controllers.nha_cung_cap_controller import NhaCungCapController
+# from src.core.database import get_db
+# from src.dependencies.permission_dependency import require_permission
+# from src.schemas.nha_cung_cap_schema import (
+#     NhaCungCapCreate,
+#     NhaCungCapResponse,
+#     NhaCungCapScoreBatchResponse,
+#     NhaCungCapScoreResponse,
+#     NhaCungCapStatusUpdate,
+#     NhaCungCapUpdate,
+#     SupplierStatus,
+# )
+
+
+# router = APIRouter(prefix='/nha-cung-cap', tags=['Nhà cung cấp'])
+
+# controller = NhaCungCapController()
+
+
+# @router.post('/tinh-diem', response_model=NhaCungCapScoreBatchResponse, dependencies=[Depends(require_permission('NHA_CUNG_CAP_SCORE'))])
+# def calculate_all_supplier_scores(db: Session = Depends(get_db)):
+#     return controller.calculate_all_scores(db)
+
+
+# @router.post('/{ma_ncc}/tinh-diem', response_model=NhaCungCapScoreResponse, dependencies=[Depends(require_permission('NHA_CUNG_CAP_SCORE'))])
+# def calculate_supplier_score(ma_ncc: str, db: Session = Depends(get_db)):
+#     return controller.calculate_score(db, ma_ncc)
+
+
+# @router.get('', response_model=list[NhaCungCapResponse], dependencies=[Depends(require_permission('NHA_CUNG_CAP_VIEW'))])
+# def list_nha_cung_cap(
+#     search: str | None = Query(default=None),
+#     trang_thai: SupplierStatus | None = Query(default=None),
+#     db: Session = Depends(get_db),
+# ):
+#     return controller.list(db, search=search, trang_thai=trang_thai)
+
+
+# @router.get('/{ma_ncc}', response_model=NhaCungCapResponse, dependencies=[Depends(require_permission('NHA_CUNG_CAP_VIEW'))])
+# def detail_nha_cung_cap(ma_ncc: str, db: Session = Depends(get_db)):
+#     return controller.detail(db, ma_ncc)
+
+
+# @router.post('', response_model=NhaCungCapResponse, status_code=201, dependencies=[Depends(require_permission('NHA_CUNG_CAP_CREATE'))])
+# def create_nha_cung_cap(payload: NhaCungCapCreate, db: Session = Depends(get_db)):
+#     return controller.create(db, payload)
+
+
+# @router.put('/{ma_ncc}', response_model=NhaCungCapResponse, dependencies=[Depends(require_permission('NHA_CUNG_CAP_UPDATE'))])
+# def update_nha_cung_cap(
+#     ma_ncc: str, payload: NhaCungCapUpdate, db: Session = Depends(get_db)
+# ):
+#     return controller.update(db, ma_ncc, payload)
+
+
+# @router.patch('/{ma_ncc}/trang-thai', response_model=NhaCungCapResponse, dependencies=[Depends(require_permission('NHA_CUNG_CAP_CHANGE_STATUS'))])
+# def update_nha_cung_cap_status(
+#     ma_ncc: str, payload: NhaCungCapStatusUpdate, actor=Depends(require_permission("NHA_CUNG_CAP_CHANGE_STATUS")), db: Session = Depends(get_db)
+# ):
+#     return controller.update_status(db, ma_ncc, payload, actor.ma_nguoi_dung)
+
+## D:\KLTN\KLTN\backend\src\routes\nha_cung_cap_routes.py
 from fastapi import APIRouter, Depends, Query
 from sqlalchemy.orm import Session
 
 from src.controllers.nha_cung_cap_controller import NhaCungCapController
 from src.core.database import get_db
-from src.dependencies.role_dependency import require_role
+from src.dependencies.permission_dependency import require_permission
 from src.schemas.nha_cung_cap_schema import (
     NhaCungCapCreate,
     NhaCungCapResponse,
@@ -15,25 +81,22 @@ from src.schemas.nha_cung_cap_schema import (
 )
 
 
-router = APIRouter(
-    prefix="/nha-cung-cap",
-    tags=["Nhà cung cấp"],
-    dependencies=[Depends(require_role("ADMIN", "NHAN_VIEN_MUA_HANG", "QUAN_LY"))],
-)
+router = APIRouter(prefix='/nha-cung-cap', tags=['Nhà cung cấp'])
+
 controller = NhaCungCapController()
 
 
-@router.post("/tinh-diem", response_model=NhaCungCapScoreBatchResponse)
+@router.post('/tinh-diem', response_model=NhaCungCapScoreBatchResponse, dependencies=[Depends(require_permission('nha_cung_cap', 'TINH_DIEM'))])
 def calculate_all_supplier_scores(db: Session = Depends(get_db)):
     return controller.calculate_all_scores(db)
 
 
-@router.post("/{ma_ncc}/tinh-diem", response_model=NhaCungCapScoreResponse)
+@router.post('/{ma_ncc}/tinh-diem', response_model=NhaCungCapScoreResponse, dependencies=[Depends(require_permission('nha_cung_cap', 'TINH_DIEM'))])
 def calculate_supplier_score(ma_ncc: str, db: Session = Depends(get_db)):
     return controller.calculate_score(db, ma_ncc)
 
 
-@router.get("", response_model=list[NhaCungCapResponse])
+@router.get('', response_model=list[NhaCungCapResponse], dependencies=[Depends(require_permission('nha_cung_cap', 'XEM'))])
 def list_nha_cung_cap(
     search: str | None = Query(default=None),
     trang_thai: SupplierStatus | None = Query(default=None),
@@ -42,25 +105,25 @@ def list_nha_cung_cap(
     return controller.list(db, search=search, trang_thai=trang_thai)
 
 
-@router.get("/{ma_ncc}", response_model=NhaCungCapResponse)
+@router.get('/{ma_ncc}', response_model=NhaCungCapResponse, dependencies=[Depends(require_permission('nha_cung_cap', 'XEM'))])
 def detail_nha_cung_cap(ma_ncc: str, db: Session = Depends(get_db)):
     return controller.detail(db, ma_ncc)
 
 
-@router.post("", response_model=NhaCungCapResponse, status_code=201)
+@router.post('', response_model=NhaCungCapResponse, status_code=201, dependencies=[Depends(require_permission('nha_cung_cap', 'THEM'))])
 def create_nha_cung_cap(payload: NhaCungCapCreate, db: Session = Depends(get_db)):
     return controller.create(db, payload)
 
 
-@router.put("/{ma_ncc}", response_model=NhaCungCapResponse)
+@router.put('/{ma_ncc}', response_model=NhaCungCapResponse, dependencies=[Depends(require_permission('nha_cung_cap', 'SUA'))])
 def update_nha_cung_cap(
     ma_ncc: str, payload: NhaCungCapUpdate, db: Session = Depends(get_db)
 ):
     return controller.update(db, ma_ncc, payload)
 
 
-@router.patch("/{ma_ncc}/trang-thai", response_model=NhaCungCapResponse)
+@router.patch('/{ma_ncc}/trang-thai', response_model=NhaCungCapResponse, dependencies=[Depends(require_permission('nha_cung_cap', 'XAC_NHAN'))])
 def update_nha_cung_cap_status(
-    ma_ncc: str, payload: NhaCungCapStatusUpdate, db: Session = Depends(get_db)
+    ma_ncc: str, payload: NhaCungCapStatusUpdate, actor=Depends(require_permission("nha_cung_cap", "XAC_NHAN")), db: Session = Depends(get_db)
 ):
-    return controller.update_status(db, ma_ncc, payload)
+    return controller.update_status(db, ma_ncc, payload, actor.ma_nguoi_dung)

@@ -207,10 +207,12 @@ CREATE TABLE chi_tiet_nhom_quyen (
                 'THEM',
                 'SUA',
                 'XOA',
-                'CHAY_DU_BAO',
-                'NHAP_FILE',
                 'DUYET',
                 'TU_CHOI',
+                'XAC_NHAN',
+                'TINH_DIEM',
+                'CHAY_DU_BAO',
+                'NHAP_FILE',
                 'XUAT_EXCEL'
             )
         )
@@ -309,7 +311,13 @@ CREATE TABLE ton_kho_nguyen_lieu (
             ton_kho_toi_da
             >= ton_kho_an_toan
         ),
-
+    ton_kho_kha_dung = Column(
+    Numeric(14, 2),
+    Computed(
+        "ton_kho_thuc_te - so_luong_book",
+        persisted=True,
+    ),
+)
     trang_thai VARCHAR(30) NOT NULL,
 
 

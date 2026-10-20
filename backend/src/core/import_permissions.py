@@ -1,4 +1,3 @@
-
 IMPORT_PERMISSIONS = {
     # Quản trị viên - toàn quyền import
     "ADMIN": {
@@ -6,7 +5,7 @@ IMPORT_PERMISSIONS = {
     },
 
     # Quản lý bán hàng
-    "QUAN_LY": {
+    "QUAN_LY_BAN_HANG": {
         "san_pham",
         "nha_cung_cap",
         "nguyen_lieu_nha_cung_cap",

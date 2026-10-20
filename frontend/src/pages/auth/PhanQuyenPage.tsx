@@ -1,5 +1,5 @@
 ////  D:\KLTN\KLTN\frontend\src\pages\auth\PhanQuyenPage.tsx
-////  D:\KLTN\KLTN\frontend\src\pages\auth\PhanQuyenPage.tsx
+import { useAuth } from "../../auth/AuthContext";
 import {
   useEffect,
   useId,
@@ -69,6 +69,8 @@ const ACTION_ORDER = [
   "XOA",
   "DUYET",
   "TU_CHOI",
+  "XAC_NHAN",
+  "TINH_DIEM",
   "CHAY_DU_BAO",
   "NHAP_FILE",
   "XUAT_EXCEL",
@@ -285,6 +287,10 @@ function Modal({
 
 
 export default function PhanQuyenPage() {
+  const { can } = useAuth();
+  const canView = can("phan_quyen:XEM");
+  const canViewAccounts = can("tai_khoan:XEM");
+  const [closedMenuGroups, setClosedMenuGroups] = useState<Record<string, boolean>>({});
   const [catalog, setCatalog] =
     useState<PermissionCatalog | null>(null);
 
@@ -337,6 +343,14 @@ export default function PhanQuyenPage() {
 
   useEffect(() => {
     const controller = new AbortController();
+    if (!canView) {
+      setCatalog(null);
+      setGroups([]);
+      setAccounts(null);
+      setLoading(false);
+      setLoadError("Bạn chưa được cấp quyền xem phân quyền.");
+      return () => controller.abort();
+    }
 
     setLoading(true);
     setLoadError("");
@@ -346,7 +360,7 @@ export default function PhanQuyenPage() {
       const results = await Promise.allSettled([
         getPermissionCatalog(controller.signal),
         getPermissionGroups(controller.signal),
-        fetchUsersFromApi(),
+        canViewAccounts ? fetchUsersFromApi() : Promise.resolve(null),
       ]);
 
       if (controller.signal.aborted) return;
@@ -384,7 +398,7 @@ export default function PhanQuyenPage() {
     void load();
 
     return () => controller.abort();
-  }, [refresh]);
+  }, [refresh, canView, canViewAccounts]);
 
   useEffect(() => {
     if (!notice || notice.type !== "success") return;
@@ -440,14 +454,48 @@ export default function PhanQuyenPage() {
   }).length;
 
 
-  const visibleFeatures =
-    catalog?.chuc_nang.filter(feature =>
-      `${feature.ma} ${feature.ten}`
-        .toLocaleLowerCase("vi")
-        .includes(
-          featureSearch.trim().toLocaleLowerCase("vi"),
-        ),
-    ) || [];
+  // Lấy cây menu do backend trả, đồng thời giữ các chức năng chưa được nhóm.
+  const permissionSections = useMemo(() => {
+    if (!catalog) return [];
+    const features = new Map(catalog.chuc_nang.map(feature => [feature.ma, feature]));
+    const used = new Set<string>();
+    const sections = (catalog.menu ?? []).map(group => ({
+      ma: group.ma,
+      ten: group.ten,
+      children: group.children.flatMap(item => {
+        const feature = features.get(item.chuc_nang);
+        if (!feature) return [];
+        used.add(feature.ma);
+        return [{ key: item.ma, feature: { ...feature, ten: item.ten } }];
+      }),
+    }));
+    const remaining = catalog.chuc_nang.filter(feature => !used.has(feature.ma));
+    if (remaining.length) sections.push({
+      ma: "chuc_nang_khac", ten: "Chức năng khác",
+      children: remaining.map(feature => ({ key: feature.ma, feature })),
+    });
+    return sections;
+  }, [catalog]);
+  const query = featureSearch.trim().toLocaleLowerCase("vi");
+  const filteredSections = permissionSections.map(group => {
+    const matchesGroup = group.ten.toLocaleLowerCase("vi").includes(query);
+    return { ...group, children: group.children.filter(item => matchesGroup ||
+      `${item.feature.ma} ${item.feature.ten}`.toLocaleLowerCase("vi").includes(query)) };
+  }).filter(group => group.children.length > 0);
+  const visibleFeatures = [...new Map(filteredSections.flatMap(group =>
+    group.children.map(item => [item.feature.ma, item.feature] as const)
+  )).values()];
+  const matrixRows = filteredSections.flatMap(group => {
+    const keys = [...new Set(group.children.flatMap(item => item.feature.thao_tac.map(action =>
+      permissionKey(item.feature.ma, action)
+    )))];
+    return [
+      { kind: "group" as const, key: group.ma, group, keys },
+      ...(!closedMenuGroups[group.ma] || query ? group.children.map(item => ({
+        kind: "feature" as const, key: `${group.ma}:${item.key}`, feature: item.feature,
+      })) : []),
+    ];
+  });
 
   // Toàn bộ quyền trong danh mục, không phụ thuộc tìm kiếm.
   const allKeys =
@@ -508,6 +556,7 @@ export default function PhanQuyenPage() {
   }
 
   function openCreate() {
+    if (!can("phan_quyen:THEM")) return;
     if (
       !catalog ||
       loading ||
@@ -517,6 +566,7 @@ export default function PhanQuyenPage() {
       return;
     }
 
+    setClosedMenuGroups({});
     setEditing(null);
     setName("");
     setDescription("");
@@ -541,6 +591,8 @@ export default function PhanQuyenPage() {
       return;
     }
 
+    if (!can("phan_quyen:XEM") || (nextMode === "edit" && !can("phan_quyen:SUA"))) return;
+    setClosedMenuGroups({});
     operationRef.current = true;
     setOpeningId(group.ma);
 
@@ -719,6 +771,11 @@ export default function PhanQuyenPage() {
     event: FormEvent<HTMLFormElement>,
   ) {
     event.preventDefault();
+    if (!can(mode === "edit" ? "phan_quyen:SUA" : "phan_quyen:THEM")) {
+      setFormError("Bạn chưa được cấp quyền lưu thay đổi này.");
+      return;
+    }
+
 
     if (
       operationRef.current ||
@@ -806,6 +863,7 @@ export default function PhanQuyenPage() {
   }
 
   async function handleDelete() {
+    if (!can("phan_quyen:XOA")) return;
     if (
       !deleting ||
       !deleting.duoc_xoa ||
@@ -842,6 +900,7 @@ export default function PhanQuyenPage() {
   }
 
   async function handleExport() {
+    if (!can("phan_quyen:XUAT_EXCEL")) return;
     if (
       !catalog ||
       loading ||
@@ -947,7 +1006,8 @@ export default function PhanQuyenPage() {
                   listDisabled ||
                   !catalog ||
                   Boolean(loadError) ||
-                  filteredGroups.length === 0
+                  filteredGroups.length === 0 ||
+                  !can("phan_quyen:XUAT_EXCEL")
                 }
                 onClick={() => void handleExport()}
               >
@@ -960,7 +1020,7 @@ export default function PhanQuyenPage() {
                 disabled={
                   listDisabled ||
                   !catalog ||
-                  Boolean(loadError)
+                  Boolean(loadError) || !can("phan_quyen:THEM")
                 }
                 onClick={openCreate}
               >
@@ -1080,7 +1140,7 @@ export default function PhanQuyenPage() {
                             disabled={
                               listDisabled ||
                               !catalog ||
-                              Boolean(loadError)
+                              Boolean(loadError) || !can("phan_quyen:SUA")
                             }
                             onClick={() => void openGroup(group, "edit")}
                           >
@@ -1098,7 +1158,7 @@ export default function PhanQuyenPage() {
                             aria-label={`Xóa ${group.ten_quyen}`}
                             disabled={
                               listDisabled ||
-                              !group.duoc_xoa
+                              !group.duoc_xoa || !can("phan_quyen:XOA")
                             }
                             onClick={() => {
                               setFormError("");
@@ -1368,7 +1428,42 @@ export default function PhanQuyenPage() {
                     </thead>
 
                     <tbody>
-                      {visibleFeatures.map(feature => {
+                      {matrixRows.map(row => {
+                        if (row.kind === "group") {
+                          const expanded = !closedMenuGroups[row.group.ma] || Boolean(query);
+                          return (
+                            <tr key={row.key} className="pqm-group-row">
+                              <td>
+                                <div className="pqm-group-head">
+                                  <button type="button" className="pqm-group-toggle"
+                                    aria-expanded={expanded} aria-label={`Đóng/mở ${row.group.ten}`}
+                                    onClick={() => setClosedMenuGroups(previous => ({
+                                      ...previous, [row.group.ma]: !previous[row.group.ma],
+                                    }))}>
+                                    <DownOutlined style={{ transform: expanded ? undefined : "rotate(-90deg)" }} />
+                                  </button>
+                                  <TriCheckbox label={`Chọn nhóm ${row.group.ten}`}
+                                    checked={row.keys.length > 0 && row.keys.every(key => selected.has(key))}
+                                    partial={row.keys.some(key => selected.has(key))}
+                                    disabled={isView || busy}
+                                    onChange={() => toggleKeys(row.keys)} />
+                                  <span>{row.group.ten}</span>
+                                </div>
+                              </td>
+                              {actions.map(action => {
+                                const keys = row.keys.filter(key => key.endsWith(`:${action.ma}`));
+                                return <td key={action.ma}>
+                                  {keys.length ? <TriCheckbox label={`${row.group.ten}: ${action.ten}`}
+                                    checked={keys.every(key => selected.has(key))}
+                                    partial={keys.some(key => selected.has(key))}
+                                    disabled={isView || busy}
+                                    onChange={() => toggleKeys(keys)} /> : <span className="pqm-dash">—</span>}
+                                </td>;
+                              })}
+                            </tr>
+                          );
+                        }
+                        const feature = row.feature;
                         const featureKeys =
                           feature.thao_tac.map(action =>
                             permissionKey(feature.ma, action),
@@ -1386,9 +1481,9 @@ export default function PhanQuyenPage() {
                           );
 
                         return (
-                          <tr key={feature.ma}>
+                          <tr key={row.key}>
                             <td>
-                              <label className="pqm-feature-select">
+                              <label className="pqm-feature-select pqm-child-label">
                                 <TriCheckbox
                                   label={
                                     `Chọn tất cả thao tác của ${feature.ten}`
@@ -1530,7 +1625,7 @@ export default function PhanQuyenPage() {
                   <button
                     type="submit"
                     className="pqm-button pqm-primary"
-                    disabled={busy}
+                    disabled={busy || !can(mode === "edit" ? "phan_quyen:SUA" : "phan_quyen:THEM")}
                   >
                     {busy ? "Đang lưu..." : "Lưu quyền"}
                   </button>

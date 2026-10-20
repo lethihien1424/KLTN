@@ -1,3 +1,5 @@
+##D:\KLTN\KLTN\backend\src\services\nguyen_lieu_service.py
+from src.services.ly_do_service import record_status_change
 from fastapi import HTTPException
 from sqlalchemy.exc import IntegrityError, SQLAlchemyError
 from sqlalchemy.orm import Session
@@ -35,8 +37,13 @@ class NguyenLieuService:
         self._commit(db)
         return model
 
-    def update_status(self, db: Session, code: str, payload: NguyenLieuStatusUpdate):
-        model = self.get(db, code)
+    def update_status(self, db: Session, code: str, payload: NguyenLieuStatusUpdate, actor=None):
+        from sqlalchemy import select
+        from src.models.nguyen_lieu_model import NguyenLieu
+        model = db.scalar(select(NguyenLieu).where(NguyenLieu.ma_nguyen_lieu == code).with_for_update())
+        if model is None:
+            raise HTTPException(404, 'Không tìm thấy nguyên liệu.')
+        record_status_change(db, model, payload, actor, "DOI_TRANG_THAI_NGUYEN_LIEU", code)
         model.trang_thai = payload.trang_thai
         self._commit(db)
         return model

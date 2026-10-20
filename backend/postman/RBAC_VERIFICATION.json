@@ -1,0 +1,21 @@
+{
+  "database_container": "milano_postgres",
+  "database": "milano_coffee",
+  "backup_file": "C:\\Users\\User\\AppData\\Local\\Temp\\milano-rbac-backup-ejr3ikvu\\milano_coffee_before_rbac.dump",
+  "tables_preserved": 19,
+  "rows_unchanged": true,
+  "migrations_applied": [
+    "03_add_user_contact_fields.sql",
+    "20261004_dynamic_rbac.sql"
+  ],
+  "post_smoke_rows_unchanged": true,
+  "checks": {
+    "postgres_regression": "33/33 PASS",
+    "windows_regression": "28 PASS, 5 PostgreSQL-only skips",
+    "http_health": 200,
+    "http_openapi": 200,
+    "live_user_read_only_smoke": "PASS",
+    "compile": "PASS",
+    "git_diff_check": "PASS"
+  }
+}

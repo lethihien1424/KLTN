@@ -1,3 +1,4 @@
+from src.services.ly_do_service import record_status_change
 from contextlib import contextmanager
 from decimal import Decimal, ROUND_HALF_UP
 
@@ -46,11 +47,12 @@ class NhaCungCapService:
             self.repository.update(db, supplier, payload.model_dump())
         return supplier
 
-    def update_status(self, db, code, payload):
+    def update_status(self, db, code, payload, actor=None):
         with self._write(db):
             supplier = self.repository.get(db, code, lock=True)
             if supplier is None:
                 raise HTTPException(404, "Không tìm thấy nhà cung cấp.")
+            record_status_change(db, supplier, payload, actor, "DOI_TRANG_THAI_NHA_CUNG_CAP", code)
             self.repository.update(db, supplier, {"trang_thai": payload.trang_thai})
         return supplier
 

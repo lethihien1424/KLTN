@@ -1,3 +1,4 @@
+###D:\KLTN\KLTN\backend\src\repositories\dashboard_repository.py
 from sqlalchemy import and_, func, select
 
 from src.models.de_xuat_nhap_hang import DeXuatNhapHang

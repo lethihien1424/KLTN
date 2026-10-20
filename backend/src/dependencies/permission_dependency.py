@@ -1,5 +1,4 @@
 ###D:\KLTN\KLTN\backend\src\dependencies\permission_dependency.py
-
 from collections.abc import Callable
 
 from fastapi import Depends, HTTPException, status
@@ -15,11 +14,7 @@ from src.models.user_model import User
 from src.services.phan_quyen_service import PhanQuyenService
 
 
-ADMIN_RECOVERY_PERMISSIONS = frozenset({
-    ("phan_quyen", "XEM"),
-    ("phan_quyen", "THEM"),
-    ("phan_quyen", "SUA"),
-})
+
 
 
 def _validate_permission(
@@ -57,11 +52,6 @@ def _get_selected_permissions(
         (item.chuc_nang, item.thao_tac)
         for item in permissions.chi_tiet
     }
-
-    # Bảo đảm ADMIN không tự khóa quyền
-    # quản lý phân quyền trong quá trình khôi phục.
-    if current_user.vai_tro == "ADMIN":
-        selected.update(ADMIN_RECOVERY_PERMISSIONS)
 
     return selected
 
@@ -149,3 +139,32 @@ def require_permission_admin(
         chuc_nang,
         thao_tac,
     )
+
+# from fastapi import Depends, Request
+# from sqlalchemy.orm import Session
+
+# from src.core.database import get_db
+# from src.dependencies.auth_dependency import get_current_user
+# from src.models.user_model import User
+# from src.services.authorization_service import AuthorizationContext, AuthorizationService
+
+
+# def get_authorization(
+#     current_user: User = Depends(get_current_user),
+#     db: Session = Depends(get_db),
+# ) -> AuthorizationContext:
+#     # FastAPI caches this dependency within the request, not across requests.
+#     return AuthorizationService().load(db, current_user)
+
+
+# def require_permission(*required_permissions: str):
+#     if not required_permissions:
+#         raise ValueError("At least one permission is required.")
+
+#     def dependency(request: Request, db: Session = Depends(get_db), context: AuthorizationContext = Depends(get_authorization)) -> User:
+#         from src.services.activity_audit import bind_actor
+#         user = AuthorizationService.check(context, *required_permissions)
+#         bind_actor(db, user, request)
+#         return user
+
+#     return dependency

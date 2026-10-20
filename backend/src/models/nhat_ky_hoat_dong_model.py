@@ -1,3 +1,4 @@
+## D:\KLTN\KLTN\backend\src\models\nhat_ky_hoat_dong_model.py
 from sqlalchemy import (
     Column,
     DateTime,
@@ -6,6 +7,7 @@ from sqlalchemy import (
     String,
     Text,
     text,
+    JSON,
 )
 
 from src.core.database import Base
@@ -13,6 +15,12 @@ from src.core.database import Base
 
 class NhatKyHoatDong(Base):
     __tablename__ = "nhat_ky_hoat_dong"
+    module = Column(String(80), nullable=True)
+    chuc_nang = Column(String(100), nullable=True)
+    ma_doi_tuong = Column(String(100), nullable=True)
+    ten_nguoi_thao_tac = Column(String(255), nullable=True)
+    du_lieu_truoc = Column(JSON, nullable=True)
+    du_lieu_sau = Column(JSON, nullable=True)
 
     ma_nhat_ky = Column(
         String(20),

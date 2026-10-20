@@ -17,5 +17,5 @@ class NguyenLieuController:
     def update(self, db, code, payload):
         return self.service.update(db, code, payload)
 
-    def update_status(self, db, code, payload):
-        return self.service.update_status(db, code, payload)
+    def update_status(self, db, code, payload, actor=None):
+        return self.service.update_status(db, code, payload, actor)

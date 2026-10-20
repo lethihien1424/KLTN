@@ -1400,3 +1400,66 @@
         min-width: 560px;
     }
 }
+
+
+/* ===== Nút điều hướng và hiệu ứng nút ===== */
+
+.db-page button.db-button.db-primary {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    min-height: 42px;
+    padding: 10px 18px;
+    border: 1px solid #2563eb;
+    border-radius: 10px;
+    background: #2563eb;
+    color: #fff;
+    font: inherit;
+    font-size: 13px;
+    font-weight: 600;
+    line-height: 1.4;
+    cursor: pointer;
+}
+
+:where(.db-page, .db-dialog) button:is(.db-button, .db-primary-button, .db-outline-button, .db-text-button, .db-done-button) {
+    transition: transform .18s ease, box-shadow .18s ease, background-color .18s ease, border-color .18s ease;
+}
+
+@media (hover: hover) {
+     :where(.db-page, .db-dialog) button:is(.db-button, .db-primary-button, .db-outline-button, .db-text-button, .db-done-button):not(:disabled):not([aria-disabled="true"]):hover {
+        transform: translateY(-2px);
+        box-shadow: 0 5px 12px rgba(37, 99, 235, .15);
+    }
+     :where(.db-page, .db-dialog) :is(button.db-primary, button.db-primary-button):not(:disabled):not([aria-disabled="true"]):hover {
+        background-color: #1d4ed8;
+        border-color: #1d4ed8;
+        color: #fff;
+    }
+}
+
+:where(.db-page, .db-dialog) button:is(.db-button, .db-primary-button, .db-outline-button, .db-text-button, .db-done-button):not(:disabled):not([aria-disabled="true"]):active {
+    transform: translateY(0);
+    box-shadow: 0 1px 3px rgba(15, 23, 42, .12);
+}
+
+:where(.db-page, .db-dialog) button:is(.db-button, .db-primary-button, .db-outline-button, .db-text-button, .db-done-button):focus-visible {
+    outline: 3px solid #bfdbfe;
+    outline-offset: 3px;
+}
+
+:where(.db-page, .db-dialog) button:is(.db-button, .db-primary-button, .db-outline-button, .db-text-button, .db-done-button):disabled,
+:where(.db-page, .db-dialog) button:is(.db-button, .db-primary-button, .db-outline-button, .db-text-button, .db-done-button)[aria-disabled="true"] {
+    cursor: not-allowed;
+    transform: none;
+    box-shadow: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+     :where(.db-page, .db-dialog) button:is(.db-button, .db-primary-button, .db-outline-button, .db-text-button, .db-done-button) {
+        transition: none;
+    }
+     :where(.db-page, .db-dialog) button:is(.db-button, .db-primary-button, .db-outline-button, .db-text-button, .db-done-button):not(:disabled):hover {
+        transform: none;
+    }
+}

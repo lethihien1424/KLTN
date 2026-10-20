@@ -42,7 +42,9 @@ class NhuCauNguyenLieuService:
 
         forecast_by_product = defaultdict(lambda: ZERO)
         for row in forecast_details:
-            forecast_by_product[row.ma_san_pham] += row.so_luong_du_bao_kg
+            if row.so_luong_du_bao is None:
+                raise HTTPException(422, f"Thiếu dữ liệu dự báo cho sản phẩm {row.ma_san_pham}.")
+            forecast_by_product[row.ma_san_pham] += Decimal(str(row.so_luong_du_bao))
         boms = self.repository.active_boms(db, list(forecast_by_product))
         bom_details = self.repository.bom_details(db, [row.ma_cong_thuc for row in boms])
         demand = self.converter.calculate(forecast_by_product, boms, bom_details)
