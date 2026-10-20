@@ -1,5 +1,8 @@
 # ###D:\KLTN\KLTN\backend\src\services\forecasting\du_bao_service.py
 import json
+from concurrent.futures import ProcessPoolExecutor
+import logging
+from time import perf_counter
 
 from datetime import date, datetime
 from decimal import Decimal, ROUND_HALF_UP
@@ -31,6 +34,7 @@ from src.services.forecasting.prophet_ngay_le import ProphetNgayLe
 
 
 TIMEZONE = ZoneInfo("Asia/Ho_Chi_Minh")
+LOGGER = logging.getLogger(__name__)
 
 TRANG_THAI_DON_HOP_LE = ("DA_GIAO_HANG", "CHO_GIAO_HANG")
 
@@ -51,6 +55,30 @@ def _fmt_day(value) -> str:
 
 def _fmt_short(value) -> str:
     return pd.Timestamp(value).strftime("%d/%m")
+
+
+def _compute_forecast_job(weekly, holidays, horizon, so_tuan_dem, use_promotion, forecast_start, km_by_week, cutoff):
+    """Run CPU-only forecasting without sharing a SQLAlchemy session."""
+    scores, folds = Backtesting.danh_gia_hai_mo_hinh(
+        df=weekly, holidays=holidays, horizon=horizon, so_fold_toi_da=4,
+        dung_khuyen_mai=use_promotion, so_tuan_dem=so_tuan_dem,
+    )
+    configuration = Backtesting.chon_cau_hinh(
+        df=weekly, holidays=holidays, horizon=horizon,
+        dung_khuyen_mai=use_promotion, so_tuan_dem=so_tuan_dem,
+    )
+    model = ProphetCoBan.huan_luyen(
+        df=weekly, holidays=holidays, cau_hinh=configuration, co_khoang=True,
+    )
+    forecast = ProphetCoBan.du_bao(
+        model=model, ngay_bat_dau_du_bao=forecast_start,
+        so_tuan_du_bao=horizon, khuyen_mai=km_by_week,
+    )
+    reference_row = ProphetCoBan.du_bao_tai_ngay(
+        model, [cutoff], khuyen_mai=km_by_week,
+    ).iloc[0]
+    return (scores, folds, configuration, forecast, reference_row,
+            ProphetCoBan.co_hoi_quy_km(model), ProphetCoBan.co_mua_vu_nam(model))
 
 
 class DuBaoService:
@@ -380,6 +408,7 @@ class DuBaoService:
         if ngay_chay is None:
             ngay_chay = datetime.now(TIMEZONE).date()
 
+        started_at = perf_counter()
         horizon = request.so_tuan_du_bao
 
         today = pd.Timestamp(ngay_chay).normalize()
@@ -482,6 +511,9 @@ class DuBaoService:
             (plan.ma_san_pham, plan.tu_ngay): plan
             for plan in request.khuyen_mai
         }
+        plans_by_product = {}
+        for plan in request.khuyen_mai:
+            plans_by_product.setdefault(plan.ma_san_pham, []).append(plan)
 
         holiday_rows = NgayLeRepository.get_tat_ca_ngay_le(db)
 
@@ -500,431 +532,384 @@ class DuBaoService:
         short_history_products: list[str] = []
         unlearned_promo_products: list[str] = []
 
+        # Prepare data on main thread: no ORM/session crosses process boundary.
+        prepared_jobs = []
         for product in products:
-
+            product_started_at = perf_counter()
             product_id = product.ma_san_pham
-            product_promotions = promotions_by_product.get(
-                product_id, []
-            )
-
+            product_promotions = promotions_by_product.get(product_id, [])
             history = TieuThuRepository.get_nhu_cau_qua_khu(
-                db=db,
-                ma_san_pham=product_id,
-                ngay_chay=ngay_chay,
+                db=db, ma_san_pham=product_id, ngay_chay=ngay_chay,
             )
-
             try:
                 weekly = ChuanBiDuLieu.tao_du_lieu_theo_tuan(
-                    du_lieu=history,
-                    ngay_chay=ngay_chay,
-                    tuan_cuoi=cutoff,
+                    du_lieu=history, ngay_chay=ngay_chay, tuan_cuoi=cutoff,
                 )
-
-                # Biến khuyến mãi theo tuần (lịch sử + kỳ dự báo).
                 km_by_week: dict[pd.Timestamp, float] = {}
-
-                for week_start in list(weekly["ds"]) + list(
-                    forecast_dates
-                ):
+                for week_start in list(weekly["ds"]) + list(forecast_dates):
                     _, _, weighted = DuBaoService._khuyen_mai_tuan(
                         product_promotions, week_start
                     )
                     km_by_week[week_start] = weighted
-
-                for plan in request.khuyen_mai:
-                    if plan.ma_san_pham != product_id:
-                        continue
-
+                for plan in plans_by_product.get(product_id, ()):
                     key = pd.Timestamp(plan.tu_ngay)
                     km_by_week[key] = max(
-                        km_by_week.get(key, 0.0),
-                        float(plan.muc_giam_gia),
+                        km_by_week.get(key, 0.0), float(plan.muc_giam_gia)
                     )
-
                 weekly = weekly.copy()
-                weekly["km"] = (
-                    weekly["ds"]
-                    .map(km_by_week)
-                    .fillna(0.0)
-                    .astype(float)
-                )
-
+                weekly["km"] = weekly["ds"].map(km_by_week).fillna(0.0).astype(float)
                 promo_weeks = int((weekly["km"] > 0).sum())
                 normal_weeks = len(weekly) - promo_weeks
-
                 use_promotion = (
                     promo_weeks >= MIN_TUAN_KHUYEN_MAI
                     and normal_weeks >= MIN_TUAN_KHUYEN_MAI
                 )
-
-                scores, fold_configurations = (
-                    Backtesting.danh_gia_hai_mo_hinh(
-                        df=weekly,
-                        holidays=holidays,
-                        horizon=horizon,
-                        so_fold_toi_da=4,
-                        dung_khuyen_mai=use_promotion,
-                        so_tuan_dem=so_tuan_dem,
-                    )
-                )
-
-                configuration = Backtesting.chon_cau_hinh(
-                    df=weekly,
-                    holidays=holidays,
-                    horizon=horizon,
-                    dung_khuyen_mai=use_promotion,
-                    so_tuan_dem=so_tuan_dem,
-                )
-
-                model = ProphetCoBan.huan_luyen(
-                    df=weekly,
-                    holidays=holidays,
-                    cau_hinh=configuration,
-                    co_khoang=True,
-                )
-
-                forecast = ProphetCoBan.du_bao(
-                    model=model,
-                    ngay_bat_dau_du_bao=forecast_start,
-                    so_tuan_du_bao=horizon,
-                    khuyen_mai=km_by_week,
-                )
-
-                reference_row = ProphetCoBan.du_bao_tai_ngay(
-                    model,
-                    [cutoff],
-                    khuyen_mai=km_by_week,
-                ).iloc[0]
-
+                prepared_jobs.append((product, product_started_at,
+                    product_promotions, weekly, km_by_week, use_promotion))
             except (ValueError, RuntimeError) as exc:
-                skipped.append(
-                    f"{product_id} — {product.ten_san_pham}: {exc}"
-                )
-                continue
+                skipped.append(f"{product_id} — {product.ten_san_pham}: {exc}")
 
-            km_used = ProphetCoBan.co_hoi_quy_km(model)
-            yearly_used = ProphetCoBan.co_mua_vu_nam(model)
+        # Run up to 4 CPU-bound Prophet jobs concurrently.
+        # Consume in original order to preserve response and persistence order.
+        with ProcessPoolExecutor(max_workers=min(4, max(1, len(prepared_jobs)))) as pool:
+            pending = [(job, pool.submit(
+                _compute_forecast_job, job[3], holidays, horizon, so_tuan_dem,
+                job[5], forecast_start, job[4], cutoff,
+            )) for job in prepared_jobs]
+            for job, future in pending:
+                (product, product_started_at, product_promotions,
+                 weekly, km_by_week, use_promotion) = job
+                product_id = product.ma_san_pham
+                try:
+                    (scores, fold_configurations, configuration, forecast,
+                     reference_row, km_used, yearly_used) = future.result()
+                except (ValueError, RuntimeError) as exc:
+                    skipped.append(f"{product_id} — {product.ten_san_pham}: {exc}")
+                    continue
 
-            train_start_dates.append(weekly["ds"].min().date())
-            train_end_dates.append(
-                (cutoff + pd.Timedelta(days=6)).date()
-            )
-
-            for score in scores:
-                evaluations.append({
-                    **score,
-                    "ma_san_pham": product_id,
-                })
-
-            comparison = DuBaoService._so_sanh_hai_mo_hinh(
-                product_id,
-                scores,
-            )
-
-            if comparison is not None:
-                comparisons.append(comparison)
-
-            actual_by_date = {
-                pd.Timestamp(row["ds"]): float(row["y"])
-                for _, row in weekly.iterrows()
-            }
-
-            weight_kg = DuBaoService._weight_kg(product)
-
-            week_results = []
-            product_warnings = []
-
-            if len(weekly) < 104:
-                short_history_products.append(product_id)
-
-            # Thành phần mô hình của tuần đối chiếu (đã có dữ liệu).
-            reference_components = ProphetCoBan.thanh_phan(
-                reference_row
-            )
-            reference_fitted = float(reference_row["yhat"])
-            reference_actual = actual_by_date.get(cutoff)
-
-            previous_forecast_quantity = None
-            previous_components = reference_components
-            has_unlearned_promo = False
-
-            for index, (_, row) in enumerate(
-                forecast.iterrows()
-            ):
-
-                start = pd.Timestamp(row["ds"])
-
-                quantity = DuBaoService._round_quantity(
-                    row["yhat"]
+                train_start_dates.append(weekly["ds"].min().date())
+                train_end_dates.append(
+                    (cutoff + pd.Timedelta(days=6)).date()
                 )
 
-                lower = min(
-                    quantity,
-                    DuBaoService._round_quantity(
-                        row["yhat_lower"]
-                    ),
+                for score in scores:
+                    evaluations.append({
+                        **score,
+                        "ma_san_pham": product_id,
+                    })
+
+                comparison = DuBaoService._so_sanh_hai_mo_hinh(
+                    product_id,
+                    scores,
                 )
 
-                upper = max(
-                    quantity,
-                    DuBaoService._round_quantity(
-                        row["yhat_upper"]
-                    ),
-                )
+                if comparison is not None:
+                    comparisons.append(comparison)
 
-                if max(quantity, lower, upper) > 2147483647:
-                    raise ValueError(
-                        f"{product_id}: Dự báo vượt giới hạn INTEGER."
+                actual_by_date = dict(zip(
+                    weekly["ds"], weekly["y"].astype(float)
+                ))
+
+                weight_kg = DuBaoService._weight_kg(product)
+
+                week_results = []
+                product_warnings = []
+
+                if len(weekly) < 104:
+                    short_history_products.append(product_id)
+
+                # Thành phần mô hình của tuần đối chiếu (đã có dữ liệu).
+                reference_components = ProphetCoBan.thanh_phan(
+                    reference_row
+                )
+                reference_fitted = float(reference_row["yhat"])
+                reference_actual = actual_by_date.get(cutoff)
+
+                previous_forecast_quantity = None
+                previous_components = reference_components
+                has_unlearned_promo = False
+
+                for index, (_, row) in enumerate(
+                    forecast.iterrows()
+                ):
+
+                    start = pd.Timestamp(row["ds"])
+
+                    quantity = DuBaoService._round_quantity(
+                        row["yhat"]
                     )
 
-                quantity_kg = (
-                    weight_kg * quantity
-                ).quantize(
-                    Decimal("0.01"),
-                    rounding=ROUND_HALF_UP,
-                )
-
-                if quantity_kg > Decimal("999999999999.99"):
-                    raise ValueError(
-                        f"{product_id}: Khối lượng dự báo "
-                        "vượt giới hạn lưu trữ."
+                    lower = min(
+                        quantity,
+                        DuBaoService._round_quantity(
+                            row["yhat_lower"]
+                        ),
                     )
 
-                components = ProphetCoBan.thanh_phan(row)
+                    upper = max(
+                        quantity,
+                        DuBaoService._round_quantity(
+                            row["yhat_upper"]
+                        ),
+                    )
 
-                # Tuần 1: đối chiếu với tuần thực tế gần nhất có dữ liệu
-                # (đúng tuần liền trước nếu dữ liệu đã cập nhật).
-                if index == 0:
-                    if reference_actual is not None:
-                        previous_quantity = reference_actual
-                        previous_type = reference_type
-                        previous_from = cutoff.date()
-                        reference_for_factors = reference_components
-                        residual = reference_fitted - reference_actual
+                    if max(quantity, lower, upper) > 2147483647:
+                        raise ValueError(
+                            f"{product_id}: Dự báo vượt giới hạn INTEGER."
+                        )
+
+                    quantity_kg = (
+                        weight_kg * quantity
+                    ).quantize(
+                        Decimal("0.01"),
+                        rounding=ROUND_HALF_UP,
+                    )
+
+                    if quantity_kg > Decimal("999999999999.99"):
+                        raise ValueError(
+                            f"{product_id}: Khối lượng dự báo "
+                            "vượt giới hạn lưu trữ."
+                        )
+
+                    components = ProphetCoBan.thanh_phan(row)
+
+                    # Tuần 1: đối chiếu với tuần thực tế gần nhất có dữ liệu
+                    # (đúng tuần liền trước nếu dữ liệu đã cập nhật).
+                    if index == 0:
+                        if reference_actual is not None:
+                            previous_quantity = reference_actual
+                            previous_type = reference_type
+                            previous_from = cutoff.date()
+                            reference_for_factors = reference_components
+                            residual = reference_fitted - reference_actual
+                        else:
+                            previous_quantity = None
+                            previous_type = "CHUA_CO_DU_LIEU"
+                            previous_from = None
+                            reference_for_factors = None
+                            residual = 0.0
+
+                    # Tuần 2 trở đi: so với dự báo của tuần liền trước.
                     else:
-                        previous_quantity = None
-                        previous_type = "CHUA_CO_DU_LIEU"
+                        previous_quantity = previous_forecast_quantity
+                        previous_type = "DU_BAO_TUAN_TRUOC"
                         previous_from = None
-                        reference_for_factors = None
+                        reference_for_factors = previous_components
                         residual = 0.0
 
-                # Tuần 2 trở đi: so với dự báo của tuần liền trước.
-                else:
-                    previous_quantity = previous_forecast_quantity
-                    previous_type = "DU_BAO_TUAN_TRUOC"
-                    previous_from = None
-                    reference_for_factors = previous_components
-                    residual = 0.0
-
-                difference = (
-                    quantity - previous_quantity
-                    if previous_quantity is not None
-                    else None
-                )
-
-                percent_change = (
-                    difference / previous_quantity * 100
-                    if (
-                        difference is not None
-                        and previous_quantity > 0
+                    difference = (
+                        quantity - previous_quantity
+                        if previous_quantity is not None
+                        else None
                     )
-                    else None
-                )
 
-                holiday_names = [
-                    item.ten_ngay_le
-                    for item in holiday_rows
-                    if (
-                        item.ngay_bat_dau
-                        <= (
+                    percent_change = (
+                        difference / previous_quantity * 100
+                        if (
+                            difference is not None
+                            and previous_quantity > 0
+                        )
+                        else None
+                    )
+
+                    holiday_names = [
+                        item.ten_ngay_le
+                        for item in holiday_rows
+                        if (
+                            item.ngay_bat_dau
+                            <= (
+                                start + pd.Timedelta(days=6)
+                            ).date()
+                            and item.ngay_ket_thuc
+                            >= start.date()
+                        )
+                    ]
+
+                    promo_names, promo_discount, _ = (
+                        DuBaoService._khuyen_mai_tuan(
+                            product_promotions, start
+                        )
+                    )
+
+                    plan = planned.get((product_id, start.date()))
+
+                    if plan is not None:
+                        promo_names = list(dict.fromkeys(
+                            promo_names + [plan.chuong_trinh_km]
+                        ))
+                        promo_discount = max(
+                            promo_discount,
+                            float(plan.muc_giam_gia),
+                        )
+
+                    if promo_names and not km_used:
+                        has_unlearned_promo = True
+
+                    factors = (
+                        DuBaoService._tao_yeu_to(
+                            comp=components,
+                            ref=reference_for_factors,
+                            nhieu=residual,
+                            ten_le=holiday_names,
+                            ten_km=promo_names,
+                            km_duoc_hoc=km_used,
+                            co_mua_vu_nam=yearly_used,
+                        )
+                        if reference_for_factors is not None
+                        else []
+                    )
+
+                    # Seasonal Naive (chu kỳ 52 tuần) = thực tế
+                    # cùng tuần năm trước.
+                    same_period = actual_by_date.get(
+                        start - pd.Timedelta(weeks=52)
+                    )
+
+                    week_results.append({
+                        "tu_ngay": start.date(),
+                        "den_ngay": (
                             start + pd.Timedelta(days=6)
-                        ).date()
-                        and item.ngay_ket_thuc
-                        >= start.date()
+                        ).date(),
+                        "so_luong_du_bao": quantity,
+                        "can_duoi": lower,
+                        "can_tren": upper,
+                        "ky_truoc": previous_quantity,
+                        "loai_ky_truoc": previous_type,
+                        "ky_truoc_tu_ngay": previous_from,
+                        "chenh_lech": difference,
+                        "ty_le_thay_doi": percent_change,
+                        "cung_ky": same_period,
+                        "ngay_le": holiday_names,
+                        "chuong_trinh_km": (
+                            ", ".join(promo_names)
+                            if promo_names
+                            else None
+                        ),
+                        "muc_giam_gia": min(
+                            max(promo_discount, 0.0), 1.0
+                        ),
+                        "so_luong_du_bao_kg": float(quantity_kg),
+                        "yeu_to": factors,
+                    })
+
+                    previous_forecast_quantity = quantity
+                    previous_components = components
+
+                if has_unlearned_promo:
+                    unlearned_promo_products.append(product_id)
+                    product_warnings.append(
+                        "Có khuyến mãi trong kỳ dự báo nhưng lịch sử "
+                        "khuyến mãi của sản phẩm chưa đủ "
+                        f"(cần ≥ {MIN_TUAN_KHUYEN_MAI} tuần có và "
+                        f"≥ {MIN_TUAN_KHUYEN_MAI} tuần không có khuyến mãi) "
+                        "để mô hình học tác động."
                     )
+
+                total = sum(
+                    week["so_luong_du_bao"]
+                    for week in week_results
+                )
+
+                # Tổng kỳ trước = N tuần thực tế kết thúc ở tuần đối chiếu.
+                comparison_end = cutoff
+                comparison_start = comparison_end - pd.Timedelta(
+                    weeks=horizon - 1
+                )
+
+                previous_weeks = weekly.loc[
+                    (weekly["ds"] >= comparison_start)
+                    & (weekly["ds"] <= comparison_end)
                 ]
 
-                promo_names, promo_discount, _ = (
-                    DuBaoService._khuyen_mai_tuan(
-                        product_promotions, start
-                    )
+                has_full_comparison = len(previous_weeks) == horizon
+
+                previous_total = (
+                    float(previous_weeks["y"].sum())
+                    if has_full_comparison
+                    else None
                 )
 
-                plan = planned.get((product_id, start.date()))
-
-                if plan is not None:
-                    promo_names = list(dict.fromkeys(
-                        promo_names + [plan.chuong_trinh_km]
-                    ))
-                    promo_discount = max(
-                        promo_discount,
-                        float(plan.muc_giam_gia),
-                    )
-
-                if promo_names and not km_used:
-                    has_unlearned_promo = True
-
-                factors = (
-                    DuBaoService._tao_yeu_to(
-                        comp=components,
-                        ref=reference_for_factors,
-                        nhieu=residual,
-                        ten_le=holiday_names,
-                        ten_km=promo_names,
-                        km_duoc_hoc=km_used,
-                        co_mua_vu_nam=yearly_used,
-                    )
-                    if reference_for_factors is not None
-                    else []
+                total_difference = (
+                    total - previous_total
+                    if previous_total is not None
+                    else None
                 )
 
-                # Seasonal Naive (chu kỳ 52 tuần) = thực tế
-                # cùng tuần năm trước.
-                same_period = actual_by_date.get(
-                    start - pd.Timedelta(weeks=52)
+                total_percent = (
+                    total_difference / previous_total * 100
+                    if (
+                        total_difference is not None
+                        and previous_total > 0
+                    )
+                    else None
                 )
 
-                week_results.append({
-                    "tu_ngay": start.date(),
-                    "den_ngay": (
-                        start + pd.Timedelta(days=6)
-                    ).date(),
-                    "so_luong_du_bao": quantity,
-                    "can_duoi": lower,
-                    "can_tren": upper,
-                    "ky_truoc": previous_quantity,
-                    "loai_ky_truoc": previous_type,
-                    "ky_truoc_tu_ngay": previous_from,
-                    "chenh_lech": difference,
-                    "ty_le_thay_doi": percent_change,
-                    "cung_ky": same_period,
-                    "ngay_le": holiday_names,
-                    "chuong_trinh_km": (
-                        ", ".join(promo_names)
-                        if promo_names
+                if previous_total is not None:
+                    range_text = (
+                        f"{horizon} tuần thực tế "
+                        f"{'liền trước' if not data_is_stale else 'gần nhất có dữ liệu'} "
+                        f"({_fmt_short(comparison_start)} – "
+                        f"{_fmt_short(comparison_end + pd.Timedelta(days=6))})"
+                    )
+
+                if total_difference is None:
+                    description = (
+                        "Chưa đủ dữ liệu thực tế của giai đoạn "
+                        "liền trước để so sánh tổng kỳ."
+                    )
+                elif total_difference > 0:
+                    description = (
+                        f"Dự kiến tăng {total_difference:g} sản phẩm "
+                        f"so với {range_text}."
+                    )
+                elif total_difference < 0:
+                    description = (
+                        f"Dự kiến giảm {abs(total_difference):g} sản phẩm "
+                        f"so với {range_text}."
+                    )
+                else:
+                    description = (
+                        f"Tổng nhu cầu dự báo bằng {range_text}."
+                    )
+
+                results.append({
+                    "ma_san_pham": product_id,
+                    "ten_san_pham": product.ten_san_pham,
+                    "ket_qua": week_results,
+                    "tong_du_bao": total,
+                    "tong_ky_truoc": previous_total,
+                    "loai_tong_ky_truoc": (
+                        reference_type
+                        if previous_total is not None
+                        else ""
+                    ),
+                    "tong_ky_truoc_tu_ngay": (
+                        comparison_start.date()
+                        if previous_total is not None
                         else None
                     ),
-                    "muc_giam_gia": min(
-                        max(promo_discount, 0.0), 1.0
+                    "tong_ky_truoc_den_ngay": (
+                        (comparison_end + pd.Timedelta(days=6)).date()
+                        if previous_total is not None
+                        else None
                     ),
-                    "so_luong_du_bao_kg": float(quantity_kg),
-                    "yeu_to": factors,
+                    "chenh_lech": total_difference,
+                    "ty_le_thay_doi": total_percent,
+                    "phan_loai": "Bình thường",
+                    "dien_giai": description,
+                    "yeu_to": [],
+                    "cau_hinh": {
+                        **configuration,
+                        "cau_hinh_cac_fold": fold_configurations,
+                        "khuyen_mai_duoc_hoc": km_used,
+                        "mua_vu_nam_duoc_bat": yearly_used,
+                    },
+                    "canh_bao": product_warnings,
                 })
-
-                previous_forecast_quantity = quantity
-                previous_components = components
-
-            if has_unlearned_promo:
-                unlearned_promo_products.append(product_id)
-                product_warnings.append(
-                    "Có khuyến mãi trong kỳ dự báo nhưng lịch sử "
-                    "khuyến mãi của sản phẩm chưa đủ "
-                    f"(cần ≥ {MIN_TUAN_KHUYEN_MAI} tuần có và "
-                    f"≥ {MIN_TUAN_KHUYEN_MAI} tuần không có khuyến mãi) "
-                    "để mô hình học tác động."
+                LOGGER.info(
+                    "Forecast product %s completed in %.3fs",
+                    product_id, perf_counter() - product_started_at,
                 )
-
-            total = sum(
-                week["so_luong_du_bao"]
-                for week in week_results
-            )
-
-            # Tổng kỳ trước = N tuần thực tế kết thúc ở tuần đối chiếu.
-            comparison_end = cutoff
-            comparison_start = comparison_end - pd.Timedelta(
-                weeks=horizon - 1
-            )
-
-            previous_weeks = weekly.loc[
-                (weekly["ds"] >= comparison_start)
-                & (weekly["ds"] <= comparison_end)
-            ]
-
-            has_full_comparison = len(previous_weeks) == horizon
-
-            previous_total = (
-                float(previous_weeks["y"].sum())
-                if has_full_comparison
-                else None
-            )
-
-            total_difference = (
-                total - previous_total
-                if previous_total is not None
-                else None
-            )
-
-            total_percent = (
-                total_difference / previous_total * 100
-                if (
-                    total_difference is not None
-                    and previous_total > 0
-                )
-                else None
-            )
-
-            if previous_total is not None:
-                range_text = (
-                    f"{horizon} tuần thực tế "
-                    f"{'liền trước' if not data_is_stale else 'gần nhất có dữ liệu'} "
-                    f"({_fmt_short(comparison_start)} – "
-                    f"{_fmt_short(comparison_end + pd.Timedelta(days=6))})"
-                )
-
-            if total_difference is None:
-                description = (
-                    "Chưa đủ dữ liệu thực tế của giai đoạn "
-                    "liền trước để so sánh tổng kỳ."
-                )
-            elif total_difference > 0:
-                description = (
-                    f"Dự kiến tăng {total_difference:g} sản phẩm "
-                    f"so với {range_text}."
-                )
-            elif total_difference < 0:
-                description = (
-                    f"Dự kiến giảm {abs(total_difference):g} sản phẩm "
-                    f"so với {range_text}."
-                )
-            else:
-                description = (
-                    f"Tổng nhu cầu dự báo bằng {range_text}."
-                )
-
-            results.append({
-                "ma_san_pham": product_id,
-                "ten_san_pham": product.ten_san_pham,
-                "ket_qua": week_results,
-                "tong_du_bao": total,
-                "tong_ky_truoc": previous_total,
-                "loai_tong_ky_truoc": (
-                    reference_type
-                    if previous_total is not None
-                    else ""
-                ),
-                "tong_ky_truoc_tu_ngay": (
-                    comparison_start.date()
-                    if previous_total is not None
-                    else None
-                ),
-                "tong_ky_truoc_den_ngay": (
-                    (comparison_end + pd.Timedelta(days=6)).date()
-                    if previous_total is not None
-                    else None
-                ),
-                "chenh_lech": total_difference,
-                "ty_le_thay_doi": total_percent,
-                "phan_loai": "Bình thường",
-                "dien_giai": description,
-                "yeu_to": [],
-                "cau_hinh": {
-                    **configuration,
-                    "cau_hinh_cac_fold": fold_configurations,
-                    "khuyen_mai_duoc_hoc": km_used,
-                    "mua_vu_nam_duoc_bat": yearly_used,
-                },
-                "canh_bao": product_warnings,
-            })
 
         if not results:
             raise ValueError(
@@ -1107,5 +1092,9 @@ class DuBaoService:
         # Transaction rollback do tầng gọi quản lý nếu có lỗi.
         db.flush()
         db.commit()
+        LOGGER.info(
+            "Forecast %s products, %s weeks completed in %.3fs",
+            len(results), horizon, perf_counter() - started_at,
+        )
 
         return response

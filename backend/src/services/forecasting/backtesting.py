@@ -205,6 +205,7 @@ class Backtesting:
         horizon: int,
         dung_khuyen_mai: bool = False,
         so_tuan_dem: int = 1,
+        _validated: bool = False,
     ) -> dict:
         """
         Chọn cấu hình bằng validation ở cuối phần dữ liệu truyền vào.
@@ -213,7 +214,8 @@ class Backtesting:
         outer training set, tránh dùng dữ liệu outer test để chọn
         cấu hình.
         """
-        data = Backtesting._validate(df, horizon, so_tuan_dem)
+        # Fold slices have already passed validation in the outer call.
+        data = df if _validated else Backtesting._validate(df, horizon, so_tuan_dem)
 
         candidates = Backtesting._candidate_configs(
             len(data), dung_khuyen_mai
@@ -225,8 +227,11 @@ class Backtesting:
         if train_end < Backtesting.MIN_TRAIN_WEEKS:
             return candidates[0]
 
-        train = data.iloc[:train_end].copy()
-        validation = data.iloc[train_end + so_tuan_dem:].copy()
+        train = data.iloc[:train_end]
+        validation = data.iloc[train_end + so_tuan_dem:]
+        validation_dates = validation["ds"]
+        validation_actual = validation["y"].to_numpy()
+        validation_promo = Backtesting._hoi_quy(validation)
 
         best_config = None
         best_mae = math.inf
@@ -248,8 +253,8 @@ class Backtesting:
 
                 result = ProphetCoBan.du_bao_tai_ngay(
                     model,
-                    validation["ds"],
-                    khuyen_mai=Backtesting._hoi_quy(validation),
+                    validation_dates,
+                    khuyen_mai=validation_promo,
                 )
 
                 predictions = np.maximum(
@@ -258,7 +263,7 @@ class Backtesting:
                 )
 
                 score = Backtesting._metrics(
-                    validation["y"].to_numpy(),
+                    validation_actual,
                     predictions,
                 )["mae"]
 
@@ -328,12 +333,12 @@ class Backtesting:
         for fold_number, train_end in enumerate(
             origins, start=1
         ):
-            train = data.iloc[:train_end].copy()
+            train = data.iloc[:train_end]
 
             test = data.iloc[
                 train_end + so_tuan_dem:
                 train_end + so_tuan_dem + horizon
-            ].copy()
+            ]
 
             actual = test["y"].to_numpy(dtype=float)
 
@@ -343,6 +348,7 @@ class Backtesting:
                 horizon=horizon,
                 dung_khuyen_mai=dung_khuyen_mai,
                 so_tuan_dem=so_tuan_dem,
+                _validated=True,
             )
 
             prophet_model = ProphetCoBan.huan_luyen(
