@@ -141,9 +141,9 @@ export const menu: MenuEntry[] = [
   { path: "/xem-ke-hoach-mua-hang", label: "Xem kế hoạch mua hàng", permission: "ke_hoach_mua_hang:XEM", group: "purchasing", icon: "▤" },
   { path: "/dashboard-mua-hang", label: "Dashboard mua hàng", permission: "dashboard_mua_hang:XEM", group: "purchasing", icon: "◫" },
   {
-    path: "/duyet-ke-hoach", label: "Duyệt kế hoạch mua hàng",
-    permission: "ke_hoach_mua_hang:XEM", group: "", icon: "▤",
-    anyPermissions: ["ke_hoach_mua_hang:DUYET", "ke_hoach_mua_hang:TU_CHOI"],
+    path: "/duyet-don-mua", label: "Duyệt đơn mua nguyên liệu",
+    permission: "don_mua_nguyen_lieu:XEM", group: "purchasing", icon: "▤",
+    anyPermissions: ["don_mua_nguyen_lieu:DUYET", "don_mua_nguyen_lieu:TU_CHOI"],
   },
   { path: "/tai-khoan", label: "Quản lý tài khoản", permission: "tai_khoan:XEM", group: "quan_tri", icon: "♙" },
   { path: "/phan-quyen", label: "Phân quyền", permission: "phan_quyen:XEM", group: "quan_tri", icon: "◇" },

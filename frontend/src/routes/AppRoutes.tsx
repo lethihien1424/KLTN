@@ -424,9 +424,15 @@ export default function AppRoutes({ location }: { location: Location }) {
     return guarded("danh_gia_mo_hinh:XEM", <DanhGiaMoHinhPage />);
   if (path === "/xem-thong-tin-nha-cung-cap")
     return guarded("nha_cung_cap:XEM", <NhaCungCapPage />);
+  if (path === "/duyet-don-mua" || path === "/duyet-ke-hoach") {
+    return guarded("DON_MUA_VIEW",
+      can("DON_MUA_APPROVE") || can("DON_MUA_REJECT")
+        ? <DanhSachDonMuaPage key="approval" approval />
+        : <EmptyState title="Bạn chưa có quyền duyệt đơn mua" description="Liên hệ quản trị viên để được cấp quyền phù hợp." />);
+  }
   // Các đoạn nguồn đã gửi chưa có component kế hoạch mua hàng hoặc tỉ lệ hao hụt.
   // Giữ trạng thái chưa hoàn thiện, không thay bằng API đơn mua/đề xuất khác nghiệp vụ.
-  if (path === "/xem-ke-hoach-mua-hang" || path === "/duyet-ke-hoach" || path === "/ti-le-hao-hut") {
+  if (path === "/xem-ke-hoach-mua-hang" || path === "/ti-le-hao-hut") {
     const entry = menu.find(item => item.path === path);
     if (!entry) return <EmptyState title="Không tìm thấy màn hình" description="Chọn chức năng từ menu." />;
     const hasAction = !entry.anyPermissions || entry.anyPermissions.some(can);

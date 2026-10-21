@@ -5,6 +5,7 @@ import { useAuth } from "../../auth/AuthContext";
 import { navigate } from "../../routes/navigation";
 import DataTable from "../../components/common/DataTable";
 import DonMuaForm from "./DonMuaForm";
+import ReviewDialog from "../../components/common/ReviewDialog";
 import {
   PageHeader,
   SummaryCard,
@@ -16,15 +17,19 @@ import {
   LoadingState,
   ErrorState,
   useResource,
+  useMutation,
+  Feedback,
   formatDate,
   formatMoney,
   number,
 } from "../../components/common/PurchaseUI";
-import { listOrders } from "../../services/donMuaService";
-export default function DanhSachDonMuaPage() {
+import { listOrders, reviewOrder } from "../../services/donMuaService";
+export default function DanhSachDonMuaPage({ approval = false }: { approval?: boolean }) {
   const { can } = useAuth();
   const resource = useResource(listOrders);
-  const [status, setStatus] = useState("");
+  const [status, setStatus] = useState(approval ? "CHUA_DUYET" : "");
+  const mutation = useMutation();
+  const [review, setReview] = useState<{ id: string; action: "approve" | "reject" } | null>(null);
   const [search, setSearch] = useState("");
   const [supplier, setSupplier] = useState("");
   const [from, setFrom] = useState("");
@@ -47,16 +52,17 @@ export default function DanhSachDonMuaPage() {
   return (
     <>
       <PageHeader
-        title="Đơn mua nguyên liệu"
+        title={approval ? "Duyệt đơn mua nguyên liệu" : "Đơn mua nguyên liệu"}
         description="Theo dõi quá trình đặt mua, phê duyệt và nhận nguyên liệu."
         actions={
-          can("DON_MUA_CREATE") && (
+          !approval && can("DON_MUA_CREATE") && (
             <button className="pm-btn primary" onClick={() => setOpen(true)}>
               + Tạo đơn mua
             </button>
           )
         }
       />
+      <Feedback error={review ? "" : mutation.error} success={mutation.success} />
       <div className="pm-cards">
         <SummaryCard
           label="Tổng đơn mua"
@@ -177,9 +183,22 @@ export default function DanhSachDonMuaPage() {
               },
               {
                 key: "actions",
-                label: "",
+                label: "Thao tác",
                 render: (r) => (
-                  <div className="pm-actions"><button
+                  <div className="pm-actions">
+                    {approval && r.trang_thai === "CHUA_DUYET" && can("DON_MUA_APPROVE") && (
+                      <button className="pm-btn primary" disabled={mutation.busy} onClick={() => {
+                        mutation.setError("");
+                        setReview({ id: r.ma_don_mua, action: "approve" });
+                      }}>Duyệt</button>
+                    )}
+                    {approval && r.trang_thai === "CHUA_DUYET" && can("DON_MUA_REJECT") && (
+                      <button className="pm-btn danger" disabled={mutation.busy} onClick={() => {
+                        mutation.setError("");
+                        setReview({ id: r.ma_don_mua, action: "reject" });
+                      }}>Từ chối</button>
+                    )}
+                    <button
                     className="pm-link"
                     onClick={() => navigate(`/don-mua/${r.ma_don_mua}`)}
                   >
@@ -193,6 +212,25 @@ export default function DanhSachDonMuaPage() {
           />
         )}
       </section>
+      {review && (
+        <ReviewDialog
+          action={review.action}
+          title={`đơn mua ${review.id}`}
+          busy={mutation.busy}
+          error={mutation.error}
+          onClose={() => { if (!mutation.busy) setReview(null); }}
+          onConfirm={(reason) => void mutation.run(async () => {
+            const order = resource.data?.find(r => r.ma_don_mua === review.id);
+            if (order?.trang_thai !== "CHUA_DUYET" ||
+                !can(review.action === "approve" ? "DON_MUA_APPROVE" : "DON_MUA_REJECT")) {
+              throw new Error("Không thể duyệt/từ chối đơn ở trạng thái hiện tại.");
+            }
+            const result = await reviewOrder(review.id, reason);
+            resource.setData((resource.data ?? []).map(r => r.ma_don_mua === result.ma_don_mua ? result : r));
+            setReview(null);
+          }, review.action === "approve" ? "Đã duyệt đơn mua." : "Đã từ chối đơn mua.")}
+        />
+      )}
       {open && (
         <DonMuaForm
           onClose={() => setOpen(false)}
