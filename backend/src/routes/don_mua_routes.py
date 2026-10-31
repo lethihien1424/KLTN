@@ -16,6 +16,8 @@ from src.schemas.don_mua_schema import (
 
 
 router = APIRouter(prefix='/don-mua-nguyen-lieu', tags=['Đơn mua nguyên liệu'])
+from src.routes.purchase_excel_routes import router as purchase_excel_router
+router.include_router(purchase_excel_router)
 controller = DonMuaController()
 receipt_router = APIRouter(prefix='/don-mua-nguyen-lieu', tags=['Đơn mua nguyên liệu'])
 

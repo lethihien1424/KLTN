@@ -3,9 +3,12 @@ from decimal import Decimal, ROUND_HALF_UP, localcontext
 
 from fastapi import HTTPException
 from sqlalchemy.exc import IntegrityError, SQLAlchemyError
+from sqlalchemy import select
+from src.models.purchase_excel_import import PurchaseExcelImport
 
 from src.repositories.don_mua_repository import DonMuaRepository
 from src.repositories.ton_kho_repository import TonKhoRepository
+from src.services.stock_accounting_service import StockAccountingService
 
 
 def line_total(quantity, price):
@@ -47,15 +50,20 @@ class DonMuaService:
 
     def _detail(self, db, model):
         supplier = self.repository.supplier(db, model.ma_ncc)
+        metadata = db.scalar(select(PurchaseExcelImport).where(PurchaseExcelImport.ma_don_mua == model.ma_don_mua))
         return {
             **self._summary(model, supplier.ten_ncc),
+            "nguon": "EXCEL_TRUC_TIEP" if metadata else "DE_XUAT" if model.ma_de_xuat else "TRUC_TIEP",
+            "ma_tham_chieu": metadata.ma_tham_chieu if metadata else None,
+            "ghi_chu": metadata.ghi_chu if metadata else None,
             "chi_tiet": [{
                 **{key: getattr(row, key) for key in (
                     "ma_chi_tiet_don_mua", "ma_nguyen_lieu", "so_luong_mua",
                     "don_gia_vnd_kg", "so_luong_thuc_nhan", "ly_do_khong_nhan",
                 )},
                 "ten_nguyen_lieu": material.ten_nguyen_lieu,
-                "don_vi_do_luong": material.don_vi_do_luong,
+                # Purchase quantities/prices are stored in kg in the existing workflow.
+                "don_vi_do_luong": "kg" if material.don_vi_do_luong.strip().lower() == "g" else material.don_vi_do_luong,
                 "thanh_tien": line_total(row.so_luong_mua, row.don_gia_vnd_kg),
             } for row, material in self.repository.details(db, model.ma_don_mua)],
         }
@@ -125,43 +133,8 @@ class DonMuaService:
 
     def receive(self, db, code, payload):
         with self._write(db):
-            order = self._get(db, code, lock=True)
-            if order.trang_thai != "DA_DUYET":
-                raise HTTPException(409, "Chỉ được nhận hàng cho đơn mua DA_DUYET.")
-            if payload.ngay_giao_thuc_te < order.ngay_dat_hang:
-                raise HTTPException(422, "Ngày giao thực tế không được trước ngày đặt hàng.")
-
-            details = self.repository.receipt_details(db, code)
-            by_code = {row.ma_chi_tiet_don_mua: row for row in details}
-            requested = {row.ma_chi_tiet_don_mua: row for row in payload.chi_tiet}
-            if requested.keys() != by_code.keys():
-                raise HTTPException(422, "Phải cung cấp đúng và đủ chi tiết của đơn mua.")
-
-            validated = []
-            for detail in details:
-                item = requested[detail.ma_chi_tiet_don_mua]
-                if item.so_luong_thuc_nhan > detail.so_luong_mua:
-                    raise HTTPException(422, "Số lượng thực nhận không được vượt số lượng mua.")
-                reason = (item.ly_do_khong_nhan or "").strip()
-                if item.so_luong_thuc_nhan < detail.so_luong_mua and not reason:
-                    raise HTTPException(422, "Nhận thiếu hàng phải có lý do không nhận.")
-                validated.append((detail, item.so_luong_thuc_nhan,
-                                  reason if item.so_luong_thuc_nhan < detail.so_luong_mua else None))
-
-            stocks = {}
-            for material_code in sorted({row.ma_nguyen_lieu for row, _, _ in validated}):
-                stock = self.stock_repository.latest_for_receipt(db, material_code)
-                if stock is None:
-                    raise HTTPException(422, f"Nguyên liệu {material_code} chưa có snapshot tồn kho.")
-                stocks[material_code] = stock
-
-            for detail, quantity, reason in validated:
-                self.repository.update_receipt_detail(db, detail, quantity, reason)
-                self.stock_repository.add_received_quantity(db, stocks[detail.ma_nguyen_lieu], quantity)
-            order.ngay_giao_thuc_te = payload.ngay_giao_thuc_te
-            order.trang_thai = "DA_NHAN_HANG"
-            db.flush()
-            response = self._detail(db, order)
+            from src.services.delivery_service import DeliveryService
+            response = DeliveryService().receive(self, db, code, payload)
         return response
 
     def update(self, db, code, payload):

@@ -51,10 +51,12 @@ class DashboardService:
         }
 
     def supplier_performance(self, db):
+        from src.services.delivery_kpi_service import DeliveryKpiService
         return [{
             "ma_ncc": supplier.ma_ncc,
             "ten_ncc": supplier.ten_ncc,
             "diem_ncc": supplier.diem_dieu_kien_thuong_mai,
-            "ty_le_giao_dung_han_thuc_te": supplier.ty_le_giao_dung_han_thuc_te,
-            "ty_le_giao_du_thuc_te": supplier.ty_le_giao_du_thuc_te,
+            **{key: value for key, value in DeliveryKpiService.summarize(db, supplier.ma_ncc).items() if key in (
+                "ty_le_giao_dung_han_thuc_te", "ty_le_giao_du_thuc_te", "ty_le_chat_luong_dat_thuc_te",
+                "thoi_gian_giao_tb_ngay", "so_don", "so_don_dang_giao", "so_phieu")},
         } for supplier in self.repository.active_supplier_performance(db)]

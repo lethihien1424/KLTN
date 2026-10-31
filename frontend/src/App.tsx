@@ -176,10 +176,12 @@ export default function App() {
   }} />;
   return (
     <AuthContext.Provider value={{ user, refreshPermissions }}>
-      {error && <div className="dashboard-session-error" role="alert">
-        {error} <button type="button" onClick={() => void refreshPermissions()}>Thử lại</button>
-      </div>}
-      <MainLayout onLogout={async () => { try { await logout(); } finally { endSession(); } }} />
+      <div className="dashboard-app">
+        {error && <div className="dashboard-session-error" role="alert">
+          {error} <button type="button" onClick={() => void refreshPermissions()}>Thử lại</button>
+        </div>}
+        <MainLayout onLogout={async () => { try { await logout(); } finally { endSession(); } }} />
+      </div>
     </AuthContext.Provider>
   );
 }

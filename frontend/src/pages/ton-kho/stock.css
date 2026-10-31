@@ -1,0 +1,7 @@
+.stock-details { display: grid; grid-template-columns: minmax(130px, 1fr) 2fr; gap: 12px 18px; margin: 24px 0; }
+.stock-details dt { color: var(--text-secondary, #64748b); }
+.stock-details dd { margin: 0; font-weight: 600; }
+.stock-warning { color: #b42318; background: #fff1f0; border: 1px solid #ffccc7; padding: 12px; border-radius: 8px; }
+.stock-negative { color: #b42318; font-weight: 600; }
+.stock-page .pm-cards { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+@media (max-width: 700px) { .stock-page .pm-cards { grid-template-columns: 1fr; } .stock-page .pm-heading .pm-actions { flex-wrap: wrap; } }

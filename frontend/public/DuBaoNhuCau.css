@@ -134,6 +134,23 @@
     padding: 24px 28px 28px;
 }
 
+.db-page .db-demand-floating-action {
+    position: sticky;
+    bottom: 16px;
+    z-index: 20;
+    display: flex;
+    justify-content: flex-end;
+    margin-top: 20px;
+    pointer-events: none;
+}
+
+.db-page .db-demand-floating-action > button {
+    max-width: 100%;
+    white-space: normal;
+    pointer-events: auto;
+    box-shadow: 0 6px 20px rgba(37, 99, 235, 0.25);
+}
+
 
 /* ===== Thiết lập dự báo ===== */
 

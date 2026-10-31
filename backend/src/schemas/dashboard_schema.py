@@ -57,9 +57,14 @@ class DashboardSupplierPerformance(BaseModel):
     diem_ncc: Decimal | None
     ty_le_giao_dung_han_thuc_te: Decimal | None
     ty_le_giao_du_thuc_te: Decimal | None
+    ty_le_chat_luong_dat_thuc_te: Decimal | None = None
+    thoi_gian_giao_tb_ngay: Decimal | None = None
+    so_don: int = 0
+    so_don_dang_giao: int = 0
+    so_phieu: int = 0
 
     @field_serializer(
-        "diem_ncc", "ty_le_giao_dung_han_thuc_te", "ty_le_giao_du_thuc_te"
+        "diem_ncc", "ty_le_giao_dung_han_thuc_te", "ty_le_giao_du_thuc_te", "ty_le_chat_luong_dat_thuc_te", "thoi_gian_giao_tb_ngay"
     )
     def serialize_score(self, value: Decimal | None):
         return None if value is None else format(value, ".2f")

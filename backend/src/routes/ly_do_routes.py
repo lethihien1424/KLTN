@@ -96,6 +96,9 @@ def applicable(
             ("nguyen_lieu", "SUA"),
             ("cong_thuc", "XAC_NHAN"),
             ("nha_cung_cap", "XAC_NHAN"),
+            ("ton_kho_nguyen_lieu", "THEM"),
+            ("ton_kho_nguyen_lieu", "SUA"),
+            ("ton_kho_nguyen_lieu", "NHAP_FILE"),
         )
     ),
 ):
@@ -110,26 +113,24 @@ def applicable(
     }
 
     required = {
-        "DOI_TRANG_THAI_NGUYEN_LIEU": (
-            "nguyen_lieu",
-            "SUA",
-        ),
-        "DOI_TRANG_THAI_CONG_THUC": (
-            "cong_thuc",
-            "XAC_NHAN",
-        ),
-        "DOI_TRANG_THAI_NHA_CUNG_CAP": (
-            "nha_cung_cap",
-            "XAC_NHAN",
-        ),
-    }[chuc_nang]
+        "DOI_TRANG_THAI_NGUYEN_LIEU": {("nguyen_lieu", "SUA")},
+        "DOI_TRANG_THAI_CONG_THUC": {("cong_thuc", "XAC_NHAN")},
+        "DOI_TRANG_THAI_NHA_CUNG_CAP": {("nha_cung_cap", "XAC_NHAN")},
+        "DIEU_CHINH_TON_KHO": {
+            ("ton_kho_nguyen_lieu", "THEM"),
+            ("ton_kho_nguyen_lieu", "SUA"),
+            ("ton_kho_nguyen_lieu", "NHAP_FILE"),
+        },
+    }.get(chuc_nang)
+    if required is None:
+        raise HTTPException(422, "Nghiệp vụ chọn lý do chưa được hỗ trợ.")
 
-    if required not in selected:
+    if not required.intersection(selected):
         raise HTTPException(
             status_code=403,
             detail=(
-                "Bạn chưa được cấp quyền đổi trạng thái "
-                "chức năng này."
+                "Bạn chưa được cấp quyền sử dụng lý do "
+                "cho chức năng này."
             ),
         )
 

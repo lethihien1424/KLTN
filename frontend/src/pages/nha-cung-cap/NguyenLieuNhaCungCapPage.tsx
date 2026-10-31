@@ -1,3 +1,4 @@
+import ActionIconButton from "../../components/common/ActionIconButton";
 //D:\KLTN\KLTN\frontend\src\pages\nha-cung-cap\NguyenLieuNhaCungCapPage.tsx
 import RecordHistoryButton from "../../components/common/RecordHistoryButton";
 import { useMemo, useState } from "react";
@@ -23,6 +24,7 @@ import {
 } from "../../components/common/PurchaseUI";
 import { listMappings, saveMapping } from "../../services/nhaCungCapService";
 import type { Mapping } from "../../services/purchaseTypes";
+import { useSupplyExcelActions } from "./useSupplyExcelActions";
 const values = [
   "don_gia_nguyen_lieu",
   "so_luong_ton_kho",
@@ -67,6 +69,7 @@ export default function NguyenLieuNhaCungCapPage({
   );
   const mutation = useMutation();
   const [search, setSearch] = useState("");
+  const excel = useSupplyExcelActions(search, supplier, resource.refetch);
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState("");
   const [form, setForm] = useState<Record<string, string>>(() =>
@@ -75,9 +78,9 @@ export default function NguyenLieuNhaCungCapPage({
   const rows = useMemo(
     () =>
       (resource.data ?? []).filter((r) =>
-        `${r.ma_nguyen_lieu} ${r.ten_nguyen_lieu} ${r.ten_ncc}`
+        `${r.ma_nguyen_lieu_ncc} ${r.ma_ncc} ${r.ma_nguyen_lieu} ${r.ten_nguyen_lieu} ${r.ten_ncc}`
           .toLowerCase()
-          .includes(search.toLowerCase()),
+          .includes(search.trim().toLowerCase()),
       ),
     [resource.data, search],
   );
@@ -133,6 +136,7 @@ export default function NguyenLieuNhaCungCapPage({
                 ← Nhà cung cấp
               </a>
             )}
+            {excel.buttons}
             {can("NGUYEN_LIEU_NCC_CREATE") && (
               <button className="pm-btn primary" onClick={() => edit()}>
                 + Thêm nguyên liệu cung ứng
@@ -142,6 +146,7 @@ export default function NguyenLieuNhaCungCapPage({
         }
       />
       <Feedback error={open ? "" : mutation.error} success={mutation.success} />
+      {excel.feedback}
       <section className="pm-panel">
         <div className="pm-toolbar">
           <SearchInput value={search} onChange={setSearch} />
@@ -221,13 +226,11 @@ export default function NguyenLieuNhaCungCapPage({
               },
               {
                 key: "actions",
-                label: "",
+                label: "Thao tác",
                 render: (r) => (<div className="pm-actions">
                   <RecordHistoryButton entity="nguyen-lieu-nha-cung-cap" code={r.ma_nguyen_lieu_ncc} />
                   {can("NGUYEN_LIEU_NCC_UPDATE") && (
-                    <button className="pm-link" onClick={() => edit(r)}>
-                      Sửa
-                    </button>
+                    <ActionIconButton action="edit" label="Chỉnh sửa" onClick={() => edit(r)} />
                   )}
                 </div>),
               },
@@ -298,6 +301,7 @@ export default function NguyenLieuNhaCungCapPage({
           <Feedback error={mutation.error} success="" />
         </form>
       </FormDrawer>
+      {excel.dialogs}
     </>
   );
 }

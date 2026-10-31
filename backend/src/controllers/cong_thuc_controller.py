@@ -11,11 +11,14 @@ class CongThucController:
     def detail(self, db, code):
         return self.service.detail(db, code)
 
+    def product_info(self, db, code):
+        return self.service.product_info(db, code)
+
     def create(self, db, payload):
         return self.service.create(db, payload)
 
-    def update(self, db, code, payload):
-        return self.service.update(db, code, payload)
+    def update(self, db, code, payload, actor=None):
+        return self.service.update(db, code, payload, actor)
 
     def update_status(self, db, code, payload, actor=None):
         return self.service.update_status(db, code, payload, actor)

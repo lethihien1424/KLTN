@@ -1415,13 +1415,7 @@ export default function DuBaoNhuCauPage({
                   />
                   {can("nhu_cau_nguyen_lieu:XEM") &&
                     result.ma_lich_su_du_bao && (
-                      <div
-                        style={{
-                          display: "flex",
-                          justifyContent: "flex-end",
-                          marginTop: 20,
-                        }}
-                      >
+                      <div className="db-demand-floating-action">
                         <button
                           type="button"
                           className="db-button db-primary"

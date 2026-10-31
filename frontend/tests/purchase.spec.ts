@@ -1,6 +1,94 @@
 import { test, expect, type Page } from "@playwright/test";
 import { mountGitBaseline } from "./baseline";
 import { mkdirSync } from "node:fs";
+import ExcelJS from "exceljs";
+import { permissionKeysToDetails } from "../src/auth/permissions";
+const { Workbook } = ExcelJS;
+
+async function setupMaterialExcel(page: Page) {
+  const state = await setup(page);
+  await page.route("**/api/phan-quyen/cua-toi", (route) => route.fulfill({ json: {
+    ma_nguoi_dung: "CUSTOM01", vai_tro: "CUSTOM_PURCHASE_ROLE",
+    chi_tiet: ["XEM", "THEM", "SUA", "XUAT_EXCEL"].map((thao_tac) => ({ chuc_nang: "nguyen_lieu", thao_tac })),
+  } }));
+  return state;
+}
+
+async function materialFile(rows: unknown[][], name = "nguyen_lieu.xlsx") {
+  const workbook = new Workbook();
+  const sheet = workbook.addWorksheet("NguyenLieu");
+  sheet.addRow(["ma_nguyen_lieu", "ten_nguyen_lieu", "don_vi_do_luong", "trang_thai"]);
+  rows.forEach((row) => sheet.addRow(row));
+  return { name, mimeType: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", buffer: Buffer.from(await workbook.xlsx.writeBuffer()) };
+}
+
+test("material Excel downloads template and exports every filtered page", async ({ page }) => {
+  const state = await setupMaterialExcel(page);
+  state.materials = Array.from({ length: 25 }, (_, index) => ({
+    ...material, ma_nguyen_lieu: `NL${index}`, ten_nguyen_lieu: `Cà phê ${index}`,
+    trang_thai: index < 22 ? "DANG_SU_DUNG" : "NGUNG_SU_DUNG",
+  }));
+  await page.goto("/#/nguyen-lieu");
+  await expect(page.getByRole("cell", { name: "NL0", exact: true })).toBeVisible();
+  const buttons = page.locator(".pm-heading button");
+  await expect(buttons).toHaveText(["Tải template", "Nhập Excel", "Xuất Excel", "+ Thêm nguyên liệu"]);
+  const boxes = await buttons.evaluateAll((nodes) => nodes.map((node) => node.getBoundingClientRect().top));
+  expect(Math.max(...boxes) - Math.min(...boxes)).toBeLessThan(1);
+  const templateWait = page.waitForEvent("download");
+  await page.getByRole("button", { name: "Tải template", exact: true }).click();
+  const template = await templateWait;
+  expect(template.suggestedFilename()).toBe("template_nguyen_lieu.xlsx");
+  const workbook = new Workbook();
+  await workbook.xlsx.readFile((await template.path())!);
+  expect(workbook.worksheets[0].getRow(1).values).toEqual([
+    undefined, "ma_nguyen_lieu", "ten_nguyen_lieu", "don_vi_do_luong", "trang_thai",
+  ]);
+  await page.getByPlaceholder("Tìm theo mã hoặc tên…").fill("Cà phê");
+  await page.locator(".pm-toolbar select").selectOption("DANG_SU_DUNG");
+  const exportWait = page.waitForEvent("download");
+  await page.getByRole("button", { name: "Xuất Excel", exact: true }).click();
+  const exported = new Workbook();
+  await exported.xlsx.readFile((await (await exportWait).path())!);
+  expect(exported.worksheets[0].actualRowCount).toBe(23);
+  expect(exported.worksheets[0].getCell("A23").text).toBe("NL21");
+  expect(state.requests.filter((r) => r.method !== "GET")).toHaveLength(0);
+});
+
+test("material Excel validates the whole file then imports and refreshes", async ({ page }) => {
+  const state = await setupMaterialExcel(page);
+  await page.goto("/#/nguyen-lieu");
+  const input = page.getByLabel("Chọn file Excel nguyên liệu");
+  await input.setInputFiles(await materialFile([
+    ["NL02", "Robusta", "kg", ""], ["NL03", "Khác", "kg", "SAI"],
+  ]));
+  await expect(page.getByRole("alert")).toContainText("Dòng 3: trạng thái");
+  expect(state.requests.filter((r) => r.method === "POST")).toHaveLength(0);
+  await input.setInputFiles(await materialFile([["NL01", "Mới", "kg", ""]]));
+  await expect(page.getByRole("alert")).toContainText("đã tồn tại");
+  expect(state.requests.filter((r) => r.method === "POST")).toHaveLength(0);
+  await input.setInputFiles(await materialFile([["NL02", "Robusta", "kg", ""], ["NL03", "Khác", "g", "NGUNG_SU_DUNG"]]));
+  await expect(page.getByText("Đã nhập danh sách nguyên liệu từ Excel.", { exact: true })).toBeVisible();
+  await expect(page.getByRole("cell", { name: "Robusta", exact: true })).toBeVisible();
+  expect(state.materials).toHaveLength(3);
+  expect(state.materials[1].trang_thai).toBe("DANG_SU_DUNG");
+  expect(state.materials[2].trang_thai).toBe("NGUNG_SU_DUNG");
+});
+
+test("material Excel reports partial API failures and stops importing", async ({ page }) => {
+  const state = await setupMaterialExcel(page);
+  await page.route("**/api/nguyen-lieu", async (route) => {
+    if (route.request().method() === "POST" && route.request().postDataJSON().ma_nguyen_lieu === "NL03")
+      return route.fulfill({ status: 409, json: { detail: "Mã nguyên liệu đã tồn tại." } });
+    await route.fallback();
+  });
+  await page.goto("/#/nguyen-lieu");
+  await page.getByLabel("Chọn file Excel nguyên liệu").setInputFiles(await materialFile([
+    ["NL02", "Robusta", "kg"], ["NL03", "Khác", "g"], ["NL04", "Chưa nhập", "kg"],
+  ]));
+  await expect(page.getByRole("alert")).toContainText("Đã nhập 1/3 nguyên liệu. Dừng tại dòng 3");
+  await expect(page.getByRole("cell", { name: "Robusta", exact: true })).toBeVisible();
+  expect(state.materials.map((row) => row.ma_nguyen_lieu)).toEqual(["NL01", "NL02"]);
+});
 const buyer = [
   "DU_BAO_VIEW",
   "NGUYEN_LIEU_VIEW",
@@ -232,6 +320,8 @@ async function setup(
       });
     if (state.failure?.path === path)
       return respond({ detail: state.failure.detail }, state.failure.status);
+    if (path === "/phan-quyen/cua-toi")
+      return respond({ ma_nguoi_dung: "CUSTOM01", vai_tro: role, chi_tiet: permissionKeysToDetails(state.permissions) });
     if (path === "/ly-do/ap-dung")
       return respond(
         state.reasons.filter(
@@ -312,7 +402,7 @@ async function setup(
     if (path === "/auth/logout") return respond({});
     if (path === "/du-bao/moi-nhat" || path === "/du-bao/lich-su/LSDB01")
       return respond(forecast);
-    if (path === "/du-bao/lich-su")
+    if (path === "/du-bao/lich-su" || path === "/nhu-cau-nguyen-lieu/lich-su")
       return respond([
         {
           ...forecast,
@@ -483,7 +573,7 @@ async function setup(
   return state;
 }
 const refreshRights = async (page: Page) =>
-  page.getByRole("button", { name: "Làm mới quyền" }).click();
+  page.getByRole("button", { name: "Tải lại quyền truy cập", exact: true }).click();
 test("NVBH forecast matches Git baseline; only three authorized legacy menu items", async ({
   page,
   context,
@@ -668,6 +758,176 @@ test("login obtains current permissions from /me before showing the shell", asyn
     await page.evaluate(() => sessionStorage.getItem("access_token")),
   ).toBe("test-session");
 });
+function demandDetail(code = "OLDER") {
+  return {
+    ma_lich_su_du_bao: code, thoi_gian_chay: "2026-10-03T08:00:00+07:00",
+    so_tuan_du_bao: 4, trang_thai: "THANH_CONG", tu_ngay: "2026-10-05", den_ngay: "2026-11-01",
+    tong_san_pham: 1, du_bom: true,
+    san_pham: [{ ma_san_pham: "SP01", ten_san_pham: `Sản phẩm ${code}`, so_luong_du_bao: "100",
+      bom: { ma_cong_thuc: "CT01", ten_cong_thuc: "BOM cà phê", khoi_luong_thanh_pham_kg: "0.25", he_so_thu_hoi: "0.8", ty_le_hao_hut: "0.2" }, loi_bom: null }],
+    nguyen_lieu: [{ ma_nguyen_lieu: "NL01", ten_nguyen_lieu: `Nguyên liệu ${code}`, nhu_cau_du_bao_kg: "18.75",
+      cach_tinh: [{ ma_san_pham: "SP01", ma_cong_thuc: "CT01", so_luong_du_bao: "100", khoi_luong_thanh_pham_kg: "0.25", he_so_thu_hoi: "0.8", ty_le_phoi_tron: "0.6", kg_moi_san_pham: "0.1875", nhu_cau_kg: "18.75" }] }],
+  };
+}
+
+for (const hasSuccessfulRun of [true, false]) {
+  test(`material demand defaults to latest successful run: ${hasSuccessfulRun}`, async ({ page }) => {
+    const state = await setup(page);
+    await page.route("**/api/nhu-cau-nguyen-lieu/OLDER/chi-tiet", (route) => route.fulfill({ json: demandDetail() }));
+    await page.route("**/api/nhu-cau-nguyen-lieu/OLDER", (route) => route.fulfill({ json: {
+      ma_lich_su_du_bao: "OLDER",
+      chi_tiet: [{
+        ...material, ten_nguyen_lieu: "Nguyên liệu lần dự báo cũ",
+        nhu_cau_du_bao_kg: "25.00", ton_kho_kha_dung: "5.00",
+        ton_kho_an_toan: "0.00", so_luong_dang_ve: "0.00",
+        so_luong_thieu_kg: "20.00", ton_kho_toi_da: "100.00",
+        so_luong_can_mua_kg: "20.00",
+      }],
+    } }));
+    await page.route("**/api/nhu-cau-nguyen-lieu/lich-su", (route) => route.fulfill({ json: [
+      { ...forecast, ma_lich_su_du_bao: "FAILED", thoi_gian_chay: "2026-10-06T08:00:00+07:00", trang_thai: "THAT_BAI" },
+      ...(hasSuccessfulRun ? [
+        { ...forecast, trang_thai: "THANH_CONG" },
+        { ...forecast, ma_lich_su_du_bao: "OLDER", thoi_gian_chay: "2026-10-03T08:00:00+07:00", trang_thai: "THANH_CONG" },
+      ] : []),
+    ] }));
+    await page.goto("/#/nhu-cau-nguyen-lieu");
+    const selector = page.getByLabel("Lần dự báo", { exact: true });
+    await expect(selector).toHaveValue(hasSuccessfulRun ? "LSDB01" : "");
+    if (hasSuccessfulRun) {
+      await expect(page.getByRole("button", { name: "Tính lại", exact: true })).toBeVisible();
+      await expect.poll(() => state.requests.some((r) => r.path === "/nhu-cau-nguyen-lieu/LSDB01")).toBe(true);
+      await selector.selectOption("OLDER");
+      await expect(selector).toHaveValue("OLDER");
+      await expect(page.getByRole("cell", { name: /Nguyên liệu lần dự báo cũ/ })).toBeVisible();
+      await expect(page.getByRole("cell", { name: material.ten_nguyen_lieu, exact: false })).toHaveCount(0);
+      await page.getByRole("button", { name: "Xem chi tiết", exact: true }).click();
+      const detail = page.getByRole("dialog", { name: "Chi tiết lần dự báo OLDER", exact: true });
+      await expect(detail).toBeVisible();
+      const runInfo = detail.getByRole("region", { name: "Thông tin lần dự báo", exact: true });
+      await expect(runInfo.getByRole("heading", { name: "Phần 1 – Thông tin lần dự báo", exact: true })).toBeVisible();
+      await expect(runInfo.getByText("Mã lần dự báo", { exact: true })).toBeVisible();
+      await expect(runInfo.getByText("OLDER", { exact: true })).toBeVisible();
+      await expect(runInfo.locator("dt", { hasText: "Ngày chạy dự báo" }).locator("+ dd")).toHaveText(/3\/10\/(20)?26/);
+      await expect(runInfo.locator("dt", { hasText: "Khoảng thời gian dự báo" }).locator("+ dd")).toHaveText(/5\/10\/(20)?26.*1\/11\/(20)?26/);
+      await expect(runInfo.locator("dt", { hasText: "Số tuần dự báo" }).locator("+ dd")).toHaveText("4 tuần");
+      await expect(runInfo.locator("dt", { hasText: "Tổng số sản phẩm dự báo" }).locator("+ dd")).toHaveText("1");
+      await expect(detail.getByRole("region", { name: "Chi tiết sản phẩm dự báo", exact: true })).toContainText("Sản phẩm OLDER");
+      await expect(detail.getByRole("region", { name: "Chi tiết sản phẩm dự báo", exact: true })).toContainText("CT01");
+      const materials = detail.getByRole("region", { name: "Chi tiết nhu cầu nguyên liệu", exact: true });
+      await expect(materials).toContainText("18,75");
+      await expect(materials).toContainText("100 × 0,25 ÷ 0,8 × 0,6 = 18,75 kg");
+      await detail.getByRole("button", { name: "Đóng", exact: true }).click();
+      await expect(detail).toHaveCount(0);
+      await expect(selector).toHaveValue("OLDER");
+      await selector.selectOption("LSDB01");
+      await expect(page.getByRole("cell", { name: material.ten_nguyen_lieu, exact: false })).toBeVisible();
+      await expect(page.getByRole("cell", { name: /Nguyên liệu lần dự báo cũ/ })).toHaveCount(0);
+      const readsBeforeRefresh = state.requests.filter((r) => r.path === "/nhu-cau-nguyen-lieu/LSDB01").length;
+      await page.getByRole("button", { name: "Tính lại", exact: true }).click();
+      await expect.poll(() => state.requests.filter((r) => r.path === "/nhu-cau-nguyen-lieu/LSDB01").length).toBeGreaterThan(readsBeforeRefresh);
+    } else {
+      await expect(page.getByText("Chọn một lần dự báo", { exact: true })).toBeVisible();
+      await expect(page.getByRole("button", { name: "Xem chi tiết", exact: true })).toBeDisabled();
+    }
+    expect(state.requests.some((r) => r.path === "/nhu-cau-nguyen-lieu/FAILED")).toBe(false);
+    expect(state.requests.filter((r) => r.path === "/du-bao/nhu-cau")).toHaveLength(0);
+  });
+}
+
+test("material demand details work with only dynamic purchasing permission and navigation from forecast", async ({ page }) => {
+  const state = await setup(page, ["nhu_cau_nguyen_lieu:XEM"]);
+  await page.route("**/api/nhu-cau-nguyen-lieu/LSDB01/chi-tiet", (route) => route.fulfill({ json: demandDetail("LSDB01") }));
+  await page.goto("/#/nhu-cau-nguyen-lieu?forecast=LSDB01");
+  await expect(page.getByLabel("Lần dự báo", { exact: true })).toHaveValue("LSDB01");
+  await page.getByRole("button", { name: "Xem chi tiết", exact: true }).click();
+  await expect(page.getByRole("dialog")).toContainText("Sản phẩm LSDB01");
+  await page.getByRole("button", { name: "Đóng", exact: true }).click();
+  state.permissions = [];
+  await refreshRights(page);
+  await expect(page.getByRole("button", { name: "Xem chi tiết", exact: true })).toHaveCount(0);
+  state.permissions = ["DU_BAO_VIEW", "nhu_cau_nguyen_lieu:XEM"];
+  await refreshRights(page);
+  await page.goto("/#/du-bao");
+  await page.getByRole("button", { name: /Xem nhu cầu nguyên liệu/ }).click();
+  await expect(page.getByLabel("Lần dự báo", { exact: true })).toHaveValue("LSDB01");
+  await page.getByRole("button", { name: "Xem chi tiết", exact: true }).click();
+  await expect(page.getByRole("dialog")).toContainText("Sản phẩm LSDB01");
+  expect(state.requests.filter((r) => r.path === "/du-bao/nhu-cau")).toHaveLength(0);
+});
+
+for (const scenario of ["missing-bom", "empty", "mismatch", "error"] as const) {
+  test(`material demand details handle ${scenario}`, async ({ page }) => {
+    await setup(page, ["nhu_cau_nguyen_lieu:XEM"]);
+    let failRequest = scenario === "error";
+    await page.route("**/api/nhu-cau-nguyen-lieu/LSDB01/chi-tiet", (route) => {
+      if (failRequest) return route.fulfill({ status: 500, json: { detail: "Không tải được chi tiết." } });
+      const data = demandDetail(scenario === "mismatch" ? "OTHER" : "LSDB01");
+      if (scenario === "missing-bom") {
+        Object.assign(data.san_pham[0], { bom: null, loi_bom: "Sản phẩm SP01 không có BOM đang sử dụng." });
+        data.du_bom = false;
+        data.nguyen_lieu = [];
+      }
+      if (scenario === "empty") Object.assign(data, { san_pham: [], nguyen_lieu: [], tong_san_pham: 0, du_bom: false, tu_ngay: null, den_ngay: null });
+      return route.fulfill({ json: data });
+    });
+    await page.goto("/#/nhu-cau-nguyen-lieu");
+    await expect(page.getByLabel("Lần dự báo", { exact: true })).toHaveValue("LSDB01");
+    await page.getByRole("button", { name: "Xem chi tiết", exact: true }).click();
+    const dialog = page.getByRole("dialog");
+    if (scenario === "error") {
+      await expect(dialog.getByRole("alert")).toContainText("Không tải được chi tiết.");
+      failRequest = false;
+      await dialog.getByRole("button", { name: /Thử lại/ }).click();
+      await expect(dialog.getByRole("region", { name: "Thông tin lần dự báo", exact: true })).toBeVisible();
+    } else if (scenario === "mismatch") {
+      await expect(dialog.getByRole("alert")).toContainText("không khớp");
+      await expect(dialog.getByRole("region", { name: "Thông tin lần dự báo", exact: true })).toHaveCount(0);
+      await expect(dialog.getByText("Sản phẩm OTHER", { exact: true })).toHaveCount(0);
+    } else {
+      await expect(dialog.getByRole("region", { name: "Thông tin lần dự báo", exact: true })).toBeVisible();
+      await expect(dialog.getByText("Chưa thể tính đầy đủ nhu cầu nguyên liệu", { exact: true })).toBeVisible();
+      if (scenario === "missing-bom") await expect(dialog).toContainText("SP01 không có BOM");
+      if (scenario === "empty") await expect(dialog.locator("dt", { hasText: "Khoảng thời gian dự báo" }).locator("+ dd")).toHaveText("—");
+    }
+    await dialog.getByRole("button", { name: "Đóng", exact: true }).click();
+    await expect(dialog).toHaveCount(0);
+  });
+}
+
+test("material demand details ignore late responses from a previously opened run", async ({ page }) => {
+  await setup(page);
+  await page.route("**/api/nhu-cau-nguyen-lieu/OLDER", (route) => route.fulfill({ json: { ma_lich_su_du_bao: "OLDER", chi_tiet: [] } }));
+  let release!: () => void;
+  const pending = new Promise<void>((resolve) => { release = resolve; });
+  await page.route("**/api/nhu-cau-nguyen-lieu/lich-su", (route) => route.fulfill({ json: [
+    { ...forecast, trang_thai: "THANH_CONG" },
+    { ...forecast, ma_lich_su_du_bao: "OLDER", trang_thai: "THANH_CONG" },
+  ] }));
+  await page.route("**/api/nhu-cau-nguyen-lieu/LSDB01/chi-tiet", async (route) => {
+    await pending;
+    await route.fulfill({ json: demandDetail("LSDB01") });
+  });
+  await page.route("**/api/nhu-cau-nguyen-lieu/OLDER/chi-tiet", (route) => route.fulfill({ json: demandDetail() }));
+  await page.goto("/#/nhu-cau-nguyen-lieu");
+  const selector = page.getByLabel("Lần dự báo", { exact: true });
+  await expect(selector).toHaveValue("LSDB01");
+  const firstRequest = page.waitForRequest("**/api/nhu-cau-nguyen-lieu/LSDB01/chi-tiet");
+  await page.getByRole("button", { name: "Xem chi tiết", exact: true }).click();
+  await firstRequest;
+  await page.getByRole("dialog").getByRole("button", { name: "Đóng", exact: true }).click();
+  await selector.selectOption("OLDER");
+  await page.getByRole("button", { name: "Xem chi tiết", exact: true }).click();
+  const dialog = page.getByRole("dialog");
+  await expect(dialog).toContainText("Sản phẩm OLDER");
+  const firstResponse = page.waitForResponse("**/api/nhu-cau-nguyen-lieu/LSDB01/chi-tiet");
+  release();
+  await firstResponse;
+  await expect(dialog).toContainText("Sản phẩm OLDER");
+  await expect(dialog.getByText("Sản phẩm LSDB01", { exact: true })).toHaveCount(0);
+  await page.screenshot({ path: "reports/forecast-demand-detail.png", fullPage: true });
+});
+
 test("forecast → demand → proposal → approvals → receipt → stock → performance → dashboard", async ({
   page,
 }) => {
@@ -680,7 +940,7 @@ test("forecast → demand → proposal → approvals → receipt → stock → p
   await expect(
     page.getByRole("heading", { name: "Nhu cầu nguyên liệu", exact: true }),
   ).toBeVisible();
-  await page.getByRole("button", { name: /Xem NCC/ }).click();
+  await page.getByRole("button", { name: "Xem nhà cung cấp", exact: true }).click();
   await expect(
     page.getByRole("button", { name: "Chọn NCC", exact: true }).nth(1),
   ).toBeDisabled();
@@ -724,7 +984,7 @@ test("forecast → demand → proposal → approvals → receipt → stock → p
   ).toHaveCount(0);
   state.permissions = manager;
   await refreshRights(page);
-  await page.getByRole("button", { name: "Duyệt đơn mua" }).click();
+  await page.getByRole("button", { name: "Duyệt đơn mua", exact: true }).click();
   await page
     .getByRole("button", { name: "Xác nhận duyệt", exact: true })
     .click();
@@ -740,11 +1000,11 @@ test("forecast → demand → proposal → approvals → receipt → stock → p
   ).toHaveCount(0);
   await page.getByRole("link", { name: "Xem tồn kho →", exact: true }).click();
   await expect(
-    page.getByRole("cell", { name: "48,28", exact: true }),
+    page.getByRole("cell", { name: "48,28 kg", exact: true }),
   ).toBeVisible();
   await page
     .locator(".dashboard-sidebar")
-    .getByRole("button", { name: "Hiệu suất nhà cung cấp", exact: true })
+    .getByRole("button", { name: /Hiệu suất nhà cung cấp$/ })
     .click();
   await page.getByRole("button", { name: "Tính lại tất cả" }).click();
   await page.getByRole("button", { name: "Xác nhận", exact: true }).click();
@@ -755,7 +1015,7 @@ test("forecast → demand → proposal → approvals → receipt → stock → p
   await refreshRights(page);
   await page
     .locator(".dashboard-sidebar")
-    .getByRole("button", { name: "Dashboard mua hàng", exact: true })
+    .getByRole("button", { name: /Dashboard mua hàng$/ })
     .click();
   await expect(
     page.getByRole("heading", { name: "Dashboard mua hàng", exact: true }),
@@ -804,9 +1064,9 @@ test("ADMIN without permissions receives no bypass", async ({ page }) => {
   const state = await setup(page, [], "ADMIN");
   await page.goto("/");
   await expect(
-    page.getByText("Chưa có chức năng được cấp quyền"),
+    page.getByRole("heading", { name: "Chưa có quyền xem dữ liệu", exact: true }),
   ).toBeVisible();
-  expect(state.requests.every((r) => r.path === "/auth/me")).toBeTruthy();
+  expect(state.requests.every((r) => ["/auth/me", "/phan-quyen/cua-toi"].includes(r.path))).toBeTruthy();
 });
 test("receipt validates excess and missing reason, sends all lines and zero quantity", async ({
   page,
@@ -823,6 +1083,7 @@ test("receipt validates excess and missing reason, sends all lines and zero quan
       .evaluate((el: HTMLInputElement) => el.validity.rangeOverflow),
   ).toBeTruthy();
   await page.getByLabel("Số lượng thực nhận").fill("0");
+  await page.getByLabel("Số lượng giao đợt này", { exact: true }).fill("0");
   await page.getByRole("button", { name: "Xác nhận nhận hàng" }).click();
   expect(
     state.requests.filter((r) => r.path.endsWith("/nhan-hang")),
@@ -839,6 +1100,9 @@ test("receipt validates excess and missing reason, sends all lines and zero quan
       ma_chi_tiet_don_mua: "DMCT01",
       so_luong_thuc_nhan: "0",
       ly_do_khong_nhan: "Không giao được hàng",
+      so_luong_giao: "0",
+      so_luong_dat_chat_luong: "0",
+      so_luong_khong_dat: "0",
     },
   ]);
 });
@@ -920,12 +1184,17 @@ test("materials create, edit and status update use separate endpoints", async ({
     )?.body,
   ).toEqual({ ten_nguyen_lieu: "Robusta rang", don_vi_do_luong: "kg" });
 });
-test("stock bounds validated and history uses its independent permission", async ({
+test("stock bounds validated and detail shows real movement history", async ({
   page,
 }) => {
   const state = await setup(page);
+  await page.route("**/api/ly-do/ap-dung?chuc_nang=DIEU_CHINH_TON_KHO", (route) => route.fulfill({ json: [{ id: "LD_TK", ten_ly_do: "Kiểm kê" }] }));
+  await page.route("**/api/ton-kho-nguyen-lieu/NL01/chi-tiet", (route) => route.fulfill({ json: {
+    ton_kho: state.stocks[0], hang_dang_ve: "0", da_giu_chua_co_nguon: "0", giu_theo_ke_hoach: [], giao_dich: [], don_mua: [],
+  } }));
   await page.goto("/#/ton-kho");
-  await page.getByRole("button", { name: "Sửa", exact: true }).click();
+  await page.getByRole("button", { name: "Chỉnh sửa", exact: true }).click();
+  await page.getByLabel("Lý do *", { exact: true }).selectOption("LD_TK");
   await page.getByLabel("Tồn an toàn", { exact: true }).fill("200");
   await page.getByRole("button", { name: "Lưu tồn kho" }).click();
   await expect(page.getByRole("alert")).toContainText(
@@ -933,10 +1202,12 @@ test("stock bounds validated and history uses its independent permission", async
   );
   expect(state.requests.filter((r) => r.method === "PUT")).toHaveLength(0);
   await page.getByRole("button", { name: "Đóng", exact: true }).click();
-  await page.getByRole("button", { name: "Lịch sử", exact: true }).click();
+  await page.getByRole("button", { name: "Chi tiết tồn kho", exact: true }).click();
   await expect(
-    page.getByRole("heading", { name: "Lịch sử tồn kho · Arabica" }),
+    page.getByRole("heading", { name: "Chi tiết tồn kho · Arabica" }),
   ).toBeVisible();
+  await page.getByRole("tab", { name: "Lịch sử nhập–xuất", exact: true }).click();
+  await expect(page.getByText("Chỉ hiển thị giao dịch được ghi nhận từ khi bật sổ kho.", { exact: false })).toBeVisible();
 });
 test("supplier detail tabs and mapping constraints", async ({ page }) => {
   const state = await setup(page);

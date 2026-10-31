@@ -94,3 +94,5 @@ api_router.include_router(
 )
 api_router.include_router(dashboard_router)
 api_router.include_router(ly_do_router)
+from src.routes.delivery_routes import router as delivery_router
+api_router.include_router(delivery_router)

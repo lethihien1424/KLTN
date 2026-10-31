@@ -1,3 +1,4 @@
+import ActionIconButton from "../../components/common/ActionIconButton";
 //D:\KLTN\KLTN\frontend\src\pages\cong-thuc\CongThucPage.tsx
 import RecordHistoryButton from "../../components/common/RecordHistoryButton";
 import ReasonConfirmDialog from "../../components/common/ReasonConfirmDialog";
@@ -31,6 +32,10 @@ import {
   type BomInput,
 } from "../../services/congThucService";
 import type { Bom } from "../../services/purchaseTypes";
+import BomQuantification from "./BomQuantification";
+import { validateBomRatios } from "../../services/bomQuantities";
+import { useBomExcelActions } from "./useBomExcelActions";
+import type { ReasonSelection } from "../../services/reasonService";
 const blank = (): BomInput => ({
   ma_san_pham: "",
   ten_cong_thuc: "",
@@ -50,7 +55,13 @@ export default function CongThucPage() {
   const [editId, setEditId] = useState("");
   const [form, setForm] = useState<BomInput>(blank);
   const [detail, setDetail] = useState<Bom | null>(null);
+  const [editBom, setEditBom] = useState<Bom | null>(null);
   const [confirm, setConfirm] = useState<Bom | null>(null);
+  const [confirmEdit, setConfirmEdit] = useState(false);
+  const excel = useBomExcelActions({
+    filters: { search: search.trim(), ma_san_pham: product, trang_thai: status },
+    loading: resource.loading || Boolean(resource.error), onImported: resource.refetch,
+  });
   const rows = useMemo(
     () =>
       (resource.data ?? []).filter(
@@ -59,7 +70,7 @@ export default function CongThucPage() {
           (!product || r.ma_san_pham === product) &&
           `${r.ma_cong_thuc} ${r.ten_cong_thuc} ${r.ten_san_pham}`
             .toLowerCase()
-            .includes(search.toLowerCase()),
+            .includes(search.trim().toLowerCase()),
       ),
     [resource.data, status, search, product],
   );
@@ -67,11 +78,14 @@ export default function CongThucPage() {
     void mutation.run(async () => {
       const value = await getBom(row.ma_cong_thuc);
       if (edit) {
+        setEditBom(value);
         setEditId(value.ma_cong_thuc);
         setForm({
+          ma_san_pham: value.ma_san_pham,
           ten_cong_thuc: value.ten_cong_thuc,
           he_so_thu_hoi: value.he_so_thu_hoi,
           ty_le_hao_hut: value.ty_le_hao_hut,
+          trang_thai: value.trang_thai,
           chi_tiet: value.chi_tiet.map((r) => ({
             ma_nguyen_lieu: r.ma_nguyen_lieu,
             ty_le_phoi_tron: r.ty_le_phoi_tron,
@@ -84,37 +98,65 @@ export default function CongThucPage() {
     (sum, r) => sum + Math.round(number(r.ty_le_phoi_tron) * 10000),
     0,
   );
-  const save = () =>
-    void mutation.run(async () => {
+  const statusChanged = Boolean(editId && editBom && form.trang_thai !== editBom.trang_thai);
+  const confirmTarget = confirmEdit
+    ? form.trang_thai
+    : confirm?.trang_thai === "DANG_SU_DUNG" ? "NGUNG_SU_DUNG" : "DANG_SU_DUNG";
+  const validateForm = () => {
       if (!can(editId ? "CONG_THUC_UPDATE" : "CONG_THUC_CREATE"))
         throw new Error("Bạn chưa có quyền lưu công thức.");
       if (!form.ten_cong_thuc.trim())
         throw new Error("Tên công thức không được để trống.");
-      if (total !== 10000)
-        throw new Error("Tổng tỷ lệ phối trộn phải bằng 100%.");
-      if (
-        new Set(form.chi_tiet.map((r) => r.ma_nguyen_lieu.trim())).size !==
-        form.chi_tiet.length
-      )
-        throw new Error("Không được chọn trùng nguyên liệu.");
+      const ratioError = validateBomRatios(form);
+      if (ratioError) throw new Error(ratioError);
+      if (statusChanged && !can("CONG_THUC_CONFIRM"))
+        throw new Error("Bạn chưa có quyền thay đổi trạng thái công thức.");
+  };
+  const saveChanges = (reason?: ReasonSelection) => mutation.run(async () => {
+      validateForm();
+      if (statusChanged && !reason) throw new Error("Vui lòng xác nhận lý do thay đổi trạng thái.");
+      const { ma_san_pham, trang_thai, ...update } = form;
       await saveBom(
-        { ...form, ten_cong_thuc: form.ten_cong_thuc.trim() },
+        { ...(editId ? update : { ...update, trang_thai, ma_san_pham: ma_san_pham?.trim() }),
+          ...(statusChanged && reason && editBom ? { thay_doi_trang_thai: {
+            ...reason, trang_thai: trang_thai!, trang_thai_cu: editBom.trang_thai,
+          } } : {}),
+          ten_cong_thuc: form.ten_cong_thuc.trim() },
         editId || undefined,
       );
       setOpen(false);
+      setConfirm(null);
+      setConfirmEdit(false);
       resource.refetch();
     });
+  const save = () => {
+    if (mutation.busy) return;
+    mutation.setError("");
+    mutation.setSuccess("");
+    try {
+      validateForm();
+      if (statusChanged && editBom) {
+        setConfirmEdit(true);
+        setConfirm(editBom);
+      } else void saveChanges();
+    } catch (cause) {
+      mutation.setError(cause instanceof Error ? cause.message : "Không thể lưu công thức.");
+    }
+  };
   return (
     <>
       <PageHeader
         title="Công thức BOM"
         description="Quản lý công thức và tỷ lệ nguyên liệu cho từng sản phẩm."
         actions={
-          can("CONG_THUC_CREATE") && (
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "flex-end", gap: 10, flexWrap: "nowrap" }}>
+          {excel.buttons}
+          {can("CONG_THUC_CREATE") && (
             <button
               className="pm-btn primary"
               onClick={() => {
                 setEditId("");
+                setEditBom(null);
                 setForm(blank());
                 mutation.setError("");
                 setOpen(true);
@@ -122,9 +164,12 @@ export default function CongThucPage() {
             >
               + Thêm công thức
             </button>
-          )
+          )}
+          </div>
         }
       />
+      {excel.dialogs}
+      {excel.feedback}
       <div className="pm-cards">
         <SummaryCard
           label="Tổng công thức"
@@ -233,28 +278,16 @@ export default function CongThucPage() {
                 render: (r) => (
                   <div className="pm-actions">
                     <RecordHistoryButton entity="cong-thuc" code={r.ma_cong_thuc} />
-                    <button className="pm-link" onClick={() => openDetail(r)}>
-                      Chi tiết
-                    </button>
+                    <ActionIconButton action="view" label="Xem chi tiết" onClick={() => openDetail(r)} />
                     {can("CONG_THUC_UPDATE") && (
-                      <button
-                        className="pm-link"
-                        disabled={mutation.busy}
-                        onClick={() => openDetail(r, true)}
-                      >
-                        Sửa
-                      </button>
+                      <ActionIconButton action="edit" label="Chỉnh sửa" disabled={mutation.busy} onClick={() => openDetail(r, true)} />
                     )}
-                    {can("CONG_THUC_CHANGE_STATUS") && (
-                      <button
-                        className="pm-link"
-                        onClick={() => {
+                    {can("CONG_THUC_CONFIRM") && (
+                      <ActionIconButton action="status" label="Đổi trạng thái" onClick={() => {
                           mutation.setError("");
+                          setConfirmEdit(false);
                           setConfirm(r);
-                        }}
-                      >
-                        Đổi trạng thái
-                      </button>
+                        }} />
                     )}
                   </div>
                 ),
@@ -315,6 +348,13 @@ export default function CongThucPage() {
               }
             />
           </Field>
+          {editId && <Field label="Trạng thái" hint={!can("CONG_THUC_CONFIRM") ? "Bạn chưa có quyền đổi trạng thái công thức." : undefined}>
+            <select value={form.trang_thai} disabled={!can("CONG_THUC_CONFIRM")}
+              onChange={(event) => setForm({ ...form, trang_thai: event.target.value })}>
+              <option value="DANG_SU_DUNG">Đang sử dụng</option>
+              <option value="NGUNG_SU_DUNG">Ngưng sử dụng</option>
+            </select>
+          </Field>}
           <div className="pm-form-grid">
             <Field label="Hệ số thu hồi (0–1)">
               <input
@@ -324,9 +364,14 @@ export default function CongThucPage() {
                 max="1"
                 step="0.0001"
                 value={form.he_so_thu_hoi}
-                onChange={(e) =>
-                  setForm({ ...form, he_so_thu_hoi: e.target.value })
-                }
+                onChange={(e) => {
+                  const value = e.target.value;
+                  const recovery = Number(value);
+                  setForm({ ...form, he_so_thu_hoi: value,
+                    ty_le_hao_hut: value && recovery > 0 && recovery <= 1
+                      ? (1 - recovery).toFixed(4) : form.ty_le_hao_hut,
+                  });
+                }}
               />
             </Field>
             <Field label="Tỷ lệ hao hụt (0–1)">
@@ -412,6 +457,13 @@ export default function CongThucPage() {
             </button>
             <strong>Tổng: {formatNumber(total / 100)}%</strong>
           </div>
+          {open && <BomQuantification
+            productCode={form.ma_san_pham?.trim() ?? ""}
+            initialProduct={editBom?.san_pham}
+            bom={form}
+            editable
+            materialNames={Object.fromEntries((editBom?.chi_tiet ?? []).map((row) => [row.ma_nguyen_lieu, row.ten_nguyen_lieu]))}
+          />}
           <Feedback error={mutation.error} success="" />
         </form>
       </FormDrawer>
@@ -471,16 +523,26 @@ export default function CongThucPage() {
           )}
           %
         </p>
+        {detail && <BomQuantification
+          productCode={detail.ma_san_pham}
+          initialProduct={detail.san_pham}
+          bom={detail}
+          materialNames={Object.fromEntries(detail.chi_tiet.map((row) => [row.ma_nguyen_lieu, row.ten_nguyen_lieu]))}
+        />}
       </FormDrawer>
       <ReasonConfirmDialog
         open={Boolean(confirm)}
         functionCode={"DOI_TRANG_THAI_CONG_THUC"}
-        title="Đổi trạng thái công thức"
-        onClose={() => setConfirm(null)}
+        title={confirmEdit ? confirmTarget === "NGUNG_SU_DUNG" ? "Lý do ngừng sử dụng công thức" : "Lý do kích hoạt lại công thức" : "Đổi trạng thái công thức"}
+        onClose={() => { setConfirm(null); setConfirmEdit(false); mutation.setError(""); }}
         busy={mutation.busy}
-        onConfirm={(reason) =>
+        onConfirm={(reason) => {
+          if (confirmEdit) {
+            void saveChanges(reason);
+            return;
+          }
           void mutation.run(async () => {
-            if (!confirm || !can("CONG_THUC_CHANGE_STATUS")) return;
+            if (!confirm || !can("CONG_THUC_CONFIRM")) return;
             await changeBomStatus(
               confirm.ma_cong_thuc,
               confirm.trang_thai === "DANG_SU_DUNG"
@@ -490,10 +552,11 @@ export default function CongThucPage() {
             );
             setConfirm(null);
             resource.refetch();
-          })
-        }
+          });
+        }}
       >
-        <p>Đổi trạng thái công thức {confirm?.ten_cong_thuc}?</p>
+        <p><strong>{confirm?.ma_cong_thuc} · {confirmEdit ? form.ten_cong_thuc : confirm?.ten_cong_thuc}</strong></p>
+        {confirm && <p><StatusBadge status={confirm.trang_thai} /> → <StatusBadge status={confirmTarget ?? confirm.trang_thai} /></p>}
         <Feedback error={mutation.error} success="" />
       </ReasonConfirmDialog>
     </>

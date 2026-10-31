@@ -60,10 +60,7 @@ class DashboardRepository:
     def active_supplier_counts(db):
         return db.execute(select(
             func.count(),
-            func.count().filter(and_(
-                NhaCungCap.ty_le_giao_dung_han_thuc_te.is_not(None),
-                NhaCungCap.ty_le_giao_du_thuc_te.is_not(None),
-            )),
+            func.count().filter(NhaCungCap.ty_le_giao_du_thuc_te.is_not(None)),
         ).where(NhaCungCap.trang_thai == "DANG_HOAT_DONG")).one()
 
     @staticmethod

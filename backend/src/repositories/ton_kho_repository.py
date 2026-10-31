@@ -67,7 +67,7 @@ class TonKhoRepository:
     def material(db: Session, code: str, lock=False):
         query = select(NguyenLieu).where(NguyenLieu.ma_nguyen_lieu == code)
         if lock:
-            query = query.with_for_update(read=True)
+            query = query.with_for_update().execution_options(populate_existing=True)
         return db.scalar(query)
 
     @staticmethod

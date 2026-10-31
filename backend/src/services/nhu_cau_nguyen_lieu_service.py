@@ -47,7 +47,8 @@ class NhuCauNguyenLieuService:
             forecast_by_product[row.ma_san_pham] += Decimal(str(row.so_luong_du_bao))
         boms = self.repository.active_boms(db, list(forecast_by_product))
         bom_details = self.repository.bom_details(db, [row.ma_cong_thuc for row in boms])
-        demand = self.converter.calculate(forecast_by_product, boms, bom_details)
+        products = self.repository.products(db, list(forecast_by_product))
+        demand = self.converter.calculate(forecast_by_product, boms, bom_details, products)
 
         codes = sorted(demand)
         materials = self.repository.materials(db, codes)
@@ -60,17 +61,22 @@ class NhuCauNguyenLieuService:
         result = []
         for code in codes:
             inventory = inventories[code]
-            available = inventory.ton_kho_kha_dung
-            safety = inventory.ton_kho_an_toan
+            material = materials.get(code)
+            if material is None:
+                raise HTTPException(422, f"Nguyên liệu {code} trong BOM không tồn tại.")
+            unit = (getattr(material, "don_vi_do_luong", "kg") or "").strip().lower()
+            if unit not in ("kg", "g"):
+                raise HTTPException(422, f"Nguyên liệu {code} phải có đơn vị kg hoặc g để tính nhu cầu theo BOM.")
+            scale = Decimal("1000") if unit == "g" else Decimal("1")
+            available = inventory.ton_kho_kha_dung / scale
+            safety = inventory.ton_kho_an_toan / scale
+            # Purchase order quantities already use kg; inventory uses the master unit.
             inbound = incoming.get(code, ZERO)
             shortage = demand[code] + safety - available - inbound
             shortage_positive = max(ZERO, shortage)
             # Inventory immediately after receipt may not exceed the configured maximum.
-            purchase_capacity = max(ZERO, inventory.ton_kho_toi_da - available - inbound)
+            purchase_capacity = max(ZERO, inventory.ton_kho_toi_da / scale - available - inbound)
             purchase = min(shortage_positive, purchase_capacity)
-            material = materials.get(code)
-            if material is None:
-                raise HTTPException(422, f"Nguyên liệu {code} trong BOM không tồn tại.")
             result.append({
                 "ma_nguyen_lieu": code,
                 "ten_nguyen_lieu": material.ten_nguyen_lieu,
@@ -79,7 +85,7 @@ class NhuCauNguyenLieuService:
                 "ton_kho_an_toan": round_quantity(safety),
                 "so_luong_dang_ve": round_quantity(inbound),
                 "so_luong_thieu_kg": round_quantity(shortage),
-                "ton_kho_toi_da": round_quantity(inventory.ton_kho_toi_da),
+                "ton_kho_toi_da": round_quantity(inventory.ton_kho_toi_da / scale),
                 "so_luong_can_mua_kg": round_quantity(purchase),
             })
         return {"ma_lich_su_du_bao": forecast_code, "chi_tiet": result}

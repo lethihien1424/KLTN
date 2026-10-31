@@ -34,6 +34,8 @@ class CongThucUpdate(BaseModel):
         total = sum((row.ty_le_phoi_tron for row in self.chi_tiet), Decimal("0"))
         if total != Decimal("1.0000"):
             raise ValueError("Tổng tỷ lệ phối trộn phải bằng 1.0000.")
+        if self.he_so_thu_hoi + self.ty_le_hao_hut != Decimal("1"):
+            raise ValueError("Hệ số thu hồi + tỷ lệ hao hụt phải bằng 100%.")
         return self
 
 
@@ -45,6 +47,14 @@ class CongThucCreate(CongThucUpdate):
 class CongThucStatusUpdate(StatusReasonFields):
     model_config = ConfigDict(extra="forbid")
     trang_thai: TrangThaiCongThuc
+
+
+class CongThucEditStatus(CongThucStatusUpdate):
+    trang_thai_cu: TrangThaiCongThuc
+
+
+class CongThucEdit(CongThucUpdate):
+    thay_doi_trang_thai: CongThucEditStatus | None = None
 
 
 class CongThucResponse(BaseModel):
@@ -75,5 +85,28 @@ class ChiTietCongThucResponse(BaseModel):
         return format(value, ".4f")
 
 
+class SanPhamDinhLuongResponse(BaseModel):
+    ma_san_pham: str
+    ten_san_pham: str
+    khoi_luong: Decimal | None
+    don_vi_do_luong: str | None
+
+
+class DinhLuongLineResponse(BaseModel):
+    ma_nguyen_lieu: str
+    ty_le_phoi_tron: Decimal
+    khoi_luong_kg: Decimal
+
+
+class DinhLuongResponse(BaseModel):
+    khoi_luong_thanh_pham_kg: Decimal
+    tong_nguyen_lieu_kg: Decimal
+    hao_hut_kg: Decimal
+    chi_tiet: list[DinhLuongLineResponse]
+
+
 class CongThucDetailResponse(CongThucResponse):
     chi_tiet: list[ChiTietCongThucResponse]
+    san_pham: SanPhamDinhLuongResponse | None = None
+    dinh_luong: DinhLuongResponse | None = None
+    loi_dinh_luong: str | None = None

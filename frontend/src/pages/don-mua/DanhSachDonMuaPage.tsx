@@ -1,3 +1,4 @@
+import ActionIconButton from "../../components/common/ActionIconButton";
 //D:\KLTN\KLTN\frontend\src\pages\don-mua\DanhSachDonMuaPage.tsx
 import RecordHistoryButton from "../../components/common/RecordHistoryButton";
 import { useMemo, useState } from "react";
@@ -24,6 +25,7 @@ import {
   number,
 } from "../../components/common/PurchaseUI";
 import { listOrders, reviewOrder } from "../../services/donMuaService";
+import { usePurchaseExcelActions } from "./usePurchaseExcelActions";
 export default function DanhSachDonMuaPage({ approval = false }: { approval?: boolean }) {
   const { can } = useAuth();
   const resource = useResource(listOrders);
@@ -35,6 +37,10 @@ export default function DanhSachDonMuaPage({ approval = false }: { approval?: bo
   const [from, setFrom] = useState("");
   const [to, setTo] = useState("");
   const [open, setOpen] = useState(false);
+  const excel = usePurchaseExcelActions({
+    filters: { search, ma_ncc: supplier, trang_thai: status, ngay_dat_tu: from, ngay_dat_den: to },
+    loading: resource.loading, onImported: resource.refetch,
+  });
   const rows = useMemo(
     () =>
       (resource.data ?? []).filter(
@@ -55,14 +61,17 @@ export default function DanhSachDonMuaPage({ approval = false }: { approval?: bo
         title={approval ? "Duyệt đơn mua nguyên liệu" : "Đơn mua nguyên liệu"}
         description="Theo dõi quá trình đặt mua, phê duyệt và nhận nguyên liệu."
         actions={
-          !approval && can("DON_MUA_CREATE") && (
-            <button className="pm-btn primary" onClick={() => setOpen(true)}>
+          !approval && <>
+            {excel.buttons}
+            {can("DON_MUA_CREATE") && <button className="pm-btn primary" onClick={() => setOpen(true)}>
               + Tạo đơn mua
-            </button>
-          )
+            </button>}
+          </>
         }
       />
       <Feedback error={review ? "" : mutation.error} success={mutation.success} />
+      {!approval && excel.feedback}
+      {!approval && excel.dialogs}
       <div className="pm-cards">
         <SummaryCard
           label="Tổng đơn mua"
@@ -187,23 +196,18 @@ export default function DanhSachDonMuaPage({ approval = false }: { approval?: bo
                 render: (r) => (
                   <div className="pm-actions">
                     {approval && r.trang_thai === "CHUA_DUYET" && can("DON_MUA_APPROVE") && (
-                      <button className="pm-btn primary" disabled={mutation.busy} onClick={() => {
+                      <ActionIconButton action="approve" label="Duyệt đơn mua" disabled={mutation.busy} onClick={() => {
                         mutation.setError("");
                         setReview({ id: r.ma_don_mua, action: "approve" });
-                      }}>Duyệt</button>
+                      }} />
                     )}
                     {approval && r.trang_thai === "CHUA_DUYET" && can("DON_MUA_REJECT") && (
-                      <button className="pm-btn danger" disabled={mutation.busy} onClick={() => {
+                      <ActionIconButton action="reject" label="Từ chối đơn mua" disabled={mutation.busy} onClick={() => {
                         mutation.setError("");
                         setReview({ id: r.ma_don_mua, action: "reject" });
-                      }}>Từ chối</button>
+                      }} />
                     )}
-                    <button
-                    className="pm-link"
-                    onClick={() => navigate(`/don-mua/${r.ma_don_mua}`)}
-                  >
-                    Chi tiết →
-                  </button>
+                    <ActionIconButton action="view" label="Xem chi tiết" onClick={() => navigate(`/don-mua/${r.ma_don_mua}`)} />
                     <RecordHistoryButton entity="don-mua-nguyen-lieu" code={r.ma_don_mua} />
                   </div>
                 ),

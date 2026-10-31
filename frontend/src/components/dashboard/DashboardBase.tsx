@@ -759,6 +759,7 @@ export default function DashboardBase({
             </div>
           </header>
           <main className="dashboard-main">
+            <div className="dashboard-main-inner">
             {!ready && (
               <section className="dashboard-panel">
                 <div className="dashboard-panel-heading">
@@ -953,6 +954,7 @@ export default function DashboardBase({
                 ) : null}
               </>
             )}
+            </div>
           </main>
         </div>
       </div>

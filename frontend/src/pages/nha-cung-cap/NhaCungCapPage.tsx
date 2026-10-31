@@ -1,3 +1,4 @@
+import ActionIconButton from "../../components/common/ActionIconButton";
 //D:\KLTN\KLTN\frontend\src\pages\nha-cung-cap\NhaCungCapPage.tsx
 import RecordHistoryButton from "../../components/common/RecordHistoryButton";
 import ReasonConfirmDialog from "../../components/common/ReasonConfirmDialog";
@@ -179,41 +180,24 @@ export default function NhaCungCapPage() {
                   <div className="pm-actions">
                     <RecordHistoryButton entity="nha-cung-cap" code={r.ma_ncc} />
                     {can("NGUYEN_LIEU_NCC_VIEW") && (
-                      <button
-                        className="pm-link"
-                        onClick={() =>
+                      <ActionIconButton action="materials" label="Xem nguyên liệu cung ứng" onClick={() =>
                           navigate("/nha-cung-cap/cung-ung", { ncc: r.ma_ncc })
-                        }
-                      >
-                        Nguyên liệu
-                      </button>
+                        } />
                     )}
                     {can("NHA_CUNG_CAP_UPDATE") && (
-                      <button className="pm-link" onClick={() => edit(r)}>
-                        Sửa
-                      </button>
+                      <ActionIconButton action="edit" label="Chỉnh sửa" onClick={() => edit(r)} />
                     )}
                     {can("NHA_CUNG_CAP_CHANGE_STATUS") && (
-                      <button
-                        className="pm-link"
-                        onClick={() => {
+                      <ActionIconButton action="status" label="Đổi trạng thái" onClick={() => {
                           mutation.setError("");
                           setConfirm({ row: r, action: "status" });
-                        }}
-                      >
-                        Trạng thái
-                      </button>
+                        }} />
                     )}
                     {can("NHA_CUNG_CAP_SCORE") && (
-                      <button
-                        className="pm-link"
-                        onClick={() => {
+                      <ActionIconButton action="score" label="Tính điểm" onClick={() => {
                           mutation.setError("");
                           setConfirm({ row: r, action: "score" });
-                        }}
-                      >
-                        Tính điểm
-                      </button>
+                        }} />
                     )}
                   </div>
                 ),

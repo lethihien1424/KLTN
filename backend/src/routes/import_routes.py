@@ -5,7 +5,11 @@ from fastapi import (
     Depends,
     File,
     UploadFile,
+    Form,
 )
+from src.dependencies.permission_dependency import require_permission
+from src.services.bom_excel_service import BomExcelService, MAX_BYTES
+from src.services.stock_excel_service import StockExcelService
 from sqlalchemy.orm import Session
 
 from src.controllers.import_controller import (
@@ -138,21 +142,18 @@ async def import_nguyen_lieu_ncc(
 
 @router.post(
     "/ton-kho-nguyen-lieu",
-    response_model=ImportResponse,
+    dependencies=[Depends(require_permission("ton_kho_nguyen_lieu", "NHAP_FILE")),
+                  Depends(require_permission("ton_kho_nguyen_lieu", "SUA"))],
 )
 async def import_ton_kho_nguyen_lieu(
     file: UploadFile = File(...),
+    confirmed: bool = Form(False),
     current_user: User = Depends(
         get_current_user
     ),
     db: Session = Depends(get_db),
 ):
-    return await execute_import(
-        import_type="ton_kho_nguyen_lieu",
-        file=file,
-        current_user=current_user,
-        db=db,
-    )
+    return StockExcelService().import_file(db, await file.read(MAX_BYTES + 1), file.filename, confirmed)
 
 
 @router.post(
@@ -199,21 +200,16 @@ async def import_ctkm(
 
 @router.post(
     "/cong-thuc",
-    response_model=ImportResponse,
 )
 async def import_cong_thuc(
     file: UploadFile = File(...),
+    confirmed: bool = Form(False),
     current_user: User = Depends(
-        get_current_user
+        require_permission("cong_thuc", "NHAP_FILE")
     ),
     db: Session = Depends(get_db),
 ):
-    return await execute_import(
-        import_type="cong_thuc",
-        file=file,
-        current_user=current_user,
-        db=db,
-    )
+    return BomExcelService().import_file(db, await file.read(MAX_BYTES + 1), file.filename, confirmed)
 
 
 @router.post(

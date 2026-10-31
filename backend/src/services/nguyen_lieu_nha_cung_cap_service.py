@@ -38,6 +38,7 @@ class NguyenLieuNhaCungCapService:
 
     def create(self, db, payload):
         with self._write(db):
+            self.supplier_service.lock_for_recalculation(db)
             if self.repository.supplier(db, payload.ma_ncc) is None:
                 raise HTTPException(422, "Nhà cung cấp không tồn tại.")
             if self.repository.material(db, payload.ma_nguyen_lieu) is None:
@@ -54,6 +55,7 @@ class NguyenLieuNhaCungCapService:
 
     def update(self, db, code, payload):
         with self._write(db):
+            self.supplier_service.lock_for_recalculation(db)
             model = self.repository.get(db, code, lock=True)
             if model is None:
                 raise HTTPException(404, "Không tìm thấy mapping nguyên liệu - nhà cung cấp.")

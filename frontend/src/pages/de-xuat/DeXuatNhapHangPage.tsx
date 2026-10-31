@@ -1,3 +1,4 @@
+import ActionIconButton from "../../components/common/ActionIconButton";
 //D:\KLTN\KLTN\frontend\src\pages\de-xuat\DeXuatNhapHangPage.tsx
 import RecordHistoryButton from "../../components/common/RecordHistoryButton";
 import { useMemo, useState } from "react";
@@ -132,14 +133,9 @@ export default function DeXuatNhapHangPage() {
               },
               {
                 key: "actions",
-                label: "",
+                label: "Thao tác",
                 render: (r) => (
-                  <div className="pm-actions"><button
-                    className="pm-link"
-                    onClick={() => navigate(`/de-xuat/${r.ma_de_xuat}`)}
-                  >
-                    Chi tiết →
-                  </button>
+                  <div className="pm-actions"><ActionIconButton action="view" label="Xem chi tiết" onClick={() => navigate(`/de-xuat/${r.ma_de_xuat}`)} />
                     <RecordHistoryButton entity="de-xuat-nhap-hang" code={r.ma_de_xuat} />
                   </div>
                 ),

@@ -1,11 +1,14 @@
+
+import ActionIconButton from "../../components/common/ActionIconButton";
 //D:\KLTN\KLTN\frontend\src\pages\nhu-cau\NhuCauNguyenLieuPage.tsx
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useAuth } from "../../auth/AuthContext";
 import { navigate } from "../../routes/navigation";
 import DataTable from "../../components/common/DataTable";
 import {
   PageHeader,
   SummaryCard,
+
   StatusBadge,
   SearchInput,
   FilterSelect,
@@ -19,7 +22,8 @@ import {
   formatDate,
 } from "../../components/common/PurchaseUI";
 import { api } from "../../services/apiClient";
-import { layLichSuDuBao } from "../../services/duBaoService";
+import type { LichSuDuBao } from "../../services/duBaoService";
+import ForecastDetailDrawer from "./ForecastDetailDrawer";
 import type { Demand } from "../../services/purchaseTypes";
 export default function NhuCauNguyenLieuPage({
   forecast = "",
@@ -31,15 +35,31 @@ export default function NhuCauNguyenLieuPage({
   const [draft, setDraft] = useState(forecast);
   const [search, setSearch] = useState("");
   const [status, setStatus] = useState("");
+  const [detailCode, setDetailCode] = useState("");
+  const defaultApplied = useRef(false);
   const history = useResource(
-    () => (can("DU_BAO_VIEW") ? layLichSuDuBao() : Promise.resolve([])),
-    [can("DU_BAO_VIEW")],
+    () => api<LichSuDuBao[]>("/nhu-cau-nguyen-lieu/lich-su"),
+    [],
   );
+  useEffect(() => {
+    if (defaultApplied.current || history.loading || history.error) return;
+    defaultApplied.current = true;
+    if (selected || draft) return;
+
+    // History is ordered newest first; match the API's successful-run rule.
+    const latest = history.data?.find((run) => run.trang_thai === "THANH_CONG");
+    if (latest) {
+      setDraft(latest.ma_lich_su_du_bao);
+      setSelected(latest.ma_lich_su_du_bao);
+    }
+  }, [history.data, history.loading, history.error, selected, draft]);
   const resource = useResource(
-    () =>
-      selected
-        ? api<Demand>(`/nhu-cau-nguyen-lieu/${encodeURIComponent(selected)}`)
-        : Promise.resolve(null),
+    async () => {
+      if (!selected) return null;
+      const result = await api<Demand>(`/nhu-cau-nguyen-lieu/${encodeURIComponent(selected)}`);
+      if (result.ma_lich_su_du_bao !== selected) throw new Error("Nhu cầu trả về không khớp lần dự báo đã chọn.");
+      return result;
+    },
     [selected],
   );
   const rows = useMemo(
@@ -76,29 +96,38 @@ export default function NhuCauNguyenLieuPage({
           }}
         >
           <Field label="Lần dự báo">
-            {history.data?.length ? (
-              <select
-                required
-                value={draft}
-                onChange={(e) => setDraft(e.target.value)}
-              >
-                <option value="">Chọn lần dự báo</option>
-                {history.data.map((r) => (
-                  <option key={r.ma_lich_su_du_bao} value={r.ma_lich_su_du_bao}>
-                    {r.ma_lich_su_du_bao} · {formatDate(r.thoi_gian_chay)} ·{" "}
-                    {r.so_tuan_du_bao} tuần
-                  </option>
-                ))}
-              </select>
-            ) : (
-              <input
-                required
-                placeholder="Nhập mã lần dự báo"
-                value={draft}
-                onChange={(e) => setDraft(e.target.value)}
-              />
-            )}
+            <select
+              required
+              disabled={history.loading}
+              value={draft}
+              onChange={(e) => {
+                setDraft(e.target.value);
+                setSelected(e.target.value);
+              }}
+            >
+              <option value="">
+                {history.loading ? "Đang tải lần dự báo…" : history.data?.length ? "Chọn lần dự báo" : "Chưa có lần dự báo"}
+              </option>
+              {draft && !history.data?.some((run) => run.ma_lich_su_du_bao === draft) && (
+                <option value={draft}>{draft}</option>
+              )}
+              {history.data?.map((r) => (
+                <option key={r.ma_lich_su_du_bao} value={r.ma_lich_su_du_bao}>
+                  {r.ma_lich_su_du_bao} · {formatDate(r.thoi_gian_chay)} ·{" "}
+                  {r.so_tuan_du_bao} tuần
+                  {r.trang_thai?.trim() ? ` · ${r.trang_thai.trim()}` : ""}
+                </option>
+              ))}
+            </select>
           </Field>
+          <button
+            className="pm-btn"
+            type="button"
+            disabled={!draft.trim()}
+            onClick={() => setDetailCode(draft.trim())}
+          >
+            Xem chi tiết
+          </button>
           <button
             className="pm-btn primary"
             type="submit"
@@ -116,12 +145,19 @@ export default function NhuCauNguyenLieuPage({
           <ErrorState message={history.error} retry={history.refetch} />
         )}
       </section>
+      {detailCode && (
+        <ForecastDetailDrawer
+          key={detailCode}
+          code={detailCode}
+          onClose={() => setDetailCode("")}
+        />
+      )}
       {!selected ? (
         <EmptyState
           title="Chọn một lần dự báo"
           description="Số liệu nhu cầu sẽ được tính từ kết quả dự báo đã lưu."
         />
-      ) : resource.loading ? (
+      ) : resource.loading || (!resource.error && resource.data?.ma_lich_su_du_bao !== selected) ? (
         <LoadingState />
       ) : resource.error ? (
         <ErrorState message={resource.error} retry={resource.refetch} />
@@ -236,22 +272,17 @@ export default function NhuCauNguyenLieuPage({
                 },
                 {
                   key: "actions",
-                  label: "",
+                  label: "Thao tác",
                   render: (r) =>
                     can("GOI_Y_NHA_CUNG_CAP_VIEW") &&
                     number(r.so_luong_can_mua_kg) > 0 && (
-                      <button
-                        className="pm-link"
-                        onClick={() =>
+                      <ActionIconButton action="supplier" label="Xem nhà cung cấp" onClick={() =>
                           navigate("/goi-y", {
                             material: r.ma_nguyen_lieu,
                             qty: r.so_luong_can_mua_kg,
                             forecast: selected,
                           })
-                        }
-                      >
-                        Xem NCC →
-                      </button>
+                        } />
                     ),
                 },
               ]}

@@ -8,10 +8,16 @@ export type OrderInput = {
 };
 export type ReceiptInput = {
   ngay_giao_thuc_te: string;
+  request_id?: string;
+  hoan_tat?: boolean;
+  ghi_chu?: string | null;
   chi_tiet: {
     ma_chi_tiet_don_mua: string;
     so_luong_thuc_nhan: string;
     ly_do_khong_nhan: string | null;
+    so_luong_giao?: string;
+    so_luong_dat_chat_luong?: string;
+    so_luong_khong_dat?: string;
   }[];
 };
 export const listOrders = () => api<Order[]>("/don-mua-nguyen-lieu");

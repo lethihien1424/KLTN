@@ -1,3 +1,4 @@
+import ActionIconButton from "../../components/common/ActionIconButton";
 // //D:\KLTN\KLTN\frontend\src\pages\dashboard\DashboardMuaHangPage.tsx
 // import { useAuth } from "../../auth/AuthContext";
 // import DataTable from "../../components/common/DataTable";
@@ -370,12 +371,10 @@ function DashboardMuaHangContent() {
                 },
                 {
                   key: "actions",
-                  label: "",
+                  label: "Thao tác",
                   render: () =>
                     can("TON_KHO_VIEW") && (
-                      <a className="pm-link" href="#/ton-kho">
-                        Xem tồn kho →
-                      </a>
+                      <ActionIconButton action="view" label="Xem tồn kho" href="#/ton-kho" />
                     ),
                 },
               ]}

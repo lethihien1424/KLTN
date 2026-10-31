@@ -12,6 +12,14 @@ export type BomLine = {
   ty_le_phoi_tron: Decimal;
 };
 export type Bom = {
+  san_pham?: import("./congThucService").BomProduct | null;
+  dinh_luong?: {
+    khoi_luong_thanh_pham_kg: string;
+    tong_nguyen_lieu_kg: string;
+    hao_hut_kg: string;
+    chi_tiet: { ma_nguyen_lieu: string; ty_le_phoi_tron: string; khoi_luong_kg: string }[];
+  } | null;
+  loi_dinh_luong?: string | null;
   ma_cong_thuc: string;
   ten_cong_thuc: string;
   ma_san_pham: string;
@@ -26,6 +34,7 @@ export type Bom = {
 export type Stock = Material & {
   ngay_ghi_nhan: string;
   ton_kho_thuc_te: Decimal;
+  hang_dang_ve: Decimal;
   so_luong_book: Decimal;
   ton_kho_kha_dung: Decimal;
   ton_kho_an_toan: Decimal;
@@ -67,6 +76,34 @@ export type DemandLine = {
   so_luong_can_mua_kg: Decimal;
 };
 export type Demand = { ma_lich_su_du_bao: string; chi_tiet: DemandLine[] };
+export type ForecastDemandDetail = {
+  ma_lich_su_du_bao: string;
+  thoi_gian_chay: string;
+  so_tuan_du_bao: number;
+  trang_thai: string | null;
+  tu_ngay: string | null;
+  den_ngay: string | null;
+  tong_san_pham: number;
+  du_bom: boolean;
+  san_pham: {
+    ma_san_pham: string;
+    ten_san_pham: string;
+    so_luong_du_bao: Decimal;
+    bom: { ma_cong_thuc: string; ten_cong_thuc: string; khoi_luong_thanh_pham_kg: Decimal; he_so_thu_hoi: Decimal; ty_le_hao_hut: Decimal } | null;
+    loi_bom: string | null;
+  }[];
+  nguyen_lieu: {
+    ma_nguyen_lieu: string;
+    ten_nguyen_lieu: string;
+    nhu_cau_du_bao_kg: Decimal;
+    cach_tinh: {
+      ma_san_pham: string; ma_cong_thuc: string;
+      so_luong_du_bao: Decimal; khoi_luong_thanh_pham_kg: Decimal;
+      he_so_thu_hoi: Decimal; ty_le_phoi_tron: Decimal;
+      kg_moi_san_pham: Decimal; nhu_cau_kg: Decimal;
+    }[];
+  }[];
+};
 export type Suggestion = {
   ma_ncc: string;
   ten_ncc: string;
@@ -117,6 +154,9 @@ export type OrderLine = {
   ly_do_khong_nhan: string | null;
 };
 export type Order = {
+  nguon?: "EXCEL_TRUC_TIEP" | "DE_XUAT" | "TRUC_TIEP";
+  ma_tham_chieu?: string | null;
+  ghi_chu?: string | null;
   ma_don_mua: string;
   ma_ncc: string;
   ten_ncc: string;
@@ -138,6 +178,11 @@ export type Performance = {
   diem_ncc: Decimal | null;
   ty_le_giao_dung_han_thuc_te: Decimal | null;
   ty_le_giao_du_thuc_te: Decimal | null;
+  ty_le_chat_luong_dat_thuc_te?: Decimal | null;
+  thoi_gian_giao_tb_ngay?: Decimal | null;
+  so_don?: number;
+  so_don_dang_giao?: number;
+  so_phieu?: number;
 };
 export type Overview = {
   nguyen_lieu: { tong_so: number; duoi_ton_an_toan: number };

@@ -20,6 +20,13 @@ class NhaCungCapService:
     def __init__(self):
         self.repository = NhaCungCapRepository()
 
+    @staticmethod
+    def lock_for_recalculation(db):
+        from sqlalchemy import select
+        from src.models.nha_cung_cap_model import NhaCungCap
+        # Mapping writes recalculate all suppliers; acquire parents in the same order before child inserts.
+        return list(db.scalars(select(NhaCungCap).order_by(NhaCungCap.ma_ncc).with_for_update()))
+
     def list(self, db, **filters):
         return self.repository.list(db, **filters)
 
@@ -87,18 +94,17 @@ class NhaCungCapService:
     @classmethod
     def mapping_score(
         cls, mapping, min_lead_time, max_lead_time,
-        on_time_ratio=None, full_delivery_ratio=None,
+        on_time_ratio=None, full_delivery_ratio=None, quality_ratio=None, actual_lead_time=None,
     ) -> Decimal:
-        quality = cls.percentage_score(mapping.ty_le_chat_luong_dat)
+        quality = cls.percentage_score(mapping.ty_le_chat_luong_dat if quality_ratio is None else quality_ratio)
         on_time = cls.percentage_score(
             mapping.ty_le_giao_dung_han if on_time_ratio is None else on_time_ratio
         )
         full_delivery = cls.percentage_score(
             mapping.ty_le_giao_du if full_delivery_ratio is None else full_delivery_ratio
         )
-        lead_time = cls.lead_time_score(
-            mapping.lead_time_ngay, min_lead_time, max_lead_time
-        )
+        lead_time = (cls.lead_time_score(mapping.lead_time_ngay, min_lead_time, max_lead_time)
+                     if actual_lead_time is None else cls.HUNDRED if actual_lead_time <= mapping.lead_time_ngay else cls.HUNDRED * Decimal(mapping.lead_time_ngay) / actual_lead_time)
         availability = cls.availability_score(
             mapping.so_luong_ton_kho, mapping.so_luong_book
         )
@@ -111,30 +117,9 @@ class NhaCungCapService:
         )
 
     def delivery_performance(self, db, supplier_code):
-        on_time_count = 0
-        order_count = 0
-        ordered = Decimal("0")
-        received = Decimal("0")
-        for order in self.repository.received_orders(db, supplier_code):
-            details = self.repository.received_details(db, order.ma_don_mua)
-            if not details or any(
-                row.so_luong_mua is None or row.so_luong_mua <= 0
-                or row.so_luong_thuc_nhan is None or row.so_luong_thuc_nhan < 0
-                or row.so_luong_thuc_nhan > row.so_luong_mua
-                for row in details
-            ):
-                continue
-            order_count += 1
-            on_time_count += order.ngay_giao_thuc_te <= order.ngay_du_kien_giao
-            ordered += sum((row.so_luong_mua for row in details), Decimal("0"))
-            received += sum((row.so_luong_thuc_nhan for row in details), Decimal("0"))
-        if not order_count:
-            return None, None, 0
-        return (
-            Decimal(on_time_count) / Decimal(order_count),
-            self._clamp(received / ordered * self.HUNDRED) / self.HUNDRED,
-            order_count,
-        )
+        from src.services.delivery_kpi_service import DeliveryKpiService
+        metrics = DeliveryKpiService.summarize(db, supplier_code)
+        return metrics["on_time_ratio"], metrics["full_ratio"], metrics["so_don_da_nhan"]
 
     def calculate_supplier_score_in_transaction(
         self, db, supplier_code, lead_time_range=None
@@ -142,9 +127,9 @@ class NhaCungCapService:
         supplier = self.repository.get(db, supplier_code, lock=True)
         if supplier is None:
             raise HTTPException(404, "Không tìm thấy nhà cung cấp.")
-        on_time_ratio, full_delivery_ratio, order_count = self.delivery_performance(
-            db, supplier_code
-        )
+        from src.services.delivery_kpi_service import DeliveryKpiService
+        metrics = DeliveryKpiService.summarize(db, supplier_code)
+        on_time_ratio, full_delivery_ratio, order_count = metrics["on_time_ratio"], metrics["full_ratio"], metrics["so_don_da_nhan"]
         mappings = self.repository.mappings(db, supplier_code)
         if not mappings:
             score = Decimal("0.00")
@@ -154,7 +139,7 @@ class NhaCungCapService:
             )
             total = sum(
                 (self.mapping_score(
-                    row, minimum, maximum, on_time_ratio, full_delivery_ratio
+                    row, minimum, maximum, on_time_ratio, full_delivery_ratio, metrics["quality_ratio"], metrics["lead_time"]
                 ) for row in mappings),
                 Decimal("0"),
             )

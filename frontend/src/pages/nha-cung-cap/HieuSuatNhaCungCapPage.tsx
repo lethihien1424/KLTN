@@ -1,7 +1,10 @@
+import ActionIconButton from "../../components/common/ActionIconButton";
 //D:\KLTN\KLTN\frontend\src\pages\nha-cung-cap\HieuSuatNhaCungCapPage.tsx
 import { useMemo, useState } from "react";
 import { useAuth } from "../../auth/AuthContext";
 import DataTable from "../../components/common/DataTable";
+import SupplierDeliveryDetail from "./SupplierDeliveryDetail";
+import { useDeliveryExcel } from "./useDeliveryExcel";
 import {
   PageHeader,
   SummaryCard,
@@ -19,14 +22,16 @@ import {
   supplierPerformance,
   scoreSupplier,
 } from "../../services/nhaCungCapService";
-const percent = (value: string | null) =>
-  value === null ? "Chưa có dữ liệu" : `${formatNumber(value)}%`;
+const percent = (value: string | null | undefined) =>
+  value == null ? "Chưa có dữ liệu" : `${formatNumber(value)}%`;
 export default function HieuSuatNhaCungCapPage() {
   const { can } = useAuth();
   const resource = useResource(supplierPerformance);
   const mutation = useMutation();
   const [search, setSearch] = useState("");
   const [confirm, setConfirm] = useState<string | null>(null);
+  const [detailCode, setDetailCode] = useState("");
+  const excel = useDeliveryExcel(resource.refetch);
   const rows = useMemo(
     () =>
       (resource.data ?? []).filter((r) =>
@@ -36,7 +41,7 @@ export default function HieuSuatNhaCungCapPage() {
   );
   const scored = resource.data?.filter((r) => r.diem_ncc !== null) ?? [];
   const delivered =
-    resource.data?.filter((r) => r.ty_le_giao_dung_han_thuc_te !== null) ?? [];
+    resource.data?.filter((r) => r.ty_le_giao_du_thuc_te != null || (r.so_phieu ?? 0) > 0) ?? [];
   return (
     <>
       <PageHeader
@@ -44,6 +49,7 @@ export default function HieuSuatNhaCungCapPage() {
         description="Theo dõi điểm thương mại và tỷ lệ giao hàng thực tế."
         actions={
           <>
+            {excel.buttons}
             <button className="pm-btn" onClick={resource.refetch}>
               Làm mới
             </button>
@@ -90,6 +96,7 @@ export default function HieuSuatNhaCungCapPage() {
         error={confirm !== null ? "" : mutation.error}
         success={mutation.success}
       />
+      {excel.feedback}
       <section className="pm-panel">
         <div className="pm-toolbar">
           <SearchInput value={search} onChange={setSearch} />
@@ -141,27 +148,27 @@ export default function HieuSuatNhaCungCapPage() {
                 render: (r) => percent(r.ty_le_giao_du_thuc_te),
               },
               {
+                key: "quality", label: "Chất lượng đạt thực tế", numeric: true,
+                render: (r) => percent(r.ty_le_chat_luong_dat_thuc_te),
+              },
+              { key: "lead", label: "Giao TB (ngày)", numeric: true, render: (r) => r.thoi_gian_giao_tb_ngay == null ? "Chưa có dữ liệu" : formatNumber(r.thoi_gian_giao_tb_ngay) },
+              { key: "orders", label: "Đơn / đang giao", render: (r) => `${r.so_don ?? 0} / ${r.so_don_dang_giao ?? 0}` },
+              {
                 key: "actions",
-                label: "",
+                label: "Thao tác",
                 render: (r) =>
-                  can("NHA_CUNG_CAP_SCORE") && (
-                    <button
-                      className="pm-link"
-                      onClick={() => {
+                  <div className="pm-actions"><ActionIconButton action="view" label="Nguồn đánh giá NCC" onClick={() => setDetailCode(r.ma_ncc)} />{can("NHA_CUNG_CAP_SCORE") && (
+                    <ActionIconButton action="score" label="Tính lại điểm" onClick={() => {
                         mutation.setError("");
                         setConfirm(r.ma_ncc);
-                      }}
-                    >
-                      Tính lại điểm
-                    </button>
-                  ),
+                      }} />
+                  )}</div>,
               },
             ]}
           />
         )}
         <p className="pm-small">
-          Tỷ lệ thực tế dựa trên các đơn đã nhận hàng. Sau khi nhận đơn mới,
-          dùng “Tính lại điểm” để cập nhật kết quả.
+          KPI và điểm tự cập nhật khi xác nhận nhận hàng hoặc nhập lịch sử. Mỗi đơn được tính một lần; đơn chưa chốt không được tính là đã hoàn tất đúng hạn. Điểm giữ trọng số hiện tại, dùng chất lượng/lead time cấu hình nếu chưa có mẫu thực tế. Tồn NCC vẫn là dữ liệu cấu hình, không tự trừ theo phiếu nhận.
         </p>
       </section>
       <ConfirmDialog
@@ -185,6 +192,8 @@ export default function HieuSuatNhaCungCapPage() {
         </p>
         <Feedback error={mutation.error} success="" />
       </ConfirmDialog>
+      {detailCode && <SupplierDeliveryDetail code={detailCode} onClose={() => setDetailCode("")} />}
+      {excel.dialogs}
     </>
   );
 }

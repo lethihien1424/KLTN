@@ -1,3 +1,4 @@
+
 //D:\KLTN\KLTN\frontend\src\components\common\DataTable.tsx
 import { useEffect, useState, type ReactNode } from "react";
 import { EmptyState } from "./PurchaseUI";
@@ -36,7 +37,7 @@ export default function DataTable<T>({
               {columns.map((column) => (
                 <th
                   key={column.key}
-                  className={column.numeric ? "numeric" : ""}
+                  className={column.key === "actions" ? "pm-action-cell" : column.numeric ? "numeric" : ""}
                 >
                   {column.label}
                 </th>
@@ -51,7 +52,7 @@ export default function DataTable<T>({
                   {columns.map((column) => (
                     <td
                       key={column.key}
-                      className={column.numeric ? "numeric" : ""}
+                      className={column.key === "actions" ? "pm-action-cell" : column.numeric ? "numeric" : ""}
                     >
                       {column.key === columns[0]?.key && onRowClick ? (
                         <button

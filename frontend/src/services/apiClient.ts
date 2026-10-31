@@ -6,7 +6,7 @@ export const API_BASE_URL = `${(
 ).replace(/\/+$/, "").replace(/\/api$/, "")}/api`;
 
 export class ApiError extends Error {
-  constructor(message: string, public status: number) {
+  constructor(message: string, public status: number, public detail?: unknown) {
     super(message);
     this.name = "ApiError";
   }
@@ -48,7 +48,7 @@ export async function api<T>(path: string, options: RequestInit = {}): Promise<T
         const row = value as { loc?: unknown[]; msg?: string };
         return `${row.loc?.slice(1).join(" / ") || "Dữ liệu"}: ${row.msg || "Không hợp lệ"}`;
       }).join("; ") : `Yêu cầu thất bại (HTTP ${response.status}).`;
-    throw new ApiError(message, response.status);
+    throw new ApiError(message, response.status, detail);
   }
   if (body === null) throw new Error("Máy chủ trả dữ liệu không hợp lệ.");
   return body as T;

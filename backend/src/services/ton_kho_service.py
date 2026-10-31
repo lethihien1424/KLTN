@@ -1,10 +1,13 @@
 ### D:\KLTN\KLTN\backend\src\services\ton_kho_service.py
 from contextlib import contextmanager
+from decimal import Decimal
 
 from fastapi import HTTPException
 from sqlalchemy.exc import IntegrityError, SQLAlchemyError
 
 from src.repositories.ton_kho_repository import TonKhoRepository
+from src.repositories.nhu_cau_nguyen_lieu_repository import NhuCauNguyenLieuRepository
+from src.services.stock_accounting_service import StockAccountingService
 
 
 class TonKhoService:
@@ -12,7 +15,7 @@ class TonKhoService:
         self.repository = TonKhoRepository()
 
     @staticmethod
-    def _response(snapshot, material):
+    def _response(snapshot, material, incoming=Decimal("0")):
         return {
             **{key: getattr(snapshot, key) for key in (
                 "ma_nguyen_lieu", "ngay_ghi_nhan", "ton_kho_thuc_te",
@@ -21,22 +24,37 @@ class TonKhoService:
             )},
             "ten_nguyen_lieu": material.ten_nguyen_lieu,
             "don_vi_do_luong": material.don_vi_do_luong,
+            "hang_dang_ve": incoming,
         }
 
+    def _responses(self, db, rows):
+        if not rows:
+            return []
+        incoming = NhuCauNguyenLieuRepository.incoming_quantities(
+            db, list({row.ma_nguyen_lieu for row, _ in rows}), ("DA_DUYET",),
+        )
+        # Purchase quantities use kg for materials whose stock unit is g.
+        return [self._response(
+            row, material,
+            incoming.get(row.ma_nguyen_lieu, Decimal("0")) * (
+                Decimal("1000") if material.don_vi_do_luong.strip().lower() == "g" else Decimal("1")
+            ),
+        ) for row, material in rows]
+
     def list(self, db, **filters):
-        return [self._response(row, material) for row, material in self.repository.list(db, **filters)]
+        return self._responses(db, self.repository.list(db, **filters))
 
     def history(self, db, material_code):
         material = self.repository.material(db, material_code)
         if material is None:
             raise HTTPException(404, "Không tìm thấy nguyên liệu.")
-        return [self._response(row, joined_material) for row, joined_material in self.repository.history(db, material_code)]
+        return self._responses(db, self.repository.history(db, material_code))
 
     def detail(self, db, material_code, recorded_date):
         row = self.repository.get(db, material_code, recorded_date)
         if row is None:
             raise HTTPException(404, "Không tìm thấy snapshot tồn kho.")
-        return self._response(row, self.repository.material(db, material_code))
+        return self._responses(db, [(row, self.repository.material(db, material_code))])[0]
 
     def _active_material(self, db, code):
         material = self.repository.material(db, code, lock=True)
@@ -47,26 +65,24 @@ class TonKhoService:
         return material
 
     def create_in_transaction(self, db, payload):
-        material = self._active_material(db, payload.ma_nguyen_lieu)
-        if self.repository.get(db, payload.ma_nguyen_lieu, payload.ngay_ghi_nhan) is not None:
-            raise HTTPException(409, "Snapshot tồn kho cho nguyên liệu và ngày này đã tồn tại.")
-        row = self.repository.add(db, payload.model_dump())
-        return row, material
+        return StockAccountingService().count(db, payload, payload.ma_nguyen_lieu, payload.ngay_ghi_nhan, creating=True)
 
     def create(self, db, payload):
         with self._write(db):
             row, material = self.create_in_transaction(db, payload)
-            result = self._response(row, material)
+            result = self._responses(db, [(row, material)])[0]
         return result
 
     def update(self, db, material_code, recorded_date, payload):
         with self._write(db):
-            row = self.repository.get(db, material_code, recorded_date, lock=True)
+            latest, _ = StockAccountingService().lock(db, material_code)
+            row = self.repository.get(db, material_code, recorded_date)
             if row is None:
                 raise HTTPException(404, "Không tìm thấy snapshot tồn kho.")
-            material = self._active_material(db, material_code)
-            self.repository.update(db, row, payload.model_dump())
-            result = self._response(row, material)
+            if latest.ngay_ghi_nhan != recorded_date:
+                raise HTTPException(409, "Không chỉnh sửa snapshot cũ.")
+            row, material = StockAccountingService().count(db, payload, material_code, recorded_date)
+            result = self._responses(db, [(row, material)])[0]
         return result
 
     @staticmethod

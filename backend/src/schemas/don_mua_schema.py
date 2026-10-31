@@ -49,16 +49,36 @@ class ChiTietNhanHangInput(BaseModel):
     so_luong_thuc_nhan: Annotated[
         Decimal, Field(ge=0, max_digits=14, decimal_places=2, allow_inf_nan=False)
     ]
-    ly_do_khong_nhan: str | None = None
+    ly_do_khong_nhan: str | None = Field(default=None, max_length=2000)
+    so_luong_giao: Annotated[Decimal, Field(ge=0, max_digits=14, decimal_places=2, allow_inf_nan=False)] | None = None
+    so_luong_dat_chat_luong: Annotated[Decimal, Field(ge=0, max_digits=14, decimal_places=2, allow_inf_nan=False)] | None = None
+    so_luong_khong_dat: Annotated[Decimal, Field(ge=0, max_digits=14, decimal_places=2, allow_inf_nan=False)] | None = None
+
+    @model_validator(mode="after")
+    def validate_quality(self):
+        values = (self.so_luong_giao, self.so_luong_dat_chat_luong, self.so_luong_khong_dat)
+        if any(value is not None for value in values):
+            if any(value is None for value in values):
+                raise ValueError("Cần nhập đủ số giao, số đạt chất lượng và số không đạt.")
+            if self.so_luong_dat_chat_luong + self.so_luong_khong_dat != self.so_luong_giao:
+                raise ValueError("Số đạt + không đạt phải bằng số giao.")
+            if self.so_luong_thuc_nhan > self.so_luong_dat_chat_luong:
+                raise ValueError("Số chấp nhận nhập kho không được vượt số đạt chất lượng.")
+        return self
 
 
 class DonMuaNhanHangRequest(BaseModel):
     model_config = ConfigDict(extra="forbid")
     ngay_giao_thuc_te: date
     chi_tiet: list[ChiTietNhanHangInput] = Field(min_length=1)
+    request_id: Annotated[str, StringConstraints(strip_whitespace=True, min_length=16, max_length=64)] | None = None
+    hoan_tat: bool = True
+    ghi_chu: str | None = Field(default=None, max_length=2000)
 
     @model_validator(mode="after")
     def unique_details(self):
+        if not self.hoan_tat and not self.request_id:
+            raise ValueError("Nhận nhiều đợt cần mã yêu cầu chống trùng.")
         codes = [row.ma_chi_tiet_don_mua for row in self.chi_tiet]
         if len(codes) != len(set(codes)):
             raise ValueError("Không được trùng chi tiết đơn mua.")
@@ -102,4 +122,7 @@ class ChiTietDonMuaResponse(BaseModel):
 
 
 class DonMuaDetailResponse(DonMuaResponse):
+    nguon: str = "TRUC_TIEP"
+    ma_tham_chieu: str | None = None
+    ghi_chu: str | None = None
     chi_tiet: list[ChiTietDonMuaResponse]

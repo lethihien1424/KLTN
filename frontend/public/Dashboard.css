@@ -1,8 +1,22 @@
 /* D:\KLTN\KLTN\frontend\public\Dashboard.css*/
 
+.dashboard-app {
+    height: 100vh;
+    height: 100dvh;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+.dashboard-app > .dashboard-session-error {
+    flex-shrink: 0;
+}
+
 .dashboard-shell {
     display: flex;
-    min-height: 100vh;
+    flex: 1;
+    min-height: 0;
+    overflow: hidden;
     background: #f4f7fc;
     color: #1e293b;
     font-family: "Segoe UI", -apple-system, BlinkMacSystemFont, Roboto, sans-serif;
@@ -12,6 +26,9 @@
     display: flex;
     flex-direction: column;
     flex: 0 0 240px;
+    min-height: 0;
+    overflow-y: auto;
+    overscroll-behavior-y: contain;
     padding: 20px 16px;
     background: #ffffff;
     border-right: 1px solid #e2e8f0;
@@ -79,6 +96,11 @@
     display: flex;
     flex-direction: column;
     gap: 6px;
+}
+
+/* Keep the menu's natural height inside the sidebar scroll area. */
+.dashboard-sidebar > * {
+    flex-shrink: 0;
 }
 
 .dashboard-nav-item {
@@ -176,11 +198,16 @@
 }
 
 .dashboard-content {
+    display: flex;
+    flex-direction: column;
     flex: 1;
     min-width: 0;
+    min-height: 0;
+    overflow: hidden;
 }
 
 .dashboard-topbar {
+    flex-shrink: 0;
     display: flex;
     align-items: center;
     justify-content: space-between;
@@ -309,9 +336,16 @@
 }
 
 .dashboard-main {
-    max-width: 1450px;
-    margin: 0 auto;
+    flex: 1;
+    min-height: 0;
+    overflow-y: auto;
+    overscroll-behavior-y: contain;
     padding: 24px 28px;
+}
+
+.dashboard-main-inner {
+    max-width: 1394px;
+    margin: 0 auto;
 }
 
 .dashboard-heading {
@@ -1048,20 +1082,14 @@
 }
 
 @media (max-width: 650px) {
-    .dashboard-shell {
-        display: block;
-    }
     .dashboard-sidebar {
-        width: 100%;
+        flex-basis: min(180px, 46vw);
+        min-width: 0;
+        padding: 20px 8px;
     }
-    .dashboard-sidebar nav {
-        display: flex;
-        overflow-x: auto;
-    }
-    .dashboard-nav-item {
-        flex: 0 0 auto;
-        width: auto;
-        white-space: nowrap;
+    .dashboard-brand {
+        gap: 8px;
+        padding-inline: 0;
     }
     .dashboard-logout {
         margin-top: 10px;

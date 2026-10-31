@@ -7,10 +7,17 @@ from src.models.cong_thuc_model import CongThuc
 from src.models.don_mua_nguyen_lieu import DonMuaNguyenLieu
 from src.models.lich_su_du_bao import LichSuDuBao
 from src.models.nguyen_lieu_model import NguyenLieu
+from src.models.san_pham_model import SanPham
 from src.models.ton_kho_nguyen_lieu_model import TonKhoNguyenLieu
 
 
 class NhuCauNguyenLieuRepository:
+    @staticmethod
+    def products(db, codes):
+        return {row.ma_san_pham: row for row in db.scalars(select(SanPham).where(
+            SanPham.ma_san_pham.in_(codes)
+        ))}
+
     @staticmethod
     def forecast(db, code):
         return db.get(LichSuDuBao, code)
@@ -18,7 +25,8 @@ class NhuCauNguyenLieuRepository:
     @staticmethod
     def forecast_details(db, code):
         return db.scalars(select(ChiTietLichSuDuBao).where(
-            ChiTietLichSuDuBao.ma_lich_su_du_bao == code
+            ChiTietLichSuDuBao.ma_lich_su_du_bao == code,
+            ChiTietLichSuDuBao.ma_nguyen_lieu.is_(None),
         ).order_by(ChiTietLichSuDuBao.ma_san_pham)).all()
 
     @staticmethod

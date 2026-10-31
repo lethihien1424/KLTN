@@ -23,4 +23,4 @@ class LyDoChucNang(Base):
     ly_do_id = Column(String(40), ForeignKey("ly_do.id", ondelete="CASCADE"), nullable=False)
     chuc_nang = Column(String(60), nullable=False)
     created_at = Column(DateTime(timezone=True), server_default=text("CURRENT_TIMESTAMP"), nullable=False)
-    __table_args__ = (UniqueConstraint("ly_do_id", "chuc_nang"), CheckConstraint("chuc_nang IN ('DOI_TRANG_THAI_NGUYEN_LIEU','DOI_TRANG_THAI_CONG_THUC','DOI_TRANG_THAI_NHA_CUNG_CAP')"))
+    __table_args__ = (UniqueConstraint("ly_do_id", "chuc_nang"), CheckConstraint("chuc_nang IN ('DOI_TRANG_THAI_NGUYEN_LIEU','DOI_TRANG_THAI_CONG_THUC','DOI_TRANG_THAI_NHA_CUNG_CAP','DIEU_CHINH_TON_KHO')"))

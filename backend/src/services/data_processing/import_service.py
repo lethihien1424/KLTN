@@ -489,6 +489,7 @@ class ImportService:
             NhaCungCapService,
         )
 
+        NhaCungCapService.lock_for_recalculation(db)
         count = self._simple(
             dataframe=dataframe,
             db=db,
@@ -518,20 +519,7 @@ class ImportService:
         dataframe,
         db: Session,
     ) -> int:
-        return self._simple(
-            dataframe=dataframe,
-            db=db,
-            model_class=TonKhoNguyenLieu,
-            fields={
-                "ma_nguyen_lieu": to_string,
-                "ngay_ghi_nhan": to_date,
-                "ton_kho_thuc_te": to_decimal,
-                "so_luong_book": to_decimal,
-                "ton_kho_an_toan": to_decimal,
-                "ton_kho_toi_da": to_decimal,
-                "trang_thai": to_string,
-            },
-        )
+        raise HTTPException(422, "Nhập tồn kho cần dùng template mới, xem trước và xác nhận tại màn Tồn kho nguyên liệu.")
 
     def _import_ngay_le(
         self,

@@ -15,10 +15,12 @@ class TonKhoValues(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
     ton_kho_thuc_te: Quantity
-    so_luong_book: Quantity
+    so_luong_book: Quantity | None = None
     ton_kho_an_toan: Quantity
     ton_kho_toi_da: Quantity
     trang_thai: Status
+    ly_do_id: Annotated[str, StringConstraints(strip_whitespace=True, min_length=1, max_length=40)]
+    ghi_chu: str | None = Field(default=None, max_length=2000)
 
     @model_validator(mode="after")
     def validate_limits(self):
@@ -42,6 +44,7 @@ class TonKhoResponse(BaseModel):
     don_vi_do_luong: str
     ngay_ghi_nhan: date
     ton_kho_thuc_te: Decimal
+    hang_dang_ve: Decimal
     so_luong_book: Decimal
     ton_kho_kha_dung: Decimal
     ton_kho_an_toan: Decimal
@@ -49,7 +52,7 @@ class TonKhoResponse(BaseModel):
     trang_thai: str
 
     @field_serializer(
-        "ton_kho_thuc_te", "so_luong_book", "ton_kho_kha_dung",
+        "ton_kho_thuc_te", "hang_dang_ve", "so_luong_book", "ton_kho_kha_dung",
         "ton_kho_an_toan", "ton_kho_toi_da",
     )
     def serialize_quantity(self, value: Decimal):

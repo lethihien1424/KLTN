@@ -1,7 +1,10 @@
+import ActionIconButton from "../../components/common/ActionIconButton";
 //D:\KLTN\KLTN\frontend\src\pages\nguyen-lieu\QuanLyNguyenLieuPage.tsx
 import RecordHistoryButton from "../../components/common/RecordHistoryButton";
 import ReasonConfirmDialog from "../../components/common/ReasonConfirmDialog";
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
+import { DownloadOutlined, UploadOutlined, FileExcelOutlined } from "@ant-design/icons";
+import { downloadMaterialExcel, importMaterialExcel } from "../../services/nguyenLieuExcel";
 import { useAuth } from "../../auth/AuthContext";
 import DataTable from "../../components/common/DataTable";
 import {
@@ -36,6 +39,9 @@ export default function QuanLyNguyenLieuPage() {
   const { can } = useAuth();
   const resource = useResource(listMaterials);
   const mutation = useMutation();
+  const excel = useMutation();
+  const fileInput = useRef<HTMLInputElement>(null);
+  const [excelAction, setExcelAction] = useState("");
   const [search, setSearch] = useState("");
   const [status, setStatus] = useState("");
   const [form, setForm] = useState<Material>(blank);
@@ -58,6 +64,16 @@ export default function QuanLyNguyenLieuPage() {
     setForm(row ? { ...row } : { ...blank });
     mutation.setError("");
     setOpen(true);
+  };
+  const runExcel = (action: string, work: () => Promise<void>, message: string) => {
+    void excel.run(async () => {
+      setExcelAction(action);
+      try {
+        await work();
+      } finally {
+        setExcelAction("");
+      }
+    }, message);
   };
   const save = () =>
     void mutation.run(async () => {
@@ -90,12 +106,47 @@ export default function QuanLyNguyenLieuPage() {
         title="Nguyên liệu"
         description="Quản lý danh mục nguyên liệu dùng trong sản xuất và mua hàng."
         actions={
-          can("NGUYEN_LIEU_CREATE") && (
-            <button className="pm-btn primary" onClick={() => edit()}>
-              + Thêm nguyên liệu
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "flex-end", gap: 10, flexWrap: "nowrap" }}>
+            <button className="pm-btn" disabled={excel.busy} onClick={() =>
+              runExcel("template", () => downloadMaterialExcel(), "Đã tải template nguyên liệu.")
+            }>
+              <DownloadOutlined aria-hidden="true" /> {excelAction === "template" ? "Đang tải…" : "Tải template"}
             </button>
-          )
+            <button className="pm-btn" disabled={excel.busy || mutation.busy || !can("NGUYEN_LIEU_CREATE")} onClick={() => fileInput.current?.click()}>
+              <UploadOutlined aria-hidden="true" /> {excelAction === "import" ? "Đang nhập…" : "Nhập Excel"}
+            </button>
+            <button className="pm-btn" disabled={excel.busy || resource.loading || Boolean(resource.error) || !can("NGUYEN_LIEU_EXPORT")} onClick={() =>
+              runExcel("export", () => downloadMaterialExcel(rows), `Đã xuất ${rows.length} nguyên liệu theo bộ lọc hiện tại.`)
+            }>
+              <FileExcelOutlined aria-hidden="true" /> {excelAction === "export" ? "Đang xuất…" : "Xuất Excel"}
+            </button>
+            {can("NGUYEN_LIEU_CREATE") && (
+              <button className="pm-btn primary" onClick={() => edit()}>
+                + Thêm nguyên liệu
+              </button>
+            )}
+          </div>
         }
+      />
+      <input
+        ref={fileInput}
+        type="file"
+        accept=".xlsx"
+        aria-label="Chọn file Excel nguyên liệu"
+        hidden
+        onChange={(event) => {
+          const file = event.target.files?.[0];
+          event.target.value = "";
+          if (!file) return;
+          runExcel("import", async () => {
+            if (!can("NGUYEN_LIEU_CREATE")) throw new Error("Bạn chưa có quyền nhập nguyên liệu.");
+            try {
+              await importMaterialExcel(file);
+            } finally {
+              resource.refetch();
+            }
+          }, "Đã nhập danh sách nguyên liệu từ Excel.");
+        }}
       />
       <div className="pm-cards">
         <SummaryCard
@@ -121,6 +172,7 @@ export default function QuanLyNguyenLieuPage() {
         error={open || confirm ? "" : mutation.error}
         success={mutation.success}
       />
+      <Feedback error={excel.error} success={excel.success} />
       <section className="pm-panel">
         <div className="pm-toolbar">
           <SearchInput value={search} onChange={setSearch} />
@@ -174,20 +226,13 @@ export default function QuanLyNguyenLieuPage() {
                   <div className="pm-actions">
                     <RecordHistoryButton entity="nguyen-lieu" code={r.ma_nguyen_lieu} />
                     {can("NGUYEN_LIEU_UPDATE") && (
-                      <button className="pm-link" onClick={() => edit(r)}>
-                        Sửa
-                      </button>
+                      <ActionIconButton action="edit" label="Chỉnh sửa" onClick={() => edit(r)} />
                     )}
                     {can("NGUYEN_LIEU_CHANGE_STATUS") && (
-                      <button
-                        className="pm-link"
-                        onClick={() => {
+                      <ActionIconButton action="status" label="Đổi trạng thái" onClick={() => {
                           mutation.setError("");
                           setConfirm(r);
-                        }}
-                      >
-                        Đổi trạng thái
-                      </button>
+                        }} />
                     )}
                   </div>
                 ),

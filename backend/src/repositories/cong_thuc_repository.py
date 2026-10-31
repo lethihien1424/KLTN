@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from sqlalchemy import or_, select
+from sqlalchemy import or_, select, text
 from sqlalchemy.orm import Session
 
 from src.models.chi_tiet_cong_thuc_model import ChiTietCongThuc
@@ -37,15 +37,23 @@ class CongThucRepository:
     def product(db: Session, code: str, lock=False):
         query = select(SanPham).where(SanPham.ma_san_pham == code)
         if lock:
-            query = query.with_for_update(read=True)
+            query = query.with_for_update()
         return db.scalar(query)
 
     @staticmethod
-    def materials(db: Session, codes: list[str]):
+    def materials(db: Session, codes: list[str], lock=True):
         # Shared locks keep reference statuses stable until the write commits.
-        return db.scalars(select(NguyenLieu).where(
+        query = select(NguyenLieu).where(
             NguyenLieu.ma_nguyen_lieu.in_(codes)
-        ).order_by(NguyenLieu.ma_nguyen_lieu).with_for_update(read=True)).all()
+        ).order_by(NguyenLieu.ma_nguyen_lieu)
+        return db.scalars(query.with_for_update(read=True) if lock else query).all()
+
+    @staticmethod
+    def active_for_product(db, code, exclude=None):
+        query = select(CongThuc).where(CongThuc.ma_san_pham == code, CongThuc.trang_thai == "DANG_SU_DUNG")
+        if exclude:
+            query = query.where(CongThuc.ma_cong_thuc != exclude)
+        return db.scalars(query).all()
 
     @staticmethod
     def details(db: Session, code: str):
@@ -55,6 +63,16 @@ class CongThucRepository:
 
     @staticmethod
     def create(db: Session, values: dict):
+        if "ma_cong_thuc" not in values and db.get_bind().dialect.name == "postgresql":
+            # Explicit Excel codes may already occupy future sequence values.
+            # Consume the normal sequence until an unused code is found; never reset it.
+            values = dict(values)
+            while True:
+                sequence = db.scalar(text("SELECT nextval('cong_thuc_seq')"))
+                code = f"CT{sequence:04d}"
+                if db.get(CongThuc, code) is None:
+                    values["ma_cong_thuc"] = code
+                    break
         model = CongThuc(**values)
         db.add(model)
         db.flush()  # Fetch the database-generated CT code; do not commit.

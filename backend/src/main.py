@@ -8,12 +8,12 @@ from fastapi import (
     status,
 )
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import JSONResponse
 from sqlalchemy import text
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import Session
 
 from src.core.config import settings
+from src.core.error_handlers import global_exception_handler
 from src.core.database import Base, engine, get_db
 import src.models  # Registers all models in Base.metadata
 from src.models.ly_do_model import LyDo, LyDoChucNang
@@ -41,13 +41,7 @@ app.add_middleware(
 )
 
 
-@app.exception_handler(Exception)
-async def global_exception_handler(request: Request, exc: Exception):
-    logger.exception("Lỗi máy chủ không xác định: %s", exc)
-    return JSONResponse(
-        status_code=500,
-        content={"detail": f"Lỗi máy chủ: {str(exc)}"},
-    )
+app.add_exception_handler(Exception, global_exception_handler)
 
 
 @app.on_event("startup")
@@ -156,6 +150,12 @@ def init_database_tables():
                         )
                 db.commit()
                 logger.info("Đã khởi tạo danh mục lý do mặc định.")
+        from src.services.stock_schema_service import upgrade_inventory_schema
+        upgrade_inventory_schema(engine)
+        from src.services.delivery_schema_service import upgrade_delivery_schema
+        upgrade_delivery_schema(engine)
+        from src.core.receipt_numbering import upgrade_receipt_numbers
+        upgrade_receipt_numbers(engine)
     except Exception as exc:
         logger.warning(
             "Lỗi khi kiểm tra/khởi tạo bảng trên startup: %s",

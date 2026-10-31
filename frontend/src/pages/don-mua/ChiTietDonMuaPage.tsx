@@ -6,6 +6,7 @@ import DataTable from "../../components/common/DataTable";
 import ReviewDialog from "../../components/common/ReviewDialog";
 import DonMuaForm from "./DonMuaForm";
 import NhanHangDialog from "./NhanHangDialog";
+import OrderDeliveryHistory from "./DeliveryHistoryTable";
 import {
   PageHeader,
   SummaryCard,
@@ -27,6 +28,8 @@ export default function ChiTietDonMuaPage({ id }: { id: string }) {
   const [review, setReview] = useState<"approve" | "reject" | null>(null);
   const [edit, setEdit] = useState(false);
   const [receive, setReceive] = useState(false);
+  const [tab, setTab] = useState("info");
+  const [historyVersion, setHistoryVersion] = useState(0);
   const order = resource.data;
   if (resource.loading) return <LoadingState />;
   if (resource.error || !order)
@@ -99,9 +102,19 @@ export default function ChiTietDonMuaPage({ id }: { id: string }) {
         <SummaryCard label="Tổng tiền" value={formatMoney(order.tong_tien)} />
         <SummaryCard label="Nguyên liệu" value={order.chi_tiet.length} />
       </div>
-      <section className="pm-panel">
+      <div className="pm-actions" role="tablist" aria-label="Chi tiết đơn mua">
+        <button role="tab" aria-selected={tab === "info"} className={`pm-btn ${tab === "info" ? "primary" : ""}`} onClick={() => setTab("info")}>Thông tin đơn mua</button>
+        <button role="tab" aria-selected={tab === "history"} className={`pm-btn ${tab === "history" ? "primary" : ""}`} onClick={() => setTab("history")}>Lịch sử nhận hàng</button>
+      </div>
+      {tab === "history" && <OrderDeliveryHistory code={id} version={historyVersion} />}
+      <section className="pm-panel" hidden={tab !== "info"}>
         <h2>Thông tin đơn mua</h2>
         <dl className="pm-info">
+          {order.nguon === "EXCEL_TRUC_TIEP" && <>
+            <div><dt>Nguồn đơn</dt><dd>Import Excel trực tiếp · Không liên kết đề xuất</dd></div>
+            <div><dt>Mã tham chiếu</dt><dd>{order.ma_tham_chieu}</dd></div>
+            <div><dt>Ghi chú</dt><dd>{order.ghi_chu || "—"}</dd></div>
+          </>}
           <div>
             <dt>Ngày đặt</dt>
             <dd>{formatDate(order.ngay_dat_hang)}</dd>
@@ -143,7 +156,7 @@ export default function ChiTietDonMuaPage({ id }: { id: string }) {
           <div className="pm-error">Lý do từ chối: {order.ly_do_tu_choi}</div>
         )}
       </section>
-      <section className="pm-panel">
+      <section className="pm-panel" hidden={tab !== "info"}>
         <h2>Chi tiết nguyên liệu</h2>
         <DataTable
           rows={order.chi_tiet}
@@ -184,10 +197,9 @@ export default function ChiTietDonMuaPage({ id }: { id: string }) {
               label: "Thực nhận",
               numeric: true,
               render: (r) =>
-                order.trang_thai === "DA_NHAN_HANG"
-                  ? formatNumber(r.so_luong_thuc_nhan)
-                  : "—",
+                formatNumber(r.so_luong_thuc_nhan),
             },
+            { key: "pending", label: "Còn chờ giao", render: (r) => order.trang_thai === "DA_DUYET" ? formatNumber(Number(r.so_luong_mua) - Number(r.so_luong_thuc_nhan)) : "0" },
             {
               key: "reason",
               label: "Lý do nhận thiếu",
@@ -249,6 +261,7 @@ export default function ChiTietDonMuaPage({ id }: { id: string }) {
           onSaved={(result) => {
             resource.setData(result);
             setReceive(false);
+            setHistoryVersion((value) => value + 1);
             mutation.setSuccess("Đã nhận hàng và cập nhật tồn kho.");
           }}
         />

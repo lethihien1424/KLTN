@@ -254,6 +254,7 @@ import DeXuatNhapHangPage from "../pages/de-xuat/DeXuatNhapHangPage";
 import ChiTietDeXuatPage from "../pages/de-xuat/ChiTietDeXuatPage";
 import TaoDeXuatPage from "../pages/de-xuat/TaoDeXuatPage";
 import DanhSachDonMuaPage from "../pages/don-mua/DanhSachDonMuaPage";
+import LichSuNhapNguyenLieuPage from "../pages/don-mua/LichSuNhapNguyenLieuPage";
 import ChiTietDonMuaPage from "../pages/don-mua/ChiTietDonMuaPage";
 import DashboardMuaHangPage from "../pages/dashboard/DashboardMuaHangPage";
 const DuBaoNhuCauPage = lazy(() => import("../pages/du-bao/DuBaoNhuCauPage"));
@@ -433,7 +434,10 @@ export default function AppRoutes({ location }: { location: Location }) {
   // Các đoạn nguồn đã gửi chưa có component kế hoạch mua hàng hoặc tỉ lệ hao hụt.
   // Giữ trạng thái chưa hoàn thiện, không thay bằng API đơn mua/đề xuất khác nghiệp vụ.
   if (path === "/xem-ke-hoach-mua-hang" || path === "/ti-le-hao-hut") {
-    const entry = menu.find(item => item.path === path);
+    // Route kế hoạch vẫn truy cập được dù không còn mục trong sidebar.
+    const entry = path === "/xem-ke-hoach-mua-hang"
+      ? { label: "Xem kế hoạch mua hàng", permission: "ke_hoach_mua_hang:XEM", anyPermissions: undefined }
+      : menu.find(item => item.path === path);
     if (!entry) return <EmptyState title="Không tìm thấy màn hình" description="Chọn chức năng từ menu." />;
     const hasAction = !entry.anyPermissions || entry.anyPermissions.some(can);
     return guarded(entry.permission, hasAction ? (
@@ -445,6 +449,7 @@ export default function AppRoutes({ location }: { location: Location }) {
     ) : <EmptyState title="Bạn chưa có quyền thực hiện thao tác này" description="Liên hệ quản trị viên để được cấp quyền phù hợp." />);
   }
   if (path === "/nhap-du-lieu-mua-hang") return guarded("don_mua_nguyen_lieu:XEM", <DanhSachDonMuaPage />);
+  if (path === "/lich-su-nhap-nguyen-lieu") return guarded("don_mua_nguyen_lieu:XEM", <LichSuNhapNguyenLieuPage />);
   return (
     <EmptyState
       title="Không tìm thấy màn hình"
