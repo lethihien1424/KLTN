@@ -124,6 +124,8 @@ export default function ChiTietDeXuatPage({ id }: { id: string }) {
       </div>
       <section className="pm-panel">
         <h2>Thông tin đề xuất</h2>
+        {proposal.ma_lich_su_du_bao && <p>Lần dự báo: <a href={`#/nhu-cau-nguyen-lieu?forecast=${encodeURIComponent(proposal.ma_lich_su_du_bao)}`}>{proposal.ma_lich_su_du_bao}</a></p>}
+        {proposal.ly_do_chua_xac_nhan && <p role="status">Lý do lập khi chưa xác nhận: {proposal.ly_do_chua_xac_nhan}. Cần xác nhận đủ trước khi duyệt và tạo đơn.</p>}
         <dl className="pm-info">
           <div>
             <dt>Ngày tạo</dt>

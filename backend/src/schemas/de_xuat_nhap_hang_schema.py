@@ -23,6 +23,9 @@ class ChiTietDeXuatInput(BaseModel):
 class DeXuatNhapHangCreate(BaseModel):
     model_config = ConfigDict(extra="forbid")
     ghi_chu: str | None = None
+    ma_lich_su_du_bao: Code | None = None
+    chap_nhan_chua_xac_nhan: bool = False
+    ly_do_chua_xac_nhan: str | None = Field(default=None, max_length=2000)
     chi_tiet: list[ChiTietDeXuatInput] = Field(min_length=1)
 
     @model_validator(mode="after")
@@ -34,6 +37,9 @@ class DeXuatNhapHangCreate(BaseModel):
 
 
 class DeXuatNhapHangSummaryResponse(BaseModel):
+    ma_lich_su_du_bao: str | None = None
+    yeu_cau_xac_nhan: bool = False
+    ly_do_chua_xac_nhan: str | None = None
     ma_de_xuat: str
     ngay_de_xuat_nhap_hang: date
     ngay_tao_de_xuat: datetime
@@ -61,6 +67,8 @@ class TaoDonMuaTuDeXuatResponse(BaseModel):
 
 
 class ChiTietDeXuatResponse(BaseModel):
+    ma_xac_nhan: str | None = None
+    trang_thai_cung_ung: str | None = None
     ma_chi_tiet: str
     ma_nguyen_lieu: str
     ten_nguyen_lieu: str

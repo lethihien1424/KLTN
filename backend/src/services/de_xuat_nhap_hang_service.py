@@ -9,6 +9,8 @@ from sqlalchemy.exc import IntegrityError, SQLAlchemyError
 from src.repositories.de_xuat_repository import DeXuatRepository
 from src.repositories.don_mua_repository import DonMuaRepository
 from src.services.don_mua_service import DonMuaService, line_total
+from src.services.supply_confirmation_service import SupplyConfirmationService, ENOUGH, UNKNOWN
+from src.services.nhu_cau_nguyen_lieu_service import NhuCauNguyenLieuService
 
 
 class DeXuatNhapHangService:
@@ -32,6 +34,7 @@ class DeXuatNhapHangService:
                 "ma_de_xuat", "ngay_de_xuat_nhap_hang", "ngay_tao_de_xuat",
                 "ghi_chu", "trang_thai", "nguoi_tao", "nguoi_duyet",
                 "thoi_gian_duyet", "ly_do_tu_choi",
+                "ma_lich_su_du_bao", "yeu_cau_xac_nhan", "ly_do_chua_xac_nhan",
             )},
             "chi_tiet": [{
                 "ma_chi_tiet": row.ma_chi_tiet,
@@ -41,12 +44,14 @@ class DeXuatNhapHangService:
                 "ten_ncc": supplier.ten_ncc,
                 "so_luong_de_xuat_kg": row.so_luong_de_xuat_kg,
                 "don_gia_du_kien": row.don_gia_du_kien,
+                "ma_xac_nhan": row.ma_xac_nhan,
+                "trang_thai_cung_ung": row.trang_thai_cung_ung,
             } for row, material, supplier in self.repository.details(db, model.ma_de_xuat)],
         }
 
-    def _validate_details(self, db, items):
+    def _validate_details(self, db, items, forecast=None, allow_unknown=False, exclude_proposal=None):
         result = []
-        for item in items:
+        for item in sorted(items, key=lambda row: (row.ma_nguyen_lieu, row.ma_ncc)):
             if self.repository.material(db, item.ma_nguyen_lieu, lock=True) is None:
                 raise HTTPException(422, f"Nguyên liệu {item.ma_nguyen_lieu} không tồn tại.")
             supplier = self.repository.supplier(db, item.ma_ncc, lock=True)
@@ -62,13 +67,10 @@ class DeXuatNhapHangService:
                     422,
                     f"Nhà cung cấp {item.ma_ncc} không cung cấp nguyên liệu {item.ma_nguyen_lieu}.",
                 )
-            available = mapping.so_luong_ton_kho - mapping.so_luong_book
-            if item.so_luong_de_xuat_kg > available:
-                raise HTTPException(
-                    422,
-                    f"Số lượng đề xuất cho {item.ma_nguyen_lieu} vượt tồn khả dụng "
-                    f"{available:.2f} kg của {item.ma_ncc}.",
-                )
+            status, confirmation = SupplyConfirmationService().evaluate(
+                db, mapping, item.so_luong_de_xuat_kg, forecast, exclude_proposal)
+            if status != ENOUGH and not (status == UNKNOWN and allow_unknown):
+                raise HTTPException(422, f"{item.ma_ncc}/{item.ma_nguyen_lieu}: cần xác nhận cung ứng còn hiệu lực và đủ số lượng.")
             price = mapping.don_gia_nguyen_lieu
             if price is None or not price.is_finite() or price < 0:
                 raise HTTPException(422, "Đơn giá mapping không hợp lệ.")
@@ -77,13 +79,30 @@ class DeXuatNhapHangService:
                 "ma_ncc": item.ma_ncc,
                 "so_luong_de_xuat_kg": item.so_luong_de_xuat_kg,
                 "don_gia_du_kien": price,
+                "ma_xac_nhan": confirmation.id if status == ENOUGH else None,
+                "trang_thai_cung_ung": status,
             })
         return result
 
     def create(self, db, payload, current_user):
         with self._write(db):
-            details = self._validate_details(db, payload.chi_tiet)
+            allow_unknown = payload.chap_nhan_chua_xac_nhan and bool((payload.ly_do_chua_xac_nhan or "").strip())
+            if payload.chap_nhan_chua_xac_nhan and not allow_unknown:
+                raise HTTPException(422, "Phải ghi lý do lập đề xuất khi NCC chưa xác nhận.")
+            # Lock material/mapping first; stock writers and confirmation writers use these locks too.
+            details = self._validate_details(db, payload.chi_tiet, payload.ma_lich_su_du_bao, allow_unknown)
+            if payload.ma_lich_su_du_bao:
+                demand = NhuCauNguyenLieuService().preview(db, payload.ma_lich_su_du_bao)
+                limits = {row["ma_nguyen_lieu"]: row["so_luong_can_mua_kg"] for row in demand["chi_tiet"]}
+                requested = defaultdict(lambda: Decimal("0"))
+                for item in payload.chi_tiet:
+                    requested[item.ma_nguyen_lieu] += item.so_luong_de_xuat_kg
+                if any(amount > limits.get(code, Decimal("0")) for code, amount in requested.items()):
+                    raise HTTPException(409, "Nhu cầu nguyên liệu đã thay đổi. Xem lại lần dự báo trước khi lập đề xuất.")
             model = self.repository.create(db, {
+                "ma_lich_su_du_bao": payload.ma_lich_su_du_bao,
+                "yeu_cau_xac_nhan": True,
+                "ly_do_chua_xac_nhan": payload.ly_do_chua_xac_nhan.strip() if allow_unknown else None,
                 "ghi_chu": payload.ghi_chu,
                 "trang_thai": "CHO_DUYET",
                 "nguoi_tao": current_user.ma_nguoi_dung,
@@ -102,6 +121,14 @@ class DeXuatNhapHangService:
                 raise HTTPException(404, "Không tìm thấy đề xuất nhập hàng.")
             if model.trang_thai != "CHO_DUYET":
                 raise HTTPException(409, "Chỉ được xử lý đề xuất đang CHO_DUYET.")
+            if target_status == "DA_DUYET" and model.yeu_cau_xac_nhan:
+                rows = self.repository.raw_details(db, code)
+                validated = self._validate_details(db, rows, model.ma_lich_su_du_bao, exclude_proposal=code)
+                by_pair = {(item["ma_nguyen_lieu"], item["ma_ncc"]): item for item in validated}
+                for row in rows:
+                    item = by_pair[(row.ma_nguyen_lieu, row.ma_ncc)]
+                    row.ma_xac_nhan = item["ma_xac_nhan"]
+                    row.trang_thai_cung_ung = item["trang_thai_cung_ung"]
             self.repository.update_workflow(db, model, {
                 "trang_thai": target_status,
                 "nguoi_duyet": current_user.ma_nguoi_dung,
@@ -134,6 +161,8 @@ class DeXuatNhapHangService:
             details = self.repository.raw_details(db, code)
             if not details:
                 raise HTTPException(422, "Đề xuất đã duyệt không có chi tiết.")
+            if proposal.yeu_cau_xac_nhan:
+                self._validate_details(db, details, proposal.ma_lich_su_du_bao, exclude_proposal=code)
 
             groups = defaultdict(list)
             totals = defaultdict(lambda: Decimal("0.00"))

@@ -489,6 +489,8 @@ async function setup(
             lead_time_ngay: 2,
             diem_ncc: "91.51",
             du_kha_nang_cung_cap: true,
+            ma_nguyen_lieu_ncc: "MAP01", trang_thai_cung_ung: "DA_XAC_NHAN_DU", xac_nhan: { id: "a".repeat(32), ngay_xac_nhan: "2020-01-01T00:00:00Z", hieu_luc_den: "2099-01-01T00:00:00Z", so_luong_xac_nhan: "190" },
+            do_day_du_kpi: "100", diem_xep_hang: "90", nguon_diem: "KPI_THUC_TE",
           },
           {
             ...supplier,
@@ -499,6 +501,8 @@ async function setup(
             lead_time_ngay: 1,
             diem_ncc: null,
             du_kha_nang_cung_cap: false,
+            ma_nguyen_lieu_ncc: "MAP02", trang_thai_cung_ung: "DA_XAC_NHAN_KHONG_DU", xac_nhan: { id: "b".repeat(32), ngay_xac_nhan: "2020-01-01T00:00:00Z", hieu_luc_den: "2099-01-01T00:00:00Z", so_luong_xac_nhan: "5" },
+            do_day_du_kpi: "0", diem_xep_hang: "10", nguon_diem: "CHUA_CO_KPI",
           },
         ],
       });
@@ -928,10 +932,166 @@ test("material demand details ignore late responses from a previously opened run
   await page.screenshot({ path: "reports/forecast-demand-detail.png", fullPage: true });
 });
 
+async function setupSupplyConfirmation(page: Page, canConfirm = false) {
+  const state = await setup(page, [...buyer, ...(canConfirm ? ["goi_y_nha_cung_cap:XAC_NHAN"] : [])]);
+  const evidence: { record: any; writes: any[]; reads: string[] } = { record: null, writes: [], reads: [] };
+  await page.route("**/api/goi-y-nha-cung-cap**", (route) => {
+    if (route.request().method() === "POST") {
+      const body = route.request().postDataJSON();
+      evidence.writes.push(body);
+      evidence.record = { ...body, id: "a".repeat(32), nguoi_xac_nhan: "CUSTOM01" };
+      return route.fulfill({ status: 201, json: evidence.record });
+    }
+    evidence.reads.push(route.request().url());
+    const qty = new URL(route.request().url()).searchParams.get("so_luong_can_mua") || "10";
+    const valid = evidence.record && Date.parse(evidence.record.hieu_luc_den) > Date.now();
+    const status = !valid ? "CHUA_XAC_NHAN" : Number(evidence.record.so_luong_xac_nhan) >= Number(qty) ? "DA_XAC_NHAN_DU" : "DA_XAC_NHAN_KHONG_DU";
+    return route.fulfill({ json: { ma_nguyen_lieu: "NL01", ten_nguyen_lieu: "Cà phê", so_luong_can_mua: qty,
+      nha_cung_cap: [{ ma_ncc: "NCC01", ten_ncc: "NCC kiểm thử", ma_nguyen_lieu_ncc: "MAP01", don_gia: "100000", lead_time_ngay: 5,
+        diem_ncc: null, do_day_du_kpi: "0", diem_xep_hang: "30", nguon_diem: "CHUA_CO_KPI",
+        ty_le_giao_dung_han_thuc_te: null, ty_le_giao_du_thuc_te: null,
+        xac_nhan: evidence.record, trang_thai_cung_ung: status, du_kha_nang_cung_cap: status === "DA_XAC_NHAN_DU" }],
+    } });
+  });
+  return { state, evidence };
+}
+
+test("supplier search waits for submit and clears results and selection when criteria change", async ({ page }) => {
+  const { evidence } = await setupSupplyConfirmation(page);
+  await page.clock.install();
+  await page.goto("/#/goi-y");
+  const materialField = page.getByLabel("Nguyên liệu", { exact: true });
+  const quantity = page.getByLabel("Số lượng cần mua (kg)", { exact: true });
+  const search = page.getByRole("button", { name: "Tìm nhà cung cấp", exact: true });
+  await materialField.selectOption("NL01");
+  await quantity.fill("10");
+  await page.evaluate(() => window.dispatchEvent(new Event("focus")));
+  await page.clock.fastForward(31000);
+  expect(evidence.reads).toHaveLength(0);
+  await expect(page.locator(".pm-cards")).toHaveCount(0);
+  await expect(page.getByRole("table")).toHaveCount(0);
+  await search.click();
+  await expect(page.getByRole("cell", { name: "NCC kiểm thử", exact: false })).toBeVisible();
+  expect(evidence.reads).toHaveLength(1);
+  await page.getByRole("button", { name: "Chọn NCC", exact: true }).click();
+  await quantity.fill("20");
+  await expect(page.locator(".pm-cards")).toHaveCount(0);
+  await expect(page.getByRole("table")).toHaveCount(0);
+  await page.clock.fastForward(31000);
+  expect(evidence.reads).toHaveLength(1);
+  await search.click();
+  await expect(page.getByRole("button", { name: "Chọn NCC", exact: true })).toBeVisible();
+  await expect(page.getByRole("button", { name: /Tạo đề xuất nhập hàng/ })).toBeDisabled();
+  expect(evidence.reads).toHaveLength(2);
+  expect(new URL(evidence.reads[1]).searchParams.get("so_luong_can_mua")).toBe("20");
+  await materialField.selectOption("");
+  await expect(page.locator(".pm-cards")).toHaveCount(0);
+  await expect(page.getByRole("table")).toHaveCount(0);
+  expect(evidence.reads).toHaveLength(2);
+});
+
+test("supplier search auto searches once for valid demand parameters and can repeat the same search", async ({ page }) => {
+  const { evidence } = await setupSupplyConfirmation(page);
+  await page.goto("/#/goi-y?material=NL01&qty=10&forecast=LSDB01");
+  await expect(page.getByRole("button", { name: "Chọn NCC", exact: true })).toBeVisible();
+  expect(evidence.reads).toHaveLength(1);
+  expect(new URL(evidence.reads[0]).searchParams.get("ma_lich_su_du_bao")).toBe("LSDB01");
+  await page.getByRole("button", { name: "Tìm nhà cung cấp", exact: true }).click();
+  await expect.poll(() => evidence.reads.length).toBe(2);
+});
+
+for (const query of ["material=NL01&qty=10", "material=NL01&forecast=LSDB01", "qty=10&forecast=LSDB01", "material=NL01&qty=0&forecast=LSDB01", "material=NL01&qty=Infinity&forecast=LSDB01"]) {
+  test(`supplier search does not auto search without valid demand parameters: ${query}`, async ({ page }) => {
+    const { evidence } = await setupSupplyConfirmation(page);
+    await page.goto(`/#/goi-y?${query}`);
+    await expect(page.getByRole("button", { name: "Tìm nhà cung cấp", exact: true })).toBeVisible();
+    await expect(page.getByLabel("Nguyên liệu", { exact: true }).locator("option[value='NL01']")).toHaveCount(1);
+    await expect(page.locator(".pm-cards")).toHaveCount(0);
+    await expect(page.getByRole("table")).toHaveCount(0);
+    expect(evidence.reads).toHaveLength(0);
+  });
+}
+
+test("supplier search ignores a late response after the form changes", async ({ page }) => {
+  await setupSupplyConfirmation(page);
+  let release!: () => void;
+  const pending = new Promise<void>((resolve) => { release = resolve; });
+  await page.route("**/api/goi-y-nha-cung-cap?**", async (route) => {
+    await pending;
+    await route.fulfill({ json: { ten_nguyen_lieu: "Kết quả cũ", so_luong_can_mua: "10", nha_cung_cap: [] } });
+  });
+  const request = page.waitForRequest("**/api/goi-y-nha-cung-cap?**");
+  await page.goto("/#/goi-y?material=NL01&qty=10&forecast=LSDB01");
+  await request;
+  await page.getByLabel("Số lượng cần mua (kg)", { exact: true }).fill("20");
+  const response = page.waitForResponse("**/api/goi-y-nha-cung-cap?**");
+  release();
+  await response;
+  await expect(page.locator(".pm-cards")).toHaveCount(0);
+  await expect(page.getByText("Kết quả cũ", { exact: true })).toHaveCount(0);
+});
+
+test("supply confirmation: unknown data, no demo stock, explicit draft reason and forecast trace", async ({ page }) => {
+  const { state } = await setupSupplyConfirmation(page);
+  await page.goto("/#/goi-y?material=NL01&qty=10&forecast=LSDB01");
+  await expect(page.getByRole("columnheader", { name: "Khả dụng (kg)", exact: true })).toHaveCount(0);
+  await expect(page.getByRole("columnheader", { name: "Thời gian giao dự kiến", exact: true })).toBeVisible();
+  await expect(page.getByRole("cell", { name: "Chưa xác nhận", exact: true })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Xác nhận cung ứng", exact: true })).toHaveCount(0);
+  await page.getByRole("button", { name: "Chọn NCC", exact: true }).click();
+  await page.getByRole("button", { name: /Tạo đề xuất nhập hàng/ }).click();
+  await expect(page).toHaveURL(/forecast=LSDB01/);
+  const acknowledge = page.getByRole("checkbox", { name: /Tôi đồng ý lập đề xuất/ });
+  await expect(acknowledge).not.toBeChecked();
+  await acknowledge.check();
+  await page.getByLabel("Lý do lập đề xuất khi chưa xác nhận", { exact: true }).fill("Chờ NCC gửi báo giá xác nhận");
+  await page.getByRole("button", { name: "Gửi đề xuất chờ duyệt", exact: true }).click();
+  await expect.poll(() => state.requests.filter((r) => r.method === "POST" && r.path === "/de-xuat-nhap-hang").length).toBe(1);
+  const body = state.requests.find((r) => r.method === "POST" && r.path === "/de-xuat-nhap-hang")!.body;
+  expect(body).toMatchObject({ ma_lich_su_du_bao: "LSDB01", chap_nhan_chua_xac_nhan: true, ly_do_chua_xac_nhan: "Chờ NCC gửi báo giá xác nhận" });
+  expect(body.chi_tiet[0]).toMatchObject({ ma_nguyen_lieu: "NL01", ma_ncc: "NCC01", so_luong_de_xuat_kg: "10" });
+});
+
+test("supply confirmation: authorized save, quantity reassessment and automatic expiry", async ({ page }) => {
+  const { evidence, state } = await setupSupplyConfirmation(page, true);
+  await page.goto("/#/goi-y?material=NL01&qty=10&forecast=LSDB01");
+  await page.getByRole("button", { name: "Xác nhận cung ứng", exact: true }).click();
+  const dialog = page.getByRole("dialog");
+  await dialog.getByLabel("Số lượng NCC xác nhận có thể giao (kg)", { exact: true }).fill("12");
+  await dialog.getByLabel("Lý do xác nhận", { exact: true }).fill("NCC đã xác nhận qua email");
+  await dialog.getByLabel("Ghi chú / tham chiếu chứng từ", { exact: true }).fill("Báo giá BG-01");
+  await dialog.getByRole("button", { name: "Lưu xác nhận cung ứng", exact: true }).click();
+  await expect(dialog).toHaveCount(0);
+  await expect(page.getByRole("cell", { name: "Đã xác nhận đủ", exact: true })).toBeVisible();
+  expect(evidence.writes[0]).toMatchObject({ ma_lich_su_du_bao: "LSDB01", so_luong_can_mua: "10", so_luong_xac_nhan: "12", nguon_xac_nhan: "EMAIL", phien_ban_truoc: null });
+  expect(evidence.writes[0]).not.toHaveProperty("nguoi_xac_nhan");
+  await page.getByLabel("Số lượng cần mua (kg)", { exact: true }).fill("20");
+  await expect(page.getByRole("table")).toHaveCount(0);
+  await page.getByRole("button", { name: "Tìm nhà cung cấp", exact: true }).click();
+  await expect(page.getByRole("cell", { name: "Đã xác nhận không đủ", exact: true })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Chọn NCC", exact: true })).toBeDisabled();
+  evidence.record.hieu_luc_den = new Date(Date.now() + 1500).toISOString();
+  await page.getByRole("button", { name: "Tìm nhà cung cấp", exact: true }).click();
+  await expect(page.getByRole("cell", { name: "Chưa xác nhận", exact: true })).toBeVisible();
+  state.permissions = [...buyer];
+  await refreshRights(page);
+  await expect(page.getByRole("button", { name: "Xác nhận cung ứng", exact: true })).toHaveCount(0);
+  await page.screenshot({ path: "reports/supply-confirmation.png", fullPage: true });
+});
+
 test("forecast → demand → proposal → approvals → receipt → stock → performance → dashboard", async ({
   page,
 }) => {
   const state = await setup(page);
+  await page.route("**/api/ly-do/ap-dung?chuc_nang=TINH_LAI_DIEM_NCC", route => route.fulfill({ json: [
+    { id: "LD_SCORE", ten_ly_do: "Đối soát sau nhận hàng", trang_thai: "DANG_SU_DUNG" },
+  ] }));
+  await page.route("**/api/nha-cung-cap/tinh-diem/preview", route => route.fulfill({ json: {
+    preview_token: "flow-preview", tinh_luc: new Date().toISOString(), chinh_sach: { formula: "Trung bình điểm mapping", missing: "Bỏ KPI thiếu" },
+    nha_cung_cap: [{ ma_ncc: "NCC01", ten_ncc: supplier.ten_ncc, diem_hien_tai: "91.51", diem_moi: "100", chenh_lech: "8.49", tinh_trang: "DU_DU_LIEU",
+      giai_thich_tong: "Điểm NCC = (100) / 1 = 100.", mapping: [{ ma_nguyen_lieu_ncc: "MAP01", ma_nguyen_lieu: "NL01", ten_nguyen_lieu: material.ten_nguyen_lieu, diem: "100", do_day_du: "100", lead_time_khai_bao_ngay: 2, lead_time_thuc_te_ngay: "2", khai_bao_khong_dung_lam_kpi: {},
+        tieu_chi: ["Chất lượng", "Đúng hạn", "Giao đủ", "Đáp ứng thời gian giao"].map((ten, i) => ({ key: ["quality_ratio", "on_time_ratio", "full_ratio", "lead_time"][i], ten, diem: "100", trong_so: ["35", "30", "20", "15"][i], trong_so_ap_dung: ["35", "30", "20", "15"][i], dong_gop: ["35", "30", "20", "15"][i] })) }] }],
+  } }));
   await page.goto("/#/du-bao");
   await expect(
     page.getByRole("button", { name: /Xem nhu cầu nguyên liệu/ }),
@@ -1007,7 +1167,12 @@ test("forecast → demand → proposal → approvals → receipt → stock → p
     .getByRole("button", { name: /Hiệu suất nhà cung cấp$/ })
     .click();
   await page.getByRole("button", { name: "Tính lại tất cả" }).click();
-  await page.getByRole("button", { name: "Xác nhận", exact: true }).click();
+  const scoreDialog = page.getByRole("dialog", { name: "Tính điểm tất cả nhà cung cấp", exact: true });
+  await expect(scoreDialog).toContainText("Preview có hiệu lực 15 phút");
+  expect(state.requests.filter(r => r.method === "POST" && r.path.includes("/tinh-diem"))).toHaveLength(0);
+  await scoreDialog.getByLabel("Lý do tính lại điểm *", { exact: true }).selectOption("LD_SCORE");
+  await scoreDialog.getByRole("button", { name: "Xác nhận lưu điểm", exact: true }).click();
+  expect(state.requests.find(r => r.method === "POST" && r.path.includes("/tinh-diem"))?.body).toMatchObject({ preview_token: "flow-preview", ly_do_id: "LD_SCORE", ly_do: "Đối soát sau nhận hàng" });
   await expect(
     page.getByRole("cell", { name: "100%", exact: true }),
   ).toHaveCount(2);
@@ -1488,58 +1653,62 @@ test("configuration opens overview then reason management with existing permissi
       "VIEW_REASON_CONFIG",
       "CREATE_REASON_CONFIG",
       "UPDATE_REASON_CONFIG",
-      "CHANGE_REASON_CONFIG_STATUS",
+      "CONFIRM_REASON_CONFIG",
     ],
     "CUSTOM_ROLE",
   );
   await page.goto("/");
-  await page.getByRole("button", { name: "Cấu hình", exact: true }).click();
+  await page.getByRole("button", { name: /Cấu hình$/ }).click();
   await expect(page).toHaveURL(/#\/cau-hinh$/);
-  await expect(page.getByRole("heading", { name: "Cấu hình", exact: true })).toBeVisible();
-  await expect(page.locator(".settings-card")).toHaveCount(1);
+  await expect(page.getByRole("heading", { name: /Cấu hình$/ })).toBeVisible();
+  await expect(page.locator(".ch-menu-card")).toHaveCount(1);
   expect(state.requests.filter((r) => r.path === "/ly-do")).toEqual([]);
   await expect(page.getByRole("link", { name: /Người dùng/ })).toHaveCount(0);
-  await page.locator('.settings-card[href="#/cau-hinh/quan-ly-ly-do"]').click();
+  await page.locator('.ch-menu-card[href="#/cau-hinh/quan-ly-ly-do"]').click();
   await expect(page).toHaveURL(/#\/cau-hinh\/quan-ly-ly-do$/);
   await expect(page.getByRole("heading", { name: "Quản lý lý do", exact: true })).toBeVisible();
-  await page.getByRole("button", { name: "+ Thêm lý do", exact: true }).click();
-  await page.getByRole("button", { name: "Lưu", exact: true }).click();
-  await expect(page.getByRole("alert")).toContainText("Vui lòng nhập lý do");
-  await page.getByLabel("Tên lý do *", { exact: true }).fill("Chất lượng test");
-  await page.getByRole("button", { name: "Lưu", exact: true }).click();
-  await expect(page.getByRole("alert")).toContainText(
-    "Vui lòng chọn chức năng",
+  await page.getByRole("button", { name: /Thêm lý do$/ }).click();
+  await page.getByRole("button", { name: "Lưu lý do", exact: true }).click();
+  expect(await page.getByPlaceholder("Nhập tên lý do (VD: Chất lượng không đạt)...", { exact: true }).evaluate(node => (node as HTMLInputElement).validity.valueMissing)).toBe(true);
+  await page.getByPlaceholder("Nhập tên lý do (VD: Chất lượng không đạt)...", { exact: true }).fill("Chất lượng test");
+  await page.getByLabel("Chọn tất cả chức năng", { exact: true }).uncheck();
+  await page.getByRole("button", { name: "Lưu lý do", exact: true }).click();
+  await expect(page.locator(".ch-modal-body .ch-error-banner")).toContainText(
+    "Vui lòng chọn ít nhất một chức năng áp dụng.",
   );
-  await page.getByLabel("Chọn tất cả", { exact: true }).check();
+  await page.getByLabel("Chọn tất cả chức năng", { exact: true }).check();
   await page.getByLabel("Đổi trạng thái công thức", { exact: true }).uncheck();
   await expect(
-    page.getByLabel("Chọn tất cả", { exact: true }),
+    page.getByLabel("Chọn tất cả chức năng", { exact: true }),
   ).not.toBeChecked();
-  await page.getByLabel("Chọn tất cả", { exact: true }).check();
-  await page.getByRole("button", { name: "Lưu", exact: true }).click();
+  await page.getByLabel("Chọn tất cả chức năng", { exact: true }).check();
+  await page.getByRole("button", { name: "Lưu lý do", exact: true }).click();
   await expect(page.getByRole("dialog")).not.toBeVisible();
   const row = page.getByRole("row").filter({ hasText: "Chất lượng test" });
-  await row.getByRole("button", { name: "Sửa", exact: true }).click();
-  await page.getByLabel("Tên lý do *", { exact: true }).fill("Chất lượng đã sửa");
-  await page.getByRole("button", { name: "Lưu", exact: true }).click();
+  await row.getByRole("button", { name: /Sửa$/ }).click();
+  await page.getByPlaceholder("Nhập tên lý do (VD: Chất lượng không đạt)...", { exact: true }).fill("Chất lượng đã sửa");
+  await page.getByRole("button", { name: "Lưu lý do", exact: true }).click();
   await expect(page.getByRole("dialog")).not.toBeVisible();
   await page
     .getByRole("row")
     .filter({ hasText: "Chất lượng đã sửa" })
-    .getByRole("button", { name: "Ngừng sử dụng", exact: true })
+    .getByRole("button", { name: /Ngừng dùng$/ })
     .click();
-  await page.getByRole("button", { name: "Xác nhận", exact: true }).click();
+  await page.getByRole("button", { name: "Xác nhận ngừng dùng", exact: true }).click();
   await expect(page.getByRole("dialog")).not.toBeVisible();
   expect(state.reasons.find((r) => r.id === "LDNEW")?.trang_thai).toBe(
     "NGUNG_SU_DUNG",
   );
-  await page.getByLabel("Tìm kiếm", { exact: true }).fill("đã sửa");
+  await page.getByPlaceholder("Tìm theo tên lý do...", { exact: true }).fill("đã sửa");
   await expect(
     page.getByRole("cell", { name: "Chất lượng đã sửa", exact: true }),
   ).toBeVisible();
-  await page.getByRole("navigation", { name: "Breadcrumb" }).getByRole("link", { name: "Cấu hình", exact: true }).click();
+  state.permissions = ["VIEW_REASON_CONFIG", "UPDATE_REASON_CONFIG"];
+  await refreshRights(page);
+  await expect(page.getByRole("button", { name: /Ngừng dùng$|Kích hoạt$/ })).toHaveCount(0);
+  await page.getByRole("navigation", { name: "Breadcrumb" }).getByRole("link", { name: /Cấu hình$/ }).click();
   await expect(page).toHaveURL(/#\/cau-hinh$/);
-  await expect(page.locator(".settings-card")).toHaveCount(1);
+  await expect(page.locator(".ch-menu-card")).toHaveCount(1);
   expect(state.errors).toEqual([]);
 });
 test("status changes require an applicable reason and Other notes", async ({
@@ -1651,16 +1820,16 @@ test("activity audit filters, compares changes, paginates and returns to setting
     } });
   });
   await page.goto("/#/cau-hinh");
-  await expect(page.locator(".settings-card")).toHaveCount(1);
-  await page.locator('.settings-card[href="#/cau-hinh/nhat-ky"]').click();
+  await expect(page.locator(".ch-menu-card")).toHaveCount(1);
+  await page.locator('.ch-menu-card[href="#/cau-hinh/nhat-ky"]').click();
   await expect(page).toHaveURL(/#\/cau-hinh\/nhat-ky$/);
   await expect(page.getByRole("cell", { name: "NK_NEW", exact: true })).toBeVisible();
-  await page.getByLabel("Tìm kiếm", { exact: true }).fill("NL01");
-  await page.getByLabel("Module", { exact: true }).selectOption("Nguyên liệu");
-  await page.getByLabel("Hành động", { exact: true }).selectOption("CHINH_SUA");
-  await page.getByLabel("Người thao tác", { exact: true }).selectOption("CUSTOM01");
-  await page.getByLabel("Từ ngày", { exact: true }).fill("2026-10-01");
-  await page.getByLabel("Đến ngày", { exact: true }).fill("2026-10-12");
+  await page.getByPlaceholder("Mã đối tượng, mã hoặc tên người thao tác...", { exact: true }).fill("NL01");
+  await page.locator(".ch-field").filter({ has: page.locator("label").filter({ hasText: /^Module$/ }) }).getByRole("combobox").selectOption("Nguyên liệu");
+  await page.locator(".ch-field").filter({ has: page.locator("label").filter({ hasText: /^Hành động$/ }) }).getByRole("combobox").selectOption("CHINH_SUA");
+  await page.locator(".ch-field").filter({ has: page.locator("label").filter({ hasText: /^Người thao tác$/ }) }).getByRole("combobox").selectOption("CUSTOM01");
+  await page.locator(".ch-field").filter({ has: page.locator("label").filter({ hasText: /^Từ ngày$/ }) }).locator("input").fill("2026-10-01");
+  await page.locator(".ch-field").filter({ has: page.locator("label").filter({ hasText: /^Đến ngày$/ }) }).locator("input").fill("2026-10-12");
   await expect.poll(() => requests.at(-1)?.searchParams.get("den_ngay")).toBe("2026-10-12");
   const params = requests.at(-1)!.searchParams;
   for (const [key, value] of Object.entries({ search: "NL01", module: "Nguyên liệu", hanh_dong: "CHINH_SUA", nguoi_thao_tac: "CUSTOM01", tu_ngay: "2026-10-01" })) {
@@ -1676,7 +1845,7 @@ test("activity audit filters, compares changes, paginates and returns to setting
   await dialog.getByRole("button", { name: "Đóng", exact: true }).last().click();
   await page.getByRole("button", { name: "Trang sau", exact: true }).click();
   await expect(page.getByRole("cell", { name: "NK_OLD", exact: true })).toBeVisible();
-  await page.getByLabel("Module", { exact: true }).selectOption("Mua hàng");
+  await page.locator(".ch-field").filter({ has: page.locator("label").filter({ hasText: /^Module$/ }) }).getByRole("combobox").selectOption("Mua hàng");
   await expect(page.getByRole("cell", { name: "NK_NEW", exact: true })).toBeVisible();
   expect(requests.at(-1)?.searchParams.get("page")).toBe("1");
   await page.getByRole("navigation", { name: "Breadcrumb" }).getByRole("link", { name: "Cấu hình", exact: true }).click();

@@ -21,15 +21,22 @@ export default function TaoDeXuatPage({
   material = "",
   ncc = "",
   qty = "",
+  forecast = "",
+  unconfirmed = false,
 }: {
   material?: string;
   ncc?: string;
   qty?: string;
+  forecast?: string;
+  unconfirmed?: boolean;
 }) {
   const { can } = useAuth();
   const mutation = useMutation();
   const [created, setCreated] = useState<Proposal | null>(null);
   const [form, setForm] = useState<ProposalInput>({
+    ma_lich_su_du_bao: forecast || null,
+    chap_nhan_chua_xac_nhan: false,
+    ly_do_chua_xac_nhan: "",
     ghi_chu: "",
     chi_tiet: [
       { ma_nguyen_lieu: material, ma_ncc: ncc, so_luong_de_xuat_kg: qty },
@@ -39,6 +46,8 @@ export default function TaoDeXuatPage({
     void mutation.run(async () => {
       if (!can("DE_XUAT_NHAP_HANG_CREATE"))
         throw new Error("Bạn chưa có quyền tạo đề xuất.");
+      if (form.chap_nhan_chua_xac_nhan && !form.ly_do_chua_xac_nhan?.trim())
+        throw new Error("Phải ghi lý do lập đề xuất khi NCC chưa xác nhận.");
       if (
         new Set(
           form.chi_tiet.map(
@@ -56,6 +65,8 @@ export default function TaoDeXuatPage({
     }, "Đã tạo đề xuất chờ duyệt.");
   return (
     <>
+      {forecast && <p className="pm-small">Lần dự báo: {forecast}</p>}
+      {unconfirmed && <p role="status">NCC chưa xác nhận cung ứng. Đề xuất chỉ để chờ xử lý; cần xác nhận đủ trước khi duyệt và tạo đơn mua.</p>}
       <PageHeader
         title="Tạo đề xuất nhập hàng"
         description="Chọn nguyên liệu, nhà cung cấp và lượng cần mua. Đơn giá được lấy từ dữ liệu cung ứng."
@@ -167,6 +178,15 @@ export default function TaoDeXuatPage({
               onChange={(e) => setForm({ ...form, ghi_chu: e.target.value })}
             />
           </Field>
+          <Field label="Xử lý khi NCC chưa xác nhận">
+            <label><input type="checkbox" checked={form.chap_nhan_chua_xac_nhan ?? false}
+              onChange={(event) => setForm({ ...form, chap_nhan_chua_xac_nhan: event.target.checked })} />
+              Tôi đồng ý lập đề xuất chờ xử lý, chưa coi NCC đã cam kết giao hàng
+            </label>
+          </Field>
+          {form.chap_nhan_chua_xac_nhan && <Field label="Lý do lập đề xuất khi chưa xác nhận">
+            <textarea required maxLength={2000} value={form.ly_do_chua_xac_nhan ?? ""} onChange={(event) => setForm({ ...form, ly_do_chua_xac_nhan: event.target.value })} />
+          </Field>}
           <div className="pm-actions">
             <button
               type="submit"

@@ -99,3 +99,4 @@ from src.models.delivery_receipt_model import DeliveryReceipt, DeliveryReceiptLi
 from src.models.don_mua_nguyen_lieu import DonMuaNguyenLieu
 from src.models.chi_tiet_don_mua import ChiTietDonMua
 from src.models.purchase_excel_import import PurchaseExcelImport
+from src.models.supply_confirmation import SupplyConfirmation

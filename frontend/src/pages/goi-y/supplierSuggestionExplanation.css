@@ -1,0 +1,17 @@
+.suggestion-explanation h3 { margin-top: 18px; }
+.suggestion-explanation .score-hero h3 { margin-top: 4px; font-size: 21px; }
+.suggestion-comparison, .suggestion-source-card { border: 1px solid #dbe5f2; border-radius: 14px; padding: 16px; background: white; margin-top: 12px; min-width: 0; }
+.suggestion-comparison h4 { margin-bottom: 12px; }
+.suggestion-facts { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; margin: 14px 0; }
+.suggestion-facts dt { color: #64748b; font-size: 12px; }
+.suggestion-facts dd { color: #1d4ed8; font-weight: 650; margin: 4px 0 0; }
+.suggestion-reason { color: #1e40af; padding: 10px 12px; background: #eff6ff; border-radius: 9px; font-size: 13px; }
+.suggestion-ranking-math { padding: 8px 0 16px; }
+.suggestion-source-card { margin-top: 0; }
+.suggestion-source-card summary { cursor: pointer; color: #1d4ed8; font-size: 13px; }
+.suggestion-source-card summary span { display: block; color: #475569; margin-top: 8px; }
+.suggestion-source-card h4 { margin-top: 16px; }
+.suggestion-table-heading { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px; margin-bottom: 14px; }
+.suggestion-table-heading h2 { font-size: 16px; margin: 0; }
+.suggestion-info-button { margin-top: 8px; }
+@media (max-width: 600px) { .suggestion-facts { grid-template-columns: repeat(2, minmax(0, 1fr)); } }

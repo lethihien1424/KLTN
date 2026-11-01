@@ -126,7 +126,7 @@ PERMISSION_CATALOG: Final[dict[str, dict]] = {
     },
     "goi_y_nha_cung_cap": {
         "ten": "Gợi ý nhà cung cấp",
-        "thao_tac": ("XEM", "XUAT_EXCEL"),
+        "thao_tac": ("XEM", "XAC_NHAN", "XUAT_EXCEL"),
     },
     "hieu_suat_nha_cung_cap": {
         "ten": "Hiệu suất nhà cung cấp",

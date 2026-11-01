@@ -155,7 +155,7 @@ export default function ReasonsPage() {
 
   const handleToggleStatus = async () => {
     if (!confirm) return;
-    if (!can("CHANGE_REASON_CONFIG_STATUS")) {
+    if (!can("quan_ly_ly_do:XAC_NHAN")) {
       showToast("error", "Bạn chưa được cấp quyền đổi trạng thái lý do.");
       return;
     }
@@ -491,7 +491,7 @@ export default function ReasonsPage() {
                                     <EditOutlined /> Sửa
                                   </button>
                                 )}
-                                {can("CHANGE_REASON_CONFIG_STATUS") && (
+                                {can("quan_ly_ly_do:XAC_NHAN") && (
                                   <button
                                     type="button"
                                     className="ch-action-btn"
@@ -697,7 +697,7 @@ export default function ReasonsPage() {
                       checked={active}
                       disabled={
                         Boolean(editing) &&
-                        !can("CHANGE_REASON_CONFIG_STATUS")
+                        !can("quan_ly_ly_do:XAC_NHAN")
                       }
                       onChange={(e) => setActive(e.target.checked)}
                       style={{ width: 16, height: 16, accentColor: "#2563eb" }}

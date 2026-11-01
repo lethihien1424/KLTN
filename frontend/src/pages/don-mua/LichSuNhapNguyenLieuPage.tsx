@@ -1,18 +1,20 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useAuth } from "../../auth/AuthContext";
 import ActionIconButton from "../../components/common/ActionIconButton";
 import DataTable from "../../components/common/DataTable";
-import { PageHeader, SearchInput, FilterSelect, Field, FormDrawer, LoadingState, ErrorState,
+import { PageHeader, SearchInput, FilterSelect, Field, FormDrawer, LoadingState, ErrorState, EmptyState,
   useResource, formatDate, formatNumber } from "../../components/common/PurchaseUI";
 import { listDeliveryReceipts, getDeliveryReceipt, formatDeliveryMoney, receiptNumber, type DeliveryReceipt, type ReceiptFilters } from "../../services/deliveryService";
 import { useDeliveryExcel } from "../nha-cung-cap/useDeliveryExcel";
 import SupplierDeliveryDetail from "../nha-cung-cap/SupplierDeliveryDetail";
 import { useReceiptPriceExcel } from './useReceiptPriceExcel';
+import { navigate, useLocation } from "../../routes/navigation";
+import { listSuppliers } from "../../services/nhaCungCapService";
 
 const sourceLabel = (r: DeliveryReceipt) => r.nguon === "LICH_SU" ? "Quá khứ · không cộng kho" : "Nhận kho thực tế";
 const timingLabel = (r: DeliveryReceipt) => r.dung_han === null ? "Chưa có hàng giao" : r.dung_han ? "Đúng hạn" : "Trễ hạn";
 
-function ReceiptDetail({ code, onClose }: { code: string; onClose: () => void }) {
+export function ReceiptDetail({ code, onClose }: { code: string; onClose: () => void }) {
   const { can } = useAuth();
   const resource = useResource(() => getDeliveryReceipt(code), [code]);
   const [supplier, setSupplier] = useState("");
@@ -21,7 +23,7 @@ function ReceiptDetail({ code, onClose }: { code: string; onClose: () => void })
     <FormDrawer open title={row ? `Chi tiết lần nhập · ${receiptNumber(row)}` : "Chi tiết lần nhập"} onClose={onClose}>
       {resource.loading ? <LoadingState /> : resource.error ? <ErrorState message={resource.error} retry={resource.refetch} /> : row && <>
         <p><strong>Phiếu nhận:</strong> {receiptNumber(row)} · {sourceLabel(row)}</p>
-        <p><strong>Đơn mua:</strong> {row.ma_don_mua ? <a className="pm-link" href={`#/don-mua/${encodeURIComponent(row.ma_don_mua)}`}>{row.ma_don_mua}</a> : row.ma_don_cu} {row.lan_giao_cu && `· Đợt ${row.lan_giao_cu}`}</p>
+        <p><strong>Đơn mua:</strong> {row.ma_don_mua && can("DON_MUA_VIEW") ? <a className="pm-link" href={`#/don-mua/${encodeURIComponent(row.ma_don_mua)}`}>{row.ma_don_mua}</a> : row.ma_don_mua || row.ma_don_cu} {row.lan_giao_cu && `· Đợt ${row.lan_giao_cu}`}</p>
         <p><strong>Nhà cung cấp:</strong> {row.ten_ncc} ({row.ma_ncc})</p>
         <p>Ngày dự kiến: {formatDate(row.ngay_du_kien_giao)} · Ngày nhận thực tế: {formatDate(row.ngay_giao_thuc_te)}</p>
         <p>{row.hoan_tat ? "Đã chốt đơn" : "Còn giao tiếp"} · {timingLabel(row)} của đợt này.</p>
@@ -52,14 +54,41 @@ function ReceiptDetail({ code, onClose }: { code: string; onClose: () => void })
 }
 
 export default function LichSuNhapNguyenLieuPage() {
-  const resource = useResource(listDeliveryReceipts);
+  const { can } = useAuth();
+  const { params } = useLocation();
+  const ma_ncc = params.get("ma_ncc") ?? "";
+  const response = useResource(async () => ({ ma_ncc, rows: await listDeliveryReceipts({ ma_ncc }) }), [ma_ncc]);
+  // Keep a previous supplier's response hidden while the URL filter is changing.
+  const resource = { ...response,
+    data: response.data?.ma_ncc === ma_ncc ? response.data.rows : null,
+    loading: response.loading || (!response.error && response.data?.ma_ncc !== ma_ncc),
+  };
+  const canViewSuppliers = can("NHA_CUNG_CAP_VIEW");
+  const supplierOptions = useResource(async () => {
+    // History-only users can still choose suppliers represented in receipt history.
+    const rows = canViewSuppliers ? await listSuppliers() : await listDeliveryReceipts();
+    return Array.from(new Map(rows.map((row) => [row.ma_ncc, row.ten_ncc])));
+  }, [canViewSuppliers]);
   const [detail, setDetail] = useState("");
-  const [filters, setFilters] = useState<ReceiptFilters>({ search: "", ngay_nhan_tu: "", ngay_nhan_den: "", ma_ncc: "", ma_nguyen_lieu: "", ma_don_mua: "" });
-  const change = (key: keyof ReceiptFilters, value: string) => setFilters((old) => ({ ...old, [key]: value }));
+  useEffect(() => setDetail(""), [ma_ncc]);
+  const [draftFilters, setFilters] = useState<Omit<ReceiptFilters, "ma_ncc">>({ search: "", ngay_nhan_tu: "", ngay_nhan_den: "", ma_nguyen_lieu: "", ma_don_mua: "" });
+  const filters: ReceiptFilters = { ...draftFilters, ma_ncc };
+  const change = (key: keyof ReceiptFilters, value: string) => {
+    if (key === "ma_ncc") {
+      const next = new URLSearchParams(params);
+      if (value) next.set("ma_ncc", value); else next.delete("ma_ncc");
+      navigate("/lich-su-nhap-nguyen-lieu", Object.fromEntries(next));
+    } else setFilters((old) => ({ ...old, [key]: value }));
+  };
   const invalidDates = Boolean(filters.ngay_nhan_tu && filters.ngay_nhan_den && filters.ngay_nhan_tu > filters.ngay_nhan_den);
   const excel = useDeliveryExcel(resource.refetch, { filters, loading: resource.loading || Boolean(resource.error) || invalidDates });
   const priceExcel = useReceiptPriceExcel(resource.refetch, filters, resource.loading || Boolean(resource.error) || invalidDates);
-  const suppliers = useMemo(() => Array.from(new Map((resource.data ?? []).map((r) => [r.ma_ncc, r.ten_ncc]))), [resource.data]);
+  const suppliers = useMemo(() => {
+    const options = new Map(supplierOptions.data ?? []);
+    for (const row of resource.data ?? []) options.set(row.ma_ncc, row.ten_ncc);
+    if (ma_ncc && !options.has(ma_ncc)) options.set(ma_ncc, ma_ncc);
+    return Array.from(options);
+  }, [supplierOptions.data, resource.data, ma_ncc]);
   const materials = useMemo(() => Array.from(new Map((resource.data ?? []).flatMap((r) => r.chi_tiet.map((line) => [line.ma_nguyen_lieu, line.ten_nguyen_lieu] as const)))), [resource.data]);
   const rows = useMemo(() => (resource.data ?? []).filter((r) => {
     const term = filters.search.trim().toLowerCase();
@@ -88,7 +117,7 @@ export default function LichSuNhapNguyenLieuPage() {
         <button className="pm-btn" onClick={resource.refetch}>Làm mới</button>
       </div>
       <p className="pm-help">Mỗi dòng là một phiếu nhận. Tổng thực nhận cộng riêng từng đơn vị và gồm toàn bộ nguyên liệu của phiếu. Dữ liệu quá khứ được đánh dấu và không cộng vào tồn kho hiện tại.</p>
-      {invalidDates ? <p role="alert">Ngày nhận từ không được sau ngày nhận đến.</p> : resource.loading ? <LoadingState /> : resource.error ? <ErrorState message={resource.error} retry={resource.refetch} /> : <DataTable rows={rows} rowKey={(r) => r.ma_phieu_nhan} columns={[
+      {invalidDates ? <p role="alert">Ngày nhận từ không được sau ngày nhận đến.</p> : resource.loading ? <LoadingState /> : resource.error ? <ErrorState message={resource.error} retry={resource.refetch} /> : ma_ncc && resource.data?.length === 0 ? <EmptyState title="Nhà cung cấp này chưa có lịch sử nhập hàng" /> : <DataTable key={ma_ncc} rows={rows} rowKey={(r) => r.ma_phieu_nhan} columns={[
         { key: "code", label: "Mã phiếu nhận", render: (r) => <>{receiptNumber(r)}<div className="pm-small">{sourceLabel(r)}</div></> },
         { key: "date", label: "Ngày nhận", render: (r) => formatDate(r.ngay_giao_thuc_te) },
         { key: "supplier", label: "Nhà cung cấp", render: (r) => <>{r.ten_ncc}<div className="pm-small">{r.ma_ncc}</div></> },

@@ -11,6 +11,7 @@ export type Reason = {
 };
 export type ReasonSelection = { ly_do_id: string; ghi_chu: string | null };
 export const reasonFunctions = [
+  { value: "TINH_LAI_DIEM_NCC", label: "Tính lại điểm nhà cung cấp" },
   { value: "DIEU_CHINH_TON_KHO", label: "Điều chỉnh tồn kho" },
   { value: "DOI_TRANG_THAI_NGUYEN_LIEU", label: "Đổi trạng thái nguyên liệu" },
   { value: "DOI_TRANG_THAI_CONG_THUC", label: "Đổi trạng thái công thức" },

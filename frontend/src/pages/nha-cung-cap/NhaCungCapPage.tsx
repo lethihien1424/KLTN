@@ -1,7 +1,7 @@
 import ActionIconButton from "../../components/common/ActionIconButton";
 //D:\KLTN\KLTN\frontend\src\pages\nha-cung-cap\NhaCungCapPage.tsx
-import RecordHistoryButton from "../../components/common/RecordHistoryButton";
 import ReasonConfirmDialog from "../../components/common/ReasonConfirmDialog";
+import SupplierScorePreviewDialog from "./SupplierScorePreviewDialog";
 import { useMemo, useState } from "react";
 import { useAuth } from "../../auth/AuthContext";
 import DataTable from "../../components/common/DataTable";
@@ -26,7 +26,6 @@ import {
   listSuppliers,
   saveSupplier,
   changeSupplierStatus,
-  scoreSupplier,
 } from "../../services/nhaCungCapService";
 import type { Supplier } from "../../services/purchaseTypes";
 export default function NhaCungCapPage() {
@@ -178,10 +177,9 @@ export default function NhaCungCapPage() {
                 label: "Thao tác",
                 render: (r) => (
                   <div className="pm-actions">
-                    <RecordHistoryButton entity="nha-cung-cap" code={r.ma_ncc} />
-                    {can("NGUYEN_LIEU_NCC_VIEW") && (
-                      <ActionIconButton action="materials" label="Xem nguyên liệu cung ứng" onClick={() =>
-                          navigate("/nha-cung-cap/cung-ung", { ncc: r.ma_ncc })
+                    {can("don_mua_nguyen_lieu:XEM") && (
+                      <ActionIconButton action="history" label="Xem lịch sử nhập hàng" onClick={() =>
+                          navigate("/lich-su-nhap-nguyen-lieu", { ma_ncc: r.ma_ncc })
                         } />
                     )}
                     {can("NHA_CUNG_CAP_UPDATE") && (
@@ -194,7 +192,7 @@ export default function NhaCungCapPage() {
                         }} />
                     )}
                     {can("NHA_CUNG_CAP_SCORE") && (
-                      <ActionIconButton action="score" label="Tính điểm" onClick={() => {
+                      <ActionIconButton action="score" label="Tính lại điểm" onClick={() => {
                           mutation.setError("");
                           setConfirm({ row: r, action: "score" });
                         }} />
@@ -253,23 +251,15 @@ export default function NhaCungCapPage() {
         </form>
       </FormDrawer>
       <ReasonConfirmDialog
-        open={Boolean(confirm)}
-        functionCode={confirm?.action === "score" ? undefined : "DOI_TRANG_THAI_NHA_CUNG_CAP"}
-        title={
-          confirm?.action === "score"
-            ? "Tính lại điểm nhà cung cấp"
-            : "Đổi trạng thái nhà cung cấp"
-        }
+        open={confirm?.action === "status"}
+        functionCode="DOI_TRANG_THAI_NHA_CUNG_CAP"
+        title="Đổi trạng thái nhà cung cấp"
         onClose={() => setConfirm(null)}
         busy={mutation.busy}
         onConfirm={(reason) =>
           void mutation.run(async () => {
             if (!confirm) return;
-            if (confirm.action === "score") {
-              if (!can("NHA_CUNG_CAP_SCORE"))
-                throw new Error("Bạn chưa có quyền tính điểm.");
-              await scoreSupplier(confirm.row?.ma_ncc);
-            } else {
+            if (confirm.action === "status") {
               if (!can("NHA_CUNG_CAP_CHANGE_STATUS") || !confirm.row)
                 throw new Error("Bạn chưa có quyền đổi trạng thái.");
               await changeSupplierStatus(
@@ -286,12 +276,13 @@ export default function NhaCungCapPage() {
         }
       >
         <p>
-          {confirm?.action === "score"
-            ? `Cập nhật điểm và tỷ lệ giao hàng từ dữ liệu hiện có cho ${confirm.row?.ten_ncc ?? "tất cả nhà cung cấp"}?`
-            : `Đổi trạng thái hoạt động của ${confirm?.row?.ten_ncc}?`}
+          Đổi trạng thái hoạt động của {confirm?.row?.ten_ncc}?
         </p>
         <Feedback error={mutation.error} success="" />
       </ReasonConfirmDialog>
+      {confirm?.action === "score" && can("NHA_CUNG_CAP_SCORE") && <SupplierScorePreviewDialog
+        code={confirm.row?.ma_ncc} onClose={() => setConfirm(null)}
+        onSaved={() => { setConfirm(null); resource.refetch(); }} />}
     </>
   );
 }

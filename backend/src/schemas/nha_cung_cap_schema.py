@@ -54,14 +54,14 @@ class NhaCungCapResponse(BaseModel):
 
 class NhaCungCapScoreResponse(BaseModel):
     ma_ncc: str
-    diem_dieu_kien_thuong_mai: Decimal
+    diem_dieu_kien_thuong_mai: Decimal | None
     ty_le_giao_dung_han_thuc_te: Decimal | None
     ty_le_giao_du_thuc_te: Decimal | None
     so_don_da_nhan: int
 
     @field_serializer("diem_dieu_kien_thuong_mai")
-    def serialize_score(self, value: Decimal):
-        return format(value, ".2f")
+    def serialize_score(self, value: Decimal | None):
+        return None if value is None else format(value, ".2f")
 
     @field_serializer("ty_le_giao_dung_han_thuc_te", "ty_le_giao_du_thuc_te")
     def serialize_delivery_metric(self, value: Decimal | None):
@@ -71,3 +71,11 @@ class NhaCungCapScoreResponse(BaseModel):
 class NhaCungCapScoreBatchResponse(BaseModel):
     so_ncc_da_cap_nhat: int
     nha_cung_cap: list[NhaCungCapScoreResponse]
+
+
+class NhaCungCapScoreConfirm(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    preview_token: Annotated[str, StringConstraints(min_length=1, max_length=4096)]
+    ly_do: Annotated[str, StringConstraints(strip_whitespace=True, min_length=1, max_length=2000)]
+    ly_do_id: Annotated[str, StringConstraints(strip_whitespace=True, min_length=1, max_length=40)] | None = None
+    ghi_chu: Annotated[str, StringConstraints(strip_whitespace=True, max_length=2000)] | None = None

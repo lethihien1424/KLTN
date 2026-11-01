@@ -222,6 +222,7 @@ export function FormDrawer({
   footer,
   busy = false,
   compact = false,
+  className = "",
 }: {
   open: boolean;
   title: string;
@@ -230,6 +231,7 @@ export function FormDrawer({
   footer?: ReactNode;
   busy?: boolean;
   compact?: boolean;
+  className?: string;
 }) {
   const dialog = useRef<HTMLDialogElement>(null);
   const titleId = useId();
@@ -242,7 +244,7 @@ export function FormDrawer({
     <dialog
       ref={dialog}
       aria-labelledby={titleId}
-      className={`pm-dialog ${compact ? "compact" : "drawer"}`}
+      className={`pm-dialog ${compact ? "compact" : "drawer"} ${className}`}
       onCancel={(event) => {
         event.preventDefault();
         if (!busy) onClose();

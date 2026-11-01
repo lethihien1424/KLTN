@@ -70,6 +70,8 @@ from sqlalchemy.orm import Session
 from src.controllers.nha_cung_cap_controller import NhaCungCapController
 from src.core.database import get_db
 from src.dependencies.permission_dependency import require_permission
+from src.services.supplier_score_preview_service import SupplierScorePreviewService
+from src.schemas.nha_cung_cap_schema import NhaCungCapScoreConfirm
 from src.schemas.nha_cung_cap_schema import (
     NhaCungCapCreate,
     NhaCungCapResponse,
@@ -87,13 +89,25 @@ controller = NhaCungCapController()
 
 
 @router.post('/tinh-diem', response_model=NhaCungCapScoreBatchResponse, dependencies=[Depends(require_permission('nha_cung_cap', 'TINH_DIEM'))])
-def calculate_all_supplier_scores(db: Session = Depends(get_db)):
-    return controller.calculate_all_scores(db)
+def calculate_all_supplier_scores(payload: NhaCungCapScoreConfirm,
+    actor=Depends(require_permission('nha_cung_cap', 'TINH_DIEM')), db: Session = Depends(get_db)):
+    return SupplierScorePreviewService().apply(db, actor, payload)
+
+
+@router.get('/tinh-diem/preview')
+def preview_all_supplier_scores(actor=Depends(require_permission('nha_cung_cap', 'TINH_DIEM')), db: Session = Depends(get_db)):
+    return SupplierScorePreviewService().preview(db, actor)
+
+
+@router.get('/{ma_ncc}/tinh-diem/preview')
+def preview_supplier_score(ma_ncc: str, actor=Depends(require_permission('nha_cung_cap', 'TINH_DIEM')), db: Session = Depends(get_db)):
+    return SupplierScorePreviewService().preview(db, actor, ma_ncc)
 
 
 @router.post('/{ma_ncc}/tinh-diem', response_model=NhaCungCapScoreResponse, dependencies=[Depends(require_permission('nha_cung_cap', 'TINH_DIEM'))])
-def calculate_supplier_score(ma_ncc: str, db: Session = Depends(get_db)):
-    return controller.calculate_score(db, ma_ncc)
+def calculate_supplier_score(ma_ncc: str, payload: NhaCungCapScoreConfirm,
+    actor=Depends(require_permission('nha_cung_cap', 'TINH_DIEM')), db: Session = Depends(get_db)):
+    return SupplierScorePreviewService().apply(db, actor, payload, ma_ncc)
 
 
 @router.get('', response_model=list[NhaCungCapResponse], dependencies=[Depends(require_permission('nha_cung_cap', 'XEM'))])

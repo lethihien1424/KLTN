@@ -160,6 +160,8 @@ export default function AppRoutes({ location }: { location: Location }) {
       "DE_XUAT_NHAP_HANG_CREATE",
       <TaoDeXuatPage
         key={params.toString()}
+        forecast={params.get("forecast") ?? ""}
+        unconfirmed={params.get("unconfirmed") === "1"}
         material={params.get("material") ?? ""}
         ncc={params.get("ncc") ?? ""}
         qty={params.get("qty") ?? ""}

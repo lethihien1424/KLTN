@@ -1,7 +1,7 @@
 from typing import Literal, Annotated
 from pydantic import BaseModel, ConfigDict, Field, StringConstraints
 
-FunctionCode = Literal['DOI_TRANG_THAI_NGUYEN_LIEU', 'DOI_TRANG_THAI_CONG_THUC', 'DOI_TRANG_THAI_NHA_CUNG_CAP', 'DIEU_CHINH_TON_KHO']
+FunctionCode = Literal['DOI_TRANG_THAI_NGUYEN_LIEU', 'DOI_TRANG_THAI_CONG_THUC', 'DOI_TRANG_THAI_NHA_CUNG_CAP', 'DIEU_CHINH_TON_KHO', 'TINH_LAI_DIEM_NCC']
 ReasonStatus = Literal['DANG_SU_DUNG', 'NGUNG_SU_DUNG']
 TrimmedName = Annotated[str, StringConstraints(strip_whitespace=True, min_length=1, max_length=250)]
 
@@ -16,7 +16,7 @@ class ReasonWrite(BaseModel):
     ten_ly_do: TrimmedName
     ghi_chu: str | None = Field(default=None, max_length=2000)
     trang_thai: ReasonStatus = 'DANG_SU_DUNG'
-    chuc_nang_ap_dung: list[FunctionCode] = Field(min_length=1, max_length=4)
+    chuc_nang_ap_dung: list[FunctionCode] = Field(min_length=1, max_length=5)
 
 
 class ReasonStatusWrite(BaseModel):

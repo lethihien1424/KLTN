@@ -1,6 +1,9 @@
 import { api, jsonBody } from "./apiClient";
 import type { Proposal, Order } from "./purchaseTypes";
 export type ProposalInput = {
+  ma_lich_su_du_bao?: string | null;
+  chap_nhan_chua_xac_nhan?: boolean;
+  ly_do_chua_xac_nhan?: string | null;
   ghi_chu: string;
   chi_tiet: {
     ma_nguyen_lieu: string;

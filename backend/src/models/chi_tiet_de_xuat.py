@@ -4,6 +4,8 @@ from src.core.database import Base
 
 
 class ChiTietDeXuatNhapHang(Base):
+    ma_xac_nhan = Column(String(32), ForeignKey("xac_nhan_cung_ung.id"))
+    trang_thai_cung_ung = Column(String(30))
     __tablename__ = "chi_tiet_de_xuat_nhap_hang"
 
     ma_chi_tiet = Column(String(20), primary_key=True, server_default=FetchedValue())

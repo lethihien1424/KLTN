@@ -105,10 +105,17 @@ export type ForecastDemandDetail = {
   }[];
 };
 export type Suggestion = {
+  giai_thich_xep_hang?: SupplierRankingExplanation | null;
+  ma_nguyen_lieu_ncc: string;
+  trang_thai_cung_ung: "DA_XAC_NHAN_DU" | "DA_XAC_NHAN_KHONG_DU" | "CHUA_XAC_NHAN";
+  do_day_du_kpi: Decimal;
+  diem_xep_hang: Decimal;
+  nguon_diem: string;
+  xac_nhan: { id: string; so_luong_can_mua: Decimal; so_luong_xac_nhan: Decimal; ngay_xac_nhan: string; hieu_luc_den: string; nguoi_xac_nhan: string; nguon_xac_nhan: string; ly_do: string; ghi_chu: string | null } | null;
   ma_ncc: string;
   ten_ncc: string;
   don_gia: Decimal;
-  ton_kho_kha_dung_ncc: Decimal;
+  ton_kho_kha_dung_ncc?: Decimal;
   lead_time_ngay: number;
   diem_ncc: Decimal | null;
   ty_le_giao_dung_han_thuc_te: Decimal | null;
@@ -116,10 +123,26 @@ export type Suggestion = {
   du_kha_nang_cung_cap: boolean;
 };
 export type Suggestions = {
+  chinh_sach_xep_hang?: SupplierRankingPolicy | null;
+  tinh_luc?: string;
   ma_nguyen_lieu: string;
   ten_nguyen_lieu: string;
   so_luong_can_mua: Decimal;
   nha_cung_cap: Suggestion[];
+};
+export type SupplierRankingPolicy = {
+  trong_so_gia: Decimal; trong_so_kpi: Decimal; nhom_cung_ung: string[];
+  cong_thuc: string; cong_thuc_gia: string; sap_xep: string; thieu_kpi: string; lam_tron: string;
+};
+export type SupplierRankingExplanation = {
+  diem_gia: Decimal; dong_gop_gia: Decimal; dong_gop_kpi: Decimal; nhom_uu_tien: number; nhan_nhom: string;
+  vi_tri: number; so_sanh: string; phep_tinh_gia: string; phep_tinh_dong_gop_gia: string;
+  phep_tinh_dong_gop_kpi: string; phep_tinh_tong: string;
+  gia: { ma_nguyen_lieu_ncc: string; ma_nguyen_lieu: string; don_gia: Decimal; gia_thap_nhat: Decimal;
+    don_vi_tien: string; don_vi_nguyen_lieu: string; don_vi_gia: string | null; cap_nhat_luc: string | null; ghi_chu: string };
+  thoi_gian_giao: { ma_nguyen_lieu_ncc: string; lead_time_ngay: number; ghi_chu: string };
+  cung_ung: { ma_lich_su_du_bao: string | null; so_luong_yeu_cau: Decimal; so_luong_da_phan_bo: Decimal;
+    so_luong_con_lai: Decimal | null; xac_nhan_con_hieu_luc: boolean; phep_tinh: string; ghi_chu: string };
 };
 export type ProposalLine = {
   ma_chi_tiet: string;
@@ -131,6 +154,9 @@ export type ProposalLine = {
   don_gia_du_kien: Decimal;
 };
 export type Proposal = {
+  ma_lich_su_du_bao?: string | null;
+  yeu_cau_xac_nhan?: boolean;
+  ly_do_chua_xac_nhan?: string | null;
   ma_de_xuat: string;
   ngay_de_xuat_nhap_hang: string;
   ngay_tao_de_xuat: string;

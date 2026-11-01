@@ -27,9 +27,9 @@ function receipt(index: number) {
     chi_tiet: index === 1 ? [line("L1"), line("L2", "NL2", "l", "5")] : [line(`L${index + 1}`, "NL1", "kg", "60")],
   };
 }
-async function setup(page: Page, rights = ["XEM", "NHAP_FILE", "XUAT_EXCEL"], score = true) {
+async function setup(page: Page, rights = ["XEM", "NHAP_FILE", "XUAT_EXCEL"], score = true, supplierView = false) {
   const state = { rows: Array.from({ length: 12 }, (_, i) => receipt(i + 1)), previews: 0, imports: 0, stock: 620,
-    exportQuery: "", requests: [] as string[], errors: [] as string[], reads: 0 };
+    exportQuery: "", requests: [] as string[], errors: [] as string[], reads: 0, historyQueries: [] as string[] };
   await page.addInitScript(() => sessionStorage.setItem("access_token", "history-test"));
   page.on("pageerror", (error) => state.errors.push(error.message));
   await page.route("**/api/**", async (route) => {
@@ -39,9 +39,18 @@ async function setup(page: Page, rights = ["XEM", "NHAP_FILE", "XUAT_EXCEL"], sc
     if (path === "/phan-quyen/cua-toi") return route.fulfill({ json: { ma_nguoi_dung: "TEST", vai_tro: "CUSTOM", chi_tiet: [
       ...rights.map((thao_tac) => ({ chuc_nang: "don_mua_nguyen_lieu", thao_tac })),
       ...(score ? [{ chuc_nang: "nha_cung_cap", thao_tac: "TINH_DIEM" }] : []),
+      ...(supplierView ? [{ chuc_nang: "nha_cung_cap", thao_tac: "XEM" }] : []),
     ] } });
+    if (path === "/nha-cung-cap") return route.fulfill({ json: ["NCC1", "NCC2", "NCC3"].map((ma_ncc) => ({
+      ma_ncc, ten_ncc: ma_ncc === "NCC1" ? "Nhà cung cấp Coffee" : ma_ncc === "NCC2" ? "NCC thứ hai" : "NCC chưa giao hàng",
+      trang_thai: "DANG_HOAT_DONG", diem_dieu_kien_thuong_mai: null,
+      ty_le_giao_dung_han_thuc_te: null, ty_le_giao_du_thuc_te: null,
+    })) });
     const root = "/giao-nguyen-lieu/lich-su";
-    if (path === root) { state.reads++; return route.fulfill({ json: state.rows }); }
+    if (path === root) {
+      state.reads++; state.historyQueries.push(url.search);
+      return route.fulfill({ json: state.rows.filter((r) => !url.searchParams.get("ma_ncc") || r.ma_ncc === url.searchParams.get("ma_ncc")) });
+    }
     if (path.startsWith(root + "/phieu/")) return route.fulfill({ json: state.rows.find((r) => r.ma_phieu_nhan === path.split("/").at(-1)) });
     if (path === root + "/excel/template") return route.fulfill({ contentType: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", body: await workbook(templateColumns) });
     if (path === root + "/excel/export") {
@@ -68,6 +77,108 @@ async function setup(page: Page, rights = ["XEM", "NHAP_FILE", "XUAT_EXCEL"], sc
   await page.goto("/#/lich-su-nhap-nguyen-lieu");
   return state;
 }
+
+for (const supplier of ["NCC1", "NCC2", "NCC3"]) {
+  test(`supplier history action navigates with the selected supplier and survives reload: ${supplier}`, async ({ page }) => {
+    const state = await setup(page, ["XEM", "NHAP_FILE", "XUAT_EXCEL"], true, true);
+    Object.assign(state.rows[2], { nguon: "LICH_SU", ma_don_mua: null, ma_don_cu: "OLD3" });
+    await page.goto("/#/nha-cung-cap");
+    const row = page.getByRole("row").filter({ has: page.getByRole("button", { name: supplier, exact: true }) });
+    const action = row.getByRole("button", { name: "Xem lịch sử nhập hàng", exact: true });
+    await action.hover();
+    await expect(page.getByRole("tooltip", { name: "Xem lịch sử nhập hàng", exact: true })).toBeVisible();
+    await expect(page.getByRole("button", { name: "Xem nguyên liệu cung ứng", exact: true })).toHaveCount(0);
+    await action.click();
+    await expect(page).toHaveURL(new RegExp(`/\\#/lich-su-nhap-nguyen-lieu\\?ma_ncc=${supplier}$`));
+    const selector = page.getByRole("combobox", { name: "Nhà cung cấp", exact: true });
+    await expect(selector).toHaveValue(supplier);
+    if (supplier === "NCC3") {
+      await expect(page.getByText("Nhà cung cấp này chưa có lịch sử nhập hàng", { exact: true })).toBeVisible();
+    } else {
+      await expect(page.locator(".pm-panel tbody tr")).toHaveCount(supplier === "NCC1" ? 10 : 1);
+      await expect(page.locator(".pm-panel tbody")).not.toContainText(supplier === "NCC1" ? "NCC2" : "NCC1");
+      if (supplier === "NCC1") {
+        await expect(page.locator(".pm-panel tbody")).toContainText("Quá khứ · không cộng kho");
+        await expect(page.locator(".pm-panel tbody")).toContainText("Nhận kho thực tế");
+        await page.getByRole("button", { name: "Sau", exact: true }).click();
+        await expect(page.locator(".pm-panel tbody tr")).toHaveCount(1);
+      }
+    }
+    expect(state.historyQueries.some((query) => new URLSearchParams(query).get("ma_ncc") === supplier)).toBeTruthy();
+    await page.reload();
+    await expect(selector).toHaveValue(supplier);
+    await page.getByRole("button", { name: "Làm mới", exact: true }).click();
+    if (supplier === "NCC3") await expect(page.getByText("Nhà cung cấp này chưa có lịch sử nhập hàng", { exact: true })).toBeVisible();
+    else await expect(page.locator(".pm-panel tbody tr")).toHaveCount(supplier === "NCC1" ? 10 : 1);
+    expect(state.requests).toEqual([]); expect(state.stock).toBe(620); expect(state.errors).toEqual([]);
+  });
+}
+
+test("supplier URL filter combines with other filters, export, switching, clearing and browser back", async ({ page }) => {
+  const state = await setup(page, ["XEM", "NHAP_FILE", "XUAT_EXCEL"], true, true);
+  await page.goto("/#/lich-su-nhap-nguyen-lieu?ma_ncc=NCC1");
+  const selector = page.getByRole("combobox", { name: "Nhà cung cấp", exact: true });
+  await page.getByPlaceholder("Tìm theo mã hoặc tên…").fill("PH1");
+  await expect(page.locator(".pm-panel tbody tr")).toHaveCount(3);
+  await expect(page.locator(".pm-panel tbody")).not.toContainText("PH12");
+  await page.getByLabel("Ngày nhận từ", { exact: true }).fill("2026-01-02");
+  await page.getByLabel("Ngày nhận đến", { exact: true }).fill("2026-01-02");
+  await page.getByRole("combobox", { name: "Nguyên liệu", exact: true }).selectOption("NL2");
+  await page.getByLabel("Mã đơn mua", { exact: true }).fill("DM1");
+  await expect(page.locator(".pm-panel tbody tr")).toHaveCount(1);
+  const download = page.waitForEvent("download");
+  await page.getByRole("button", { name: "Xuất Excel", exact: true }).click(); await download;
+  expect(Object.fromEntries(new URLSearchParams(state.exportQuery))).toMatchObject({ ma_ncc: "NCC1", search: "PH1", ngay_nhan_tu: "2026-01-02", ngay_nhan_den: "2026-01-02", ma_nguyen_lieu: "NL2", ma_don_mua: "DM1" });
+  await page.getByPlaceholder("Tìm theo mã hoặc tên…").fill("");
+  await page.getByLabel("Ngày nhận từ", { exact: true }).fill("");
+  await page.getByLabel("Ngày nhận đến", { exact: true }).fill("");
+  await page.getByRole("combobox", { name: "Nguyên liệu", exact: true }).selectOption("");
+  await page.getByLabel("Mã đơn mua", { exact: true }).fill("");
+  await selector.selectOption("NCC2");
+  await expect(page).toHaveURL(/ma_ncc=NCC2$/);
+  await expect(page.locator(".pm-panel tbody tr")).toHaveCount(1);
+  await expect(page.locator(".pm-panel tbody")).toContainText("PH12");
+  await selector.selectOption("");
+  await expect(page).toHaveURL(/\/#\/lich-su-nhap-nguyen-lieu$/);
+  await expect(page.locator(".pm-pagination")).toContainText("12 bản ghi");
+  await page.goBack();
+  await expect(selector).toHaveValue("NCC2");
+  await expect(page.locator(".pm-panel tbody tr")).toHaveCount(1);
+  expect(state.requests).toEqual([]); expect(state.errors).toEqual([]);
+});
+
+test("changing supplier hides previous receipts and ignores a late response", async ({ page }) => {
+  const state = await setup(page, ["XEM"], false, true);
+  await page.goto("/#/lich-su-nhap-nguyen-lieu?ma_ncc=NCC1");
+  await expect(page.locator(".pm-panel tbody tr")).toHaveCount(10);
+  let release!: () => void;
+  const pending = new Promise<void>((resolve) => { release = resolve; });
+  await page.route("**/api/giao-nguyen-lieu/lich-su?ma_ncc=NCC2", async (route) => {
+    await pending;
+    await route.fulfill({ json: state.rows.filter((r) => r.ma_ncc === "NCC2") });
+  });
+  const request = page.waitForRequest("**/api/giao-nguyen-lieu/lich-su?ma_ncc=NCC2");
+  const selector = page.getByRole("combobox", { name: "Nhà cung cấp", exact: true });
+  await selector.selectOption("NCC2"); await request;
+  await expect(page.locator(".pm-panel tbody tr")).toHaveCount(0);
+  await selector.selectOption("NCC1");
+  await expect(page.locator(".pm-panel tbody tr")).toHaveCount(10);
+  const response = page.waitForResponse("**/api/giao-nguyen-lieu/lich-su?ma_ncc=NCC2");
+  release(); await response;
+  await expect(selector).toHaveValue("NCC1");
+  await expect(page.locator(".pm-panel tbody")).not.toContainText("NCC2");
+  expect(state.errors).toEqual([]);
+});
+
+test("supplier history action and direct URL require history viewing permission", async ({ page }) => {
+  const state = await setup(page, [], false, true);
+  await page.goto("/#/nha-cung-cap");
+  await expect(page.locator(".pm-panel tbody tr")).toHaveCount(3);
+  await expect(page.getByRole("button", { name: "Xem lịch sử nhập hàng", exact: true })).toHaveCount(0);
+  await page.goto("/#/lich-su-nhap-nguyen-lieu?ma_ncc=NCC1");
+  await expect(page.getByText("Bạn chưa có quyền truy cập màn hình này", { exact: true })).toBeVisible();
+  expect(state.reads).toBe(0); expect(state.requests).toEqual([]);
+});
 
 test("receipt list groups batches totals by unit and details reuse warehouse history", async ({ page }) => {
   const state = await setup(page);

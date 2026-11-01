@@ -15,6 +15,7 @@ from sqlalchemy.orm import Session
 from src.models.nhat_ky_hoat_dong_model import NhatKyHoatDong
 
 TABLES = {
+    'xac_nhan_cung_ung': ('Nhà cung cấp', 'Xác nhận cung ứng'),
     'nguyen_lieu': ('Nguyên liệu', 'Nguyên liệu'),
     'cong_thuc': ('Nguyên liệu', 'Công thức / BOM'),
     'chi_tiet_cong_thuc': ('Nguyên liệu', 'Chi tiết công thức'),

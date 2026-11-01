@@ -4,6 +4,7 @@ import { useMemo, useState } from "react";
 import { useAuth } from "../../auth/AuthContext";
 import DataTable from "../../components/common/DataTable";
 import SupplierDeliveryDetail from "./SupplierDeliveryDetail";
+import SupplierScorePreviewDialog from "./SupplierScorePreviewDialog";
 import { useDeliveryExcel } from "./useDeliveryExcel";
 import {
   PageHeader,
@@ -20,7 +21,6 @@ import {
 } from "../../components/common/PurchaseUI";
 import {
   supplierPerformance,
-  scoreSupplier,
 } from "../../services/nhaCungCapService";
 const percent = (value: string | null | undefined) =>
   value == null ? "Chưa có dữ liệu" : `${formatNumber(value)}%`;
@@ -168,30 +168,11 @@ export default function HieuSuatNhaCungCapPage() {
           />
         )}
         <p className="pm-small">
-          KPI và điểm tự cập nhật khi xác nhận nhận hàng hoặc nhập lịch sử. Mỗi đơn được tính một lần; đơn chưa chốt không được tính là đã hoàn tất đúng hạn. Điểm giữ trọng số hiện tại, dùng chất lượng/lead time cấu hình nếu chưa có mẫu thực tế. Tồn NCC vẫn là dữ liệu cấu hình, không tự trừ theo phiếu nhận.
+          KPI và điểm tự cập nhật khi xác nhận nhận hàng hoặc nhập lịch sử. Mỗi đơn được tính một lần; đơn chưa chốt không được tính là đã hoàn tất đúng hạn. Điểm giữ trọng số hiện tại; tiêu chí thiếu dữ liệu không được thay bằng tỷ lệ khai báo hoặc 0%. Thời gian khai báo chỉ là mốc so sánh với thời gian thực tế. Tồn NCC không được dùng làm KPI.
         </p>
       </section>
-      <ConfirmDialog
-        open={confirm !== null}
-        title="Tính lại hiệu suất NCC"
-        onClose={() => setConfirm(null)}
-        busy={mutation.busy}
-        onConfirm={() =>
-          void mutation.run(async () => {
-            if (!can("NHA_CUNG_CAP_SCORE"))
-              throw new Error("Bạn chưa có quyền tính điểm.");
-            await scoreSupplier(confirm || undefined);
-            setConfirm(null);
-            resource.refetch();
-          }, "Đã tính lại điểm và hiệu suất nhà cung cấp.")
-        }
-      >
-        <p>
-          Cập nhật điểm và tỷ lệ giao hàng cho{" "}
-          {confirm || "tất cả nhà cung cấp"}?
-        </p>
-        <Feedback error={mutation.error} success="" />
-      </ConfirmDialog>
+      {confirm !== null && can("NHA_CUNG_CAP_SCORE") && <SupplierScorePreviewDialog code={confirm || undefined}
+        onClose={() => setConfirm(null)} onSaved={() => { setConfirm(null); resource.refetch(); }} />}
       {detailCode && <SupplierDeliveryDetail code={detailCode} onClose={() => setDetailCode("")} />}
       {excel.dialogs}
     </>

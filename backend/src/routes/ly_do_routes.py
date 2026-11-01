@@ -93,6 +93,7 @@ def applicable(
     db: Session = Depends(get_db),
     user: User = Depends(
         require_any_permission(
+            ("nha_cung_cap", "TINH_DIEM"),
             ("nguyen_lieu", "SUA"),
             ("cong_thuc", "XAC_NHAN"),
             ("nha_cung_cap", "XAC_NHAN"),
@@ -113,6 +114,7 @@ def applicable(
     }
 
     required = {
+        "TINH_LAI_DIEM_NCC": {("nha_cung_cap", "TINH_DIEM")},
         "DOI_TRANG_THAI_NGUYEN_LIEU": {("nguyen_lieu", "SUA")},
         "DOI_TRANG_THAI_CONG_THUC": {("cong_thuc", "XAC_NHAN")},
         "DOI_TRANG_THAI_NHA_CUNG_CAP": {("nha_cung_cap", "XAC_NHAN")},

@@ -36,7 +36,7 @@ class DeXuatRepository:
     def material(db, code, lock=False):
         query = select(NguyenLieu).where(NguyenLieu.ma_nguyen_lieu == code)
         if lock:
-            query = query.with_for_update(read=True).execution_options(populate_existing=True)
+            query = query.with_for_update().execution_options(populate_existing=True)
         return db.scalar(query)
 
     @staticmethod
@@ -53,7 +53,7 @@ class DeXuatRepository:
             NguyenLieuNhaCungCap.ma_ncc == supplier_code,
         )
         if lock:
-            query = query.with_for_update(read=True).execution_options(populate_existing=True)
+            query = query.with_for_update().execution_options(populate_existing=True)
         return db.scalar(query)
 
     @staticmethod

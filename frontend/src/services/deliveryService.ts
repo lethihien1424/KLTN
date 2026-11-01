@@ -48,7 +48,8 @@ export type DeliveryReceipt = {
 };
 export type ReceiptFilters = { search: string; ngay_nhan_tu: string; ngay_nhan_den: string; ma_ncc: string; ma_nguyen_lieu: string; ma_don_mua: string; ma_phieu_nhap?: string };
 export const receiptNumber = (receipt: { ma_phieu_nhan: string; ma_phieu_nhap?: string }) => receipt.ma_phieu_nhap || receipt.ma_phieu_nhan;
-export const listDeliveryReceipts = () => api<DeliveryReceipt[]>("/giao-nguyen-lieu/lich-su");
+export const listDeliveryReceipts = (filters: Partial<ReceiptFilters> = {}) =>
+  api<DeliveryReceipt[]>("/giao-nguyen-lieu/lich-su" + queryString(filters));
 export const getDeliveryReceipt = (code: string) => api<DeliveryReceipt>(`/giao-nguyen-lieu/lich-su/phieu/${encodeURIComponent(code)}`);
 export const exportDeliveryReceipts = (filters: ReceiptFilters) => download(
   "/giao-nguyen-lieu/lich-su/excel/export" + queryString(filters), "Lich_su_nhap_nguyen_lieu.xlsx",

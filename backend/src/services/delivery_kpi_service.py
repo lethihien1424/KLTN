@@ -22,6 +22,7 @@ class DeliveryKpiService:
             DeliveryReceiptLine, DeliveryReceiptLine.ma_phieu_nhan == DeliveryReceipt.ma_phieu_nhan
         ).where(DeliveryReceipt.ma_ncc == supplier_code).order_by(DeliveryReceipt.ngay_giao_thuc_te, DeliveryReceipt.thoi_gian)).all()
         quality_units = defaultdict(lambda: [ZERO, ZERO])
+        quality_evidence = []
         for header, line in rows:
             key = (header.nguon, header.ma_don_mua or header.ma_don_cu)
             group = groups.setdefault(key, {"ma_don": key[1], "nguon": header.nguon, "ngay_dat": header.ngay_dat_hang,
@@ -33,6 +34,13 @@ class DeliveryKpiService:
             item = group["lines"].setdefault(line.ma_nguyen_lieu, {"dat": line.so_luong_dat, "nhap": ZERO, "giao": ZERO, "don_vi": line.don_vi})
             item["nhap"] += line.so_luong_nhap_kho
             item["giao"] += line.so_luong_giao
+            quality_evidence.append({"ma_phieu_nhan": header.ma_phieu_nhan, "ma_phieu_nhap": header.ma_phieu_nhap,
+                "ma_don": key[1], "nguon": header.nguon, "ma_nguyen_lieu": line.ma_nguyen_lieu,
+                "don_vi": line.don_vi, "so_luong_giao": line.so_luong_giao,
+                "so_luong_dat_hang": line.so_luong_dat, "so_luong_nhap": line.so_luong_nhap_kho,
+                "so_luong_dat": line.so_luong_dat_chat_luong, "so_luong_khong_dat": line.so_luong_khong_dat,
+                "ty_le": line.so_luong_dat_chat_luong / line.so_luong_giao
+                    if line.so_luong_dat_chat_luong is not None and line.so_luong_giao > 0 else None})
             if line.so_luong_dat_chat_luong is not None:
                 quality_units[line.don_vi][0] += line.so_luong_dat_chat_luong
                 quality_units[line.don_vi][1] += line.so_luong_giao
@@ -64,7 +72,10 @@ class DeliveryKpiService:
             evidence.append({"ma_don": group["ma_don"], "nguon": group["nguon"], "hoan_tat": group["hoan_tat"],
                 "ngay_dat_hang": group["ngay_dat"], "ngay_du_kien_giao": group["ngay_du_kien"], "ngay_nhan_cuoi": group["ngay_cuoi"],
                 "dung_han": has_delivery(group) and group["ngay_cuoi"] <= group["ngay_du_kien"] if group["hoan_tat"] else None,
-                "ty_le_du": percent(fill), "so_dot": len(group["phieu"]), "chi_tiet": [{"ma_nguyen_lieu": code,
+                "ty_le_du": percent(fill), "ty_le_du_chinh_xac": fill,
+                "co_giao_hang": has_delivery(group), "thoi_gian_thuc_te_ngay": (group["ngay_cuoi"] - group["ngay_dat"]).days,
+                "phieu": sorted(group["phieu"]), "so_dot": len(group["phieu"]), "chi_tiet": [{"ma_nguyen_lieu": code,
+                    "ty_le_du": min(ONE, line["nhap"] / line["dat"]),
                     "so_luong_dat": line["dat"], "so_luong_nhap": line["nhap"], "so_luong_giao": line["giao"], "don_vi": line["don_vi"]}
                     for code, line in group["lines"].items()]})
         quality_ratios = [good / delivered for good, delivered in quality_units.values() if delivered > 0]
@@ -81,4 +92,4 @@ class DeliveryKpiService:
                 "thoi_gian_giao_tb_ngay": lead.quantize(Decimal("0.01")) if lead is not None else None,
                 "chat_luong_theo_don_vi": [{"don_vi": unit, "so_luong_dat": values[0], "so_luong_giao": values[1],
                     "ty_le_dat": percent(values[0] / values[1]) if values[1] else None} for unit, values in quality_units.items()],
-                "don_mua": evidence}
+                "chat_luong_chung_tu": quality_evidence, "don_mua": evidence}

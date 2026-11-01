@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Date, DateTime, FetchedValue, ForeignKey, String, Text, text
+from sqlalchemy import Column, Boolean, Date, DateTime, FetchedValue, ForeignKey, String, Text, text
 
 from src.core.database import Base
 
@@ -7,6 +7,9 @@ class DeXuatNhapHang(Base):
     __tablename__ = "de_xuat_nhap_hang"
 
     ma_de_xuat = Column(String(20), primary_key=True, server_default=FetchedValue())
+    ma_lich_su_du_bao = Column(String(20), ForeignKey("lich_su_du_bao.ma_lich_su_du_bao"))
+    yeu_cau_xac_nhan = Column(Boolean, nullable=False, server_default=text("false"), default=False)
+    ly_do_chua_xac_nhan = Column(Text)
     ngay_de_xuat_nhap_hang = Column(Date, nullable=False, server_default=text("CURRENT_DATE"))
     ngay_tao_de_xuat = Column(DateTime(timezone=True), nullable=False, server_default=text("CURRENT_TIMESTAMP"))
     ghi_chu = Column(Text, nullable=True)
