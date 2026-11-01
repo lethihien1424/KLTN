@@ -1064,7 +1064,7 @@ test("ADMIN without permissions receives no bypass", async ({ page }) => {
   const state = await setup(page, [], "ADMIN");
   await page.goto("/");
   await expect(
-    page.getByRole("heading", { name: "Chưa có quyền xem dữ liệu", exact: true }),
+    page.getByText("Bạn chưa được cấp quyền xem dashboard tương ứng.", { exact: true }),
   ).toBeVisible();
   expect(state.requests.every((r) => ["/auth/me", "/phan-quyen/cua-toi"].includes(r.path))).toBeTruthy();
 });
@@ -1127,6 +1127,9 @@ test("BOM rejects incorrect total before sending and saves decimal strings", asy
   page,
 }) => {
   const state = await setup(page);
+  await page.route("**/api/cong-thuc/san-pham/SP01/dinh-luong", route => route.fulfill({ json: {
+    ma_san_pham: "SP01", ten_san_pham: "Cà phê", khoi_luong: "250", don_vi_do_luong: "g",
+  } }));
   await page.goto("/#/cong-thuc");
   await page.getByRole("button", { name: "+ Thêm công thức" }).click();
   await page.getByLabel("Mã sản phẩm").fill("SP01");
@@ -1137,7 +1140,7 @@ test("BOM rejects incorrect total before sending and saves decimal strings", asy
     .selectOption("NL01");
   await page.getByLabel("Tỷ lệ phối trộn (0–1)").fill("0.5");
   await page.getByRole("button", { name: "Lưu công thức" }).click();
-  await expect(page.getByRole("alert")).toContainText(
+  await expect(page.getByRole("dialog").getByRole("alert").filter({ hasText: "Tổng tỷ lệ phối trộn phải bằng 100%" }).first()).toContainText(
     "Tổng tỷ lệ phối trộn phải bằng 100%",
   );
   expect(
@@ -1215,7 +1218,7 @@ test("supplier detail tabs and mapping constraints", async ({ page }) => {
   await page
     .getByRole("button", { name: "Nguyên liệu cung cấp", exact: true })
     .click();
-  await page.getByRole("button", { name: "Sửa", exact: true }).click();
+  await page.getByRole("button", { name: "Chỉnh sửa", exact: true }).click();
   await page.getByLabel("Đã book", { exact: true }).fill("999");
   await page.getByRole("button", { name: "Lưu cung ứng" }).click();
   await expect(page.getByRole("alert")).toContainText(
@@ -1232,7 +1235,7 @@ test("supplier detail tabs and mapping constraints", async ({ page }) => {
     2,
   );
 });
-test("403 refreshes permissions and removes stale write action", async ({
+test("403 preserves the error and explicit permission refresh removes stale write action", async ({
   page,
 }) => {
   const state = await setup(page);
@@ -1247,6 +1250,9 @@ test("403 refreshes permissions and removes stale write action", async ({
     detail: "Quyền tạo đã bị thu hồi.",
   };
   await page.getByRole("button", { name: "Lưu nguyên liệu" }).click();
+  await expect(page.getByRole("alert")).toContainText("Quyền tạo đã bị thu hồi.");
+  // The current client deliberately avoids refresh loops on every HTTP 403.
+  await page.evaluate(() => window.dispatchEvent(new Event("auth-permissions-refresh")));
   await expect(
     page.getByRole("button", { name: "Lưu nguyên liệu" }),
   ).toBeDisabled();
@@ -1406,7 +1412,7 @@ test("new full route names reject direct access without VIEW permissions", async
         .getByRole("button", { name: label, exact: true }),
     ).toHaveCount(0);
   }
-  expect(state.requests.filter((r) => r.path !== "/auth/me")).toEqual([]);
+  expect(state.requests.filter((r) => !["/auth/me", "/phan-quyen/cua-toi"].includes(r.path))).toEqual([]);
 });
 
 test("sidebar groups collapse and reopen on detail navigation and refresh", async ({

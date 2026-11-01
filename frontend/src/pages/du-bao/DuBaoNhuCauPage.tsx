@@ -6,6 +6,7 @@ import {
   useRef,
   useState,
 } from "react";
+import SharedDataTable from "../../components/common/SharedDataTable";
 import {
   chayDuBaoTheoYeuCau,
   layChiTietDuBao,
@@ -21,16 +22,12 @@ import {
   type SoTuanDuBao,
   type YeuToDuBao,
 } from "../../services/duBaoService";
-// <<<<<<< HEAD
-// =======
 
 // import { getMe } from "../../services/authService";
 import { useAuth } from "../../auth/AuthContext";
 import { navigate } from "../../routes/navigation";
 
 // import "../../../public/DuBaoNhuCau.css";
-
-// >>>>>>> origin/hien
 type Props = {
   tenSanPham?: Record<string, string>;
   mode?: Tab;
@@ -880,13 +877,11 @@ export default function DuBaoNhuCauPage({
   const { can } = useAuth();
   const tab = mode;
   const [soTuan, setSoTuan] = useState<SoTuanDuBao>(4);
-// <<<<<<< HEAD
   const [products, setProducts] = useState<SanPhamDuBao[]>([]);
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [productDropdown, setProductDropdown] = useState(false);
   const [weekDropdown, setWeekDropdown] = useState(false);
   const [result, setResult] = useState<DuBaoResponse | null>(null);
-// =======
 
 //   const [accountId, setAccountId] = useState("");
 //   const { can } = useAuth();
@@ -894,10 +889,10 @@ export default function DuBaoNhuCauPage({
 
 //   const [result, setResult] =
 //     useState<DuBaoResponse | null>(null);
-
-// >>>>>>> origin/hien
   const [history, setHistory] = useState<LichSuDuBao[]>([]);
   const [historyQuery, setHistoryQuery] = useState("");
+  const [historyPage, setHistoryPage] = useState(1);
+  const [historyPageSize, setHistoryPageSize] = useState(7);
   const [historyDetail, setHistoryDetail] =
     useState<DuBaoResponse | null>(null);
   const [loading, setLoading] = useState(true);
@@ -908,7 +903,6 @@ export default function DuBaoNhuCauPage({
   const [detailLoading, setDetailLoading] = useState(false);
   const [error, setError] = useState("");
   const [historyError, setHistoryError] = useState("");
-// <<<<<<< HEAD
   const productDropdownRef = useRef<HTMLDivElement>(null);
   const weekDropdownRef = useRef<HTMLDivElement>(null);
   const resultAnchorRef = useRef<HTMLDivElement>(null);
@@ -922,7 +916,6 @@ export default function DuBaoNhuCauPage({
     const output = { ...tenSanPham };
     for (const product of products) {
       output[product.ma] = product.ten;
-// =======
 //   const [search, setSearch] = useState("");
 //   const [historyVersion, setHistoryVersion] = useState(0);
 
@@ -1009,7 +1002,6 @@ export default function DuBaoNhuCauPage({
 //           setInitialLoading(false);
 //         }
 //       }
-// >>>>>>> origin/hien
     }
     return output;
   }, [products, tenSanPham]);
@@ -1431,12 +1423,12 @@ export default function DuBaoNhuCauPage({
                     )}
                 </>
               )}
-{/* <<<<<<< HEAD */}
+
               {!running && !loading && !result && (
                 <div className="db-placeholder">
                   <Icon name="chart" size={28} />
                   <h3>Chưa có kết quả dự báo</h3>
-{/* ======= */}
+
 
               {/* {running && (
                 <div className="db-loading" role="status">
@@ -1476,7 +1468,7 @@ export default function DuBaoNhuCauPage({
                         : "Chưa có kết quả dự báo"}
                   </strong>
 
->>>>>>> origin/hien */}
+              */}
                   <p>
                     Chọn số tuần và sản phẩm ở trên rồi nhấn Chạy dự
                     báo để xem kết quả.
@@ -1484,8 +1476,6 @@ export default function DuBaoNhuCauPage({
                 </div>
               )}
             </>
-// <<<<<<< HEAD
-// =======
 //           ) : viewResult ? (
 //             <>
 //               <div className="db-view-toolbar">
@@ -1512,7 +1502,6 @@ export default function DuBaoNhuCauPage({
 //               />
 //               {can('NHU_CAU_NGUYEN_LIEU_VIEW') && <button className="db-button db-primary" onClick={() => navigate('/nhu-cau', { forecast: viewResult.ma_lich_su_du_bao })}>Xem nhu cầu nguyên liệu →</button>}
 //             </>
-// >>>>>>> origin/hien
           ) : (
             <section className="db-history-section">
               {historyDetail || detailLoading ? (
@@ -1593,80 +1582,39 @@ export default function DuBaoNhuCauPage({
                     aria-label="Tìm trong lịch sử"
                     placeholder="Tìm theo mã, người thực hiện..."
                     value={historyQuery}
-                    onChange={event =>
-                      setHistoryQuery(event.target.value)
-                    }
+                    onChange={event => {
+                      setHistoryQuery(event.target.value);
+                      setHistoryPage(1);
+                    }}
                   />
                   {historyError && (
                     <div className="db-error" role="alert">
                       {historyError}
                     </div>
                   )}
-                  {historyLoading ? (
-                    <p className="db-loading-text">
-                      Đang tải lịch sử...
-                    </p>
-                  ) : (
-                    <div className="db-history-table-wrap">
-                      <table className="db-history-table">
-                        <thead>
-                          <tr>
-                            <th>Mã lần chạy</th>
-                            <th>Thời gian chạy</th>
-                            <th>Người thực hiện</th>
-                            <th>Số tuần</th>
-                            <th>Sản phẩm</th>
-                            <th>Trạng thái</th>
-                            <th />
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {filteredHistory.map(item => (
-                            <tr key={item.ma_lich_su_du_bao}>
-                              <td>
-                                <b>{item.ma_lich_su_du_bao}</b>
-                              </td>
-                              <td>{dateTime(item.thoi_gian_chay)}</td>
-                              <td>
-                                {item.ho_ten_nguoi_thuc_hien ||
-                                  item.nguoi_thuc_hien ||
-                                  "—"}
-                              </td>
-                              <td>{item.so_tuan_du_bao} tuần</td>
-                              <td>{fmt(item.tong_san_pham)}</td>
-                              <td>
-                                <span className="db-status-success">
-                                  {item.trang_thai}
-                                </span>
-                              </td>
-                              <td>
-                                <button
-                                  type="button"
-                                  className="db-text-button"
-                                  onClick={() =>
-                                    void viewHistory(
-                                      item.ma_lich_su_du_bao,
-                                    )
-                                  }
-                                >
-                                  Xem
-                                </button>
-                              </td>
-                            </tr>
-                          ))}
-                          {filteredHistory.length === 0 && (
-                            <tr>
-                              <td colSpan={7} className="db-empty-text">
-                                {history.length === 0
-                                  ? "Chưa có lịch sử dự báo."
-                                  : "Không có lần chạy nào khớp từ khóa."}
-                              </td>
-                            </tr>
-                          )}
-                        </tbody>
-                      </table>
-                    </div>
-                  )}
+                  <SharedDataTable
+                    rows={filteredHistory}
+                    columns={[
+                      { key: "code", title: "Mã lần chạy", render: item => <b>{item.ma_lich_su_du_bao}</b> },
+                      { key: "date", title: "Thời gian chạy", render: item => dateTime(item.thoi_gian_chay) },
+                      { key: "user", title: "Người thực hiện", render: item => item.ho_ten_nguoi_thuc_hien || item.nguoi_thuc_hien || "—" },
+                      { key: "weeks", title: "Số tuần", render: item => `${item.so_tuan_du_bao} tuần` },
+                      { key: "products", title: "Sản phẩm", render: item => fmt(item.tong_san_pham) },
+                      { key: "status", title: "Trạng thái", render: item => <span className="db-status-success">{item.trang_thai}</span> },
+                      { key: "actions", title: "", align: "center", render: item => (
+                        <button type="button" className="db-text-button" onClick={() => void viewHistory(item.ma_lich_su_du_bao)}>Xem</button>
+                      ) },
+                    ]}
+                    rowKey={item => item.ma_lich_su_du_bao}
+                    total={filteredHistory.length}
+                    page={historyPage}
+                    pageSize={historyPageSize}
+                    onPageChange={setHistoryPage}
+                    onPageSizeChange={size => { setHistoryPageSize(size); setHistoryPage(1); }}
+                    loading={historyLoading}
+                    loadingMessage="Đang tải lịch sử..."
+                    emptyMessage={history.length === 0 ? "Chưa có lịch sử dự báo." : "Không có lần chạy nào khớp từ khóa."}
+                  />
                 </>
               )}
             </section>

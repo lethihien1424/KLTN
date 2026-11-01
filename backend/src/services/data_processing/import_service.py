@@ -1,6 +1,7 @@
 ### D:\KLTN\KLTN\backend\src\services\data_processing\import_service.py
 
 import logging
+import re
 from decimal import Decimal
 
 from fastapi import HTTPException, UploadFile
@@ -48,6 +49,23 @@ from src.services.du_lieu_ban_hang_service import (
 from src.services.phan_quyen_service import PhanQuyenService
 
 logger = logging.getLogger(__name__)
+
+SALES_IMPORT_COLUMNS = [
+    "ma_don_hang",
+    "ma_san_pham",
+    "ngay_ban",
+    "so_luong",
+    "trang_thai_don_hang",
+    "gia_goc",
+    "muc_giam_gia",
+    "gia_ban_sau_giam",
+    "co_khuyen_mai",
+    "chuong_trinh_km",
+    "ma_ctkm",
+    "kenh_ban_hang",
+    "ma_ngay_le",
+    "ngay_giao_hang",
+]
 
 
 class ImportService:
@@ -119,7 +137,53 @@ class ImportService:
             )
 
         try:
+            if import_type == "don_hang":
+                filename = (file.filename or "").lower()
+                if not filename.endswith(".xlsx"):
+                    raise HTTPException(
+                        status_code=400,
+                        detail={
+                            "message": "Upload dữ liệu bán hàng chỉ nhận file .xlsx theo template.",
+                            "row_errors": [{
+                                "row": 1,
+                                "column": None,
+                                "message": "File phải có định dạng .xlsx.",
+                            }],
+                        },
+                    )
+
             dataframe, sheet_names = await read_upload_file(file)
+
+            if import_type == "don_hang":
+                if sheet_names != ["DonHang"]:
+                    raise HTTPException(
+                        status_code=422,
+                        detail={
+                            "message": "Tên sheet không đúng template bán hàng.",
+                            "row_errors": [{
+                                "row": 1,
+                                "column": None,
+                                "message": "Sheet bắt buộc có tên DonHang.",
+                            }],
+                        },
+                    )
+                actual_columns = [
+                    column for column in dataframe.columns
+                    if column != "_row_number"
+                ]
+                if actual_columns != SALES_IMPORT_COLUMNS:
+                    mismatch = "Cột hoặc thứ tự cột không khớp template."
+                    raise HTTPException(
+                        status_code=422,
+                        detail={
+                            "message": mismatch,
+                            "row_errors": [{
+                                "row": 1,
+                                "column": None,
+                                "message": mismatch + " Tải template mới và giữ nguyên tên, thứ tự các cột.",
+                            }],
+                        },
+                    )
 
             # CTKM dùng đúng một sheet theo template.
             # Không ảnh hưởng quy trình import các loại khác.
@@ -168,9 +232,28 @@ class ImportService:
                 description=str(exc),
             )
 
+            detail: str | dict = str(exc)
+            if import_type == "don_hang":
+                row_match = re.search(r"Dòng\s+(\d+)", str(exc), re.IGNORECASE)
+                column_match = next(
+                    (column for column in SALES_IMPORT_COLUMNS if column in str(exc)),
+                    None,
+                )
+                message = str(exc)
+                if row_match:
+                    message = re.sub(r"^Dòng\s+\d+\s*:\s*", "", message, flags=re.IGNORECASE)
+                detail = {
+                    "message": str(exc),
+                    "row_errors": [{
+                        "row": int(row_match.group(1)) if row_match else 1,
+                        "column": column_match,
+                        "message": message,
+                    }],
+                }
+
             raise HTTPException(
                 status_code=400,
-                detail=str(exc),
+                detail=detail,
             ) from exc
 
         except IntegrityError as exc:
@@ -880,7 +963,7 @@ class ImportService:
                 raise ValueError(
                     f"Dòng {number}: "
                     + "; ".join(
-                        item["msg"]
+                        f"{'.'.join(str(part) for part in item['loc'])}: {item['msg']}"
                         for item in exc.errors()
                     )
                 ) from exc

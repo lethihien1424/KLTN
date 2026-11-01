@@ -698,6 +698,7 @@ import {
 import QuanLyTaiKhoanPage from "../tai-khoan/QuanLyTaiKhoanPage";
 import PhanQuyenPage from "../auth/PhanQuyenPage";
 import SanPhamPage from "../san-pham/SanPhamPage";
+import UnifiedDashboardPage from "./UnifiedDashboardPage";
 
 type Props = {
   user: User;
@@ -961,6 +962,7 @@ if (otherActiveCount > 0) {
                 display: grid;
                 grid-template-columns: repeat(2, minmax(0, 1fr));
                 gap: 20px;
+                margin-bottom: 28px;
               }
 
               .admin-chart-card {
@@ -1104,6 +1106,12 @@ if (otherActiveCount > 0) {
                 text-align: center;
               }
 
+              .admin-divider {
+                margin: 28px 0;
+                border: none;
+                border-top: 2px solid #f1f5f9;
+              }
+
               @media (max-width: 900px) {
                 .admin-chart-grid {
                   grid-template-columns: 1fr;
@@ -1126,7 +1134,7 @@ if (otherActiveCount > 0) {
               <div>
                 <h2>Tổng quan hệ thống</h2>
                 <p>
-                  Theo dõi cơ cấu vai trò và trạng thái tài khoản.
+                  Theo dõi cơ cấu vai trò, trạng thái tài khoản và các biểu đồ nghiệp vụ.
                 </p>
               </div>
 
@@ -1149,165 +1157,171 @@ if (otherActiveCount > 0) {
               </div>
             )}
 
-            {!loaded ? (
-              <div className="admin-overview-empty" role="status">
-                {loading
-                  ? "Đang tải số liệu tổng quan..."
-                  : "Chưa tải được số liệu. Nhấn Làm mới để thử lại."}
-              </div>
-            ) : (
-              <div className="admin-chart-grid">
-                <article className="admin-chart-card">
-                  <h3>Cơ cấu vai trò</h3>
-                  <p className="admin-chart-description">
-                    Phân bố các tài khoản đang hoạt động.
-                  </p>
+            {canViewAccounts && (
+              !loaded ? (
+                <div className="admin-overview-empty" role="status">
+                  {loading
+                    ? "Đang tải số liệu tổng quan..."
+                    : "Chưa tải được số liệu. Nhấn Làm mới để thử lại."}
+                </div>
+              ) : (
+                <div className="admin-chart-grid">
+                  <article className="admin-chart-card">
+                    <h3>Cơ cấu vai trò</h3>
+                    <p className="admin-chart-description">
+                      Phân bố các tài khoản đang hoạt động.
+                    </p>
 
-                  <div className="admin-donut-wrap">
-                    <svg
-                      className="admin-donut"
-                      viewBox="0 0 220 220"
-                      role="img"
-                      aria-label={
-                        "Biểu đồ vai trò: " +
-                        roleGroups
-                          .map(group => `${group.label}: ${group.count}`)
-                          .join(", ")
-                      }
-                    >
-                      <circle
-                        cx="110"
-                        cy="110"
-                        r={radius}
-                        fill="none"
-                        stroke="#f1f5f9"
-                        strokeWidth="25"
-                      />
-
-                      {segments
-                        .filter(segment => segment.count > 0)
-                        .map(segment => (
-                          <circle
-                            key={segment.label}
-                            cx="110"
-                            cy="110"
-                            r={radius}
-                            fill="none"
-                            stroke={segment.color}
-                            strokeWidth="25"
-                            strokeDasharray={
-                              `${segment.length} ${circumference}`
-                            }
-                            strokeDashoffset={-segment.offset}
-                            transform="rotate(-90 110 110)"
-                          >
-                            <title>
-                              {segment.label}: {segment.count} tài khoản
-                            </title>
-                          </circle>
-                        ))}
-
-                      <text
-                        x="110"
-                        y="107"
-                        textAnchor="middle"
-                        fill="#17243b"
-                        fontSize="32"
-                        fontWeight="700"
+                    <div className="admin-donut-wrap">
+                      <svg
+                        className="admin-donut"
+                        viewBox="0 0 220 220"
+                        role="img"
+                        aria-label={
+                          "Biểu đồ vai trò: " +
+                          roleGroups
+                            .map(group => `${group.label}: ${group.count}`)
+                            .join(", ")
+                        }
                       >
-                        {activeAccounts.length}
-                      </text>
-
-                      <text
-                        x="110"
-                        y="130"
-                        textAnchor="middle"
-                        fill="#94a3b8"
-                        fontSize="11"
-                      >
-                        Đang hoạt động
-                      </text>
-                    </svg>
-                  </div>
-
-                  <ul className="admin-chart-legend">
-                    {roleGroups.map(group => (
-                      <li key={group.label}>
-                        <span
-                          className="admin-legend-dot"
-                          style={{ backgroundColor: group.color }}
-                          aria-hidden="true"
+                        <circle
+                          cx="110"
+                          cy="110"
+                          r={radius}
+                          fill="none"
+                          stroke="#f1f5f9"
+                          strokeWidth="25"
                         />
-                        <span>{group.label}</span>
-                        <strong>{group.count}</strong>
-                      </li>
-                    ))}
-                  </ul>
-                </article>
 
-                <article className="admin-chart-card">
-                  <h3>Trạng thái tài khoản</h3>
-                  <p className="admin-chart-description">
-                    So sánh tài khoản hoạt động và ngưng hoạt động.
-                  </p>
+                        {segments
+                          .filter(segment => segment.count > 0)
+                          .map(segment => (
+                            <circle
+                              key={segment.label}
+                              cx="110"
+                              cy="110"
+                              r={radius}
+                              fill="none"
+                              stroke={segment.color}
+                              strokeWidth="25"
+                              strokeDasharray={
+                                `${segment.length} ${circumference}`
+                              }
+                              strokeDashoffset={-segment.offset}
+                              transform="rotate(-90 110 110)"
+                            >
+                              <title>
+                                {segment.label}: {segment.count} tài khoản
+                              </title>
+                            </circle>
+                          ))}
 
-                  <div className="admin-status-summary">
-                    <strong>{activePercent}%</strong>
-                    <span>
-                      tài khoản đang hoạt động trong tổng số{" "}
-                      {accounts.length} tài khoản
-                    </span>
-                  </div>
+                        <text
+                          x="110"
+                          y="107"
+                          textAnchor="middle"
+                          fill="#17243b"
+                          fontSize="32"
+                          fontWeight="700"
+                        >
+                          {activeAccounts.length}
+                        </text>
 
-                  <div className="admin-bar-item">
-                    <div className="admin-bar-label">
-                      <span>Đang hoạt động</span>
-                      <strong>{activeAccounts.length}</strong>
+                        <text
+                          x="110"
+                          y="130"
+                          textAnchor="middle"
+                          fill="#94a3b8"
+                          fontSize="11"
+                        >
+                          Đang hoạt động
+                        </text>
+                      </svg>
                     </div>
 
-                    <div className="admin-bar-track">
-                      <div
-                        className="admin-bar-fill"
-                        style={{
-                          width: `${
-                            accounts.length > 0
-                              ? (activeAccounts.length / accounts.length) * 100
-                              : 0
-                          }%`,
-                          backgroundColor: "#22c55e",
-                        }}
-                      />
-                    </div>
-                  </div>
+                    <ul className="admin-chart-legend">
+                      {roleGroups.map(group => (
+                        <li key={group.label}>
+                          <span
+                            className="admin-legend-dot"
+                            style={{ backgroundColor: group.color }}
+                            aria-hidden="true"
+                          />
+                          <span>{group.label}</span>
+                          <strong>{group.count}</strong>
+                        </li>
+                      ))}
+                    </ul>
+                  </article>
 
-                  <div className="admin-bar-item">
-                    <div className="admin-bar-label">
-                      <span>Ngưng hoạt động</span>
-                      <strong>{inactiveCount}</strong>
+                  <article className="admin-chart-card">
+                    <h3>Trạng thái tài khoản</h3>
+                    <p className="admin-chart-description">
+                      So sánh tài khoản hoạt động và ngưng hoạt động.
+                    </p>
+
+                    <div className="admin-status-summary">
+                      <strong>{activePercent}%</strong>
+                      <span>
+                        tài khoản đang hoạt động trong tổng số{" "}
+                        {accounts.length} tài khoản
+                      </span>
                     </div>
 
-                    <div className="admin-bar-track">
-                      <div
-                        className="admin-bar-fill"
-                        style={{
-                          width: `${
-                            accounts.length > 0
-                              ? (inactiveCount / accounts.length) * 100
-                              : 0
-                          }%`,
-                          backgroundColor: "#ef4444",
-                        }}
-                      />
-                    </div>
-                  </div>
+                    <div className="admin-bar-item">
+                      <div className="admin-bar-label">
+                        <span>Đang hoạt động</span>
+                        <strong>{activeAccounts.length}</strong>
+                      </div>
 
-                  <p className="admin-chart-note">
-                    Tài khoản ngưng hoạt động vẫn được lưu trong hệ
-                    thống để giữ thông tin và lịch sử liên quan.
-                  </p>
-                </article>
-              </div>
+                      <div className="admin-bar-track">
+                        <div
+                          className="admin-bar-fill"
+                          style={{
+                            width: `${
+                              accounts.length > 0
+                                ? (activeAccounts.length / accounts.length) * 100
+                                : 0
+                            }%`,
+                            backgroundColor: "#22c55e",
+                          }}
+                        />
+                      </div>
+                    </div>
+
+                    <div className="admin-bar-item">
+                      <div className="admin-bar-label">
+                        <span>Ngưng hoạt động</span>
+                        <strong>{inactiveCount}</strong>
+                      </div>
+
+                      <div className="admin-bar-track">
+                        <div
+                          className="admin-bar-fill"
+                          style={{
+                            width: `${
+                              accounts.length > 0
+                                ? (inactiveCount / accounts.length) * 100
+                                : 0
+                            }%`,
+                            backgroundColor: "#ef4444",
+                          }}
+                        />
+                      </div>
+                    </div>
+
+                    <p className="admin-chart-note">
+                      Tài khoản ngưng hoạt động vẫn được lưu trong hệ
+                      thống để giữ thông tin và lịch sử liên quan.
+                    </p>
+                  </article>
+                </div>
+              )
             )}
+
+            {/* ====== BIỂU ĐỒ NGHIỆP VỤ TỔNG HỢP ====== */}
+            <hr className="admin-divider" />
+            <UnifiedDashboardPage />
           </section>
         );
       }

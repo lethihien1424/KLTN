@@ -83,6 +83,51 @@ body {
     border-color: #3d7cf0;
 }
 
+.login-password-field {
+    position: relative;
+}
+
+.login-password-field input {
+    display: block;
+    width: 100%;
+    height: 38px;
+    padding: 0 42px 0 12px;
+    border: 1px solid #dce5ef;
+    border-radius: 9px;
+    background: #f7f9fc;
+    font-size: 13px;
+    outline: none;
+}
+
+.login-password-field input:focus {
+    border-color: #3d7cf0;
+}
+
+.login-password-toggle {
+    position: absolute;
+    top: 50%;
+    right: 8px;
+    display: grid;
+    place-items: center;
+    width: 28px;
+    height: 28px;
+    padding: 0;
+    transform: translateY(-50%);
+    border: 0;
+    border-radius: 6px;
+    background: transparent;
+    color: #7587a3;
+    cursor: pointer;
+}
+
+.login-password-toggle:hover:not(:disabled) {
+    color: #2864e8;
+}
+
+.login-password-toggle:disabled {
+    cursor: not-allowed;
+    opacity: 0.6;
+}
 .login-options {
     display: flex;
     justify-content: space-between;

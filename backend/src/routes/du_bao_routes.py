@@ -4,6 +4,7 @@ from sqlalchemy.orm import Session
 
 from src.core.database import get_db
 from src.dependencies.permission_dependency import (
+    require_any_permission,
     require_permission,
 )
 
@@ -78,7 +79,10 @@ def forecast(
 def history(
     db: Session = Depends(get_db),
     current_user: User = Depends(
-        require_permission("lich_su_du_bao", "XEM")
+        require_any_permission(
+            ("du_bao_nhu_cau", "XEM"),
+            ("lich_su_du_bao", "XEM"),
+        )
     ),
 ):
     return LichSuDuBaoService.lay_danh_sach(db)
@@ -125,7 +129,10 @@ def detail(
     ma_lich_su_du_bao: str,
     db: Session = Depends(get_db),
     current_user: User = Depends(
-        require_permission("lich_su_du_bao", "XEM")
+        require_any_permission(
+            ("du_bao_nhu_cau", "XEM"),
+            ("lich_su_du_bao", "XEM"),
+        )
     ),
 ):
     return LichSuDuBaoService.lay_chi_tiet(

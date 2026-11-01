@@ -21,6 +21,22 @@ from src.services.data_processing.template_validator import (
 )
 
 
+def _to_sales_money(value):
+    """Accept Vietnamese money text (100.000 or 100.000,50) and numeric cells."""
+    if isinstance(value, str):
+        raw = value.strip().replace(" ", "")
+        if "." in raw and "," in raw:
+            raw = raw.replace(".", "").replace(",", ".")
+        elif "." in raw:
+            parts = raw.lstrip("+-").split(".")
+            if len(parts) > 1 and all(len(part) == 3 for part in parts[1:]):
+                raw = raw.replace(".", "")
+        elif "," in raw:
+            raw = raw.replace(",", ".")
+        return raw
+    return value
+
+
 def lam_sach_don_hang(
     dataframe: pd.DataFrame,
     db: Session,
@@ -43,6 +59,7 @@ def lam_sach_don_hang(
             "ma_ctkm",
             "kenh_ban_hang",
             "ma_ngay_le",
+            "ngay_giao_hang",
         },
     )
 
@@ -141,7 +158,15 @@ def lam_sach_don_hang(
                     "ngay_ban",
                     number,
                 ),
-                ngay_giao_hang=None,
+                ngay_giao_hang=(
+                    None
+                    if is_empty(source.get("ngay_giao_hang"))
+                    else to_date(
+                        source.get("ngay_giao_hang"),
+                        "ngay_giao_hang",
+                        number,
+                    )
+                ),
                 so_luong=to_integer(
                     source["so_luong"],
                     "so_luong",
@@ -149,14 +174,14 @@ def lam_sach_don_hang(
                 ),
                 trang_thai_don_hang=order_status,
                 gia_goc=to_decimal(
-                    source.get("gia_goc"),
+                    _to_sales_money(source.get("gia_goc")),
                     "gia_goc",
                     number,
                     required=False,
                 ),
                 muc_giam_gia=discount,
                 gia_ban_sau_giam=to_decimal(
-                    source.get("gia_ban_sau_giam"),
+                    _to_sales_money(source.get("gia_ban_sau_giam")),
                     "gia_ban_sau_giam",
                     number,
                     required=False,
@@ -182,7 +207,7 @@ def lam_sach_don_hang(
             raise ValueError(
                 f"Dòng {number}: "
                 + "; ".join(
-                    item["msg"]
+                    f"{'.'.join(str(part) for part in item['loc'])}: {item['msg']}"
                     for item in exc.errors()
                 )
             ) from exc

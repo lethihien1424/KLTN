@@ -11,6 +11,7 @@ import DashboardBase, {
   type DashboardWorkspace,
 } from "../../components/dashboard/DashboardBase";
 import type { User } from "../../services/authService";
+import UnifiedDashboardPage from "./UnifiedDashboardPage";
 
 type Props = {
   user: User;
@@ -51,6 +52,12 @@ const config: DashboardConfig = {
   tableTitle: "Tổng quan bán hàng",
   columns: [],
   rows: [],
+  renderCustomContent: activeMenu => {
+    if (activeMenu === "tong-quan") {
+      return <UnifiedDashboardPage />;
+    }
+    return null;
+  },
 };
 
 export default function DashboardPageGSBH({ user, onLogout, workspace }: Props) {
