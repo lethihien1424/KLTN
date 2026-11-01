@@ -1,5 +1,6 @@
 ////D:\KLTN\KLTN\frontend\src\pages\tai-khoan\QuanLyTaiKhoanPage.tsx
 ////D:\KLTN\KLTN\frontend\src\pages\tai-khoan\QuanLyTaiKhoanPage.tsx
+import SharedDataTable from "../../components/common/SharedDataTable";
 import {
   useEffect,
   useMemo,
@@ -54,7 +55,7 @@ type FormState = {
   dia_chi: string;
 };
 
-const PAGE_SIZE = 7;
+
 
 function emptyForm(): FormState {
   return {
@@ -103,6 +104,7 @@ export default function QuanLyTaiKhoanPage() {
   const [roleFilter, setRoleFilter] = useState("");
   const [statusFilter, setStatusFilter] = useState("");
   const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(7);
   const [modal, setModal] = useState<ModalType | null>(null);
   const [selected, setSelected] = useState<UserAccount | null>(null);
   const [form, setForm] = useState<FormState>(emptyForm);
@@ -156,12 +158,8 @@ export default function QuanLyTaiKhoanPage() {
     });
   }, [users, search, roleFilter, statusFilter]);
 
-  const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
+  const totalPages = Math.max(1, Math.ceil(filtered.length / pageSize));
   const currentPage = Math.min(page, totalPages);
-  const visible = filtered.slice(
-    (currentPage - 1) * PAGE_SIZE,
-    currentPage * PAGE_SIZE,
-  );
 
   useEffect(() => {
     setPage(1);
@@ -595,169 +593,25 @@ export default function QuanLyTaiKhoanPage() {
             </button>
           </div>
 
-          {/* Bảng dữ liệu */}
-          <div className="tk-table-container">
-            <table className="tk-table">
-              <thead>
-                <tr>
-                  <th style={{ width: "26%" }}>Tài khoản</th>
-                  <th style={{ width: "20%" }}>Vai trò</th>
-                  <th style={{ width: "28%" }}>Thông tin liên hệ</th>
-                  <th style={{ width: "14%" }}>Trạng thái</th>
-                  <th style={{ width: "12%", textAlign: "center" }}>Thao tác</th>
-                </tr>
-              </thead>
-              <tbody>
-                {loading ? (
-                  <tr>
-                    <td colSpan={5} className="tk-empty">
-                      Đang tải tài khoản...
-                    </td>
-                  </tr>
-                ) : !visible.length ? (
-                  <tr>
-                    <td colSpan={5} className="tk-empty">
-                      Không có tài khoản phù hợp.
-                    </td>
-                  </tr>
-                ) : (
-                  visible.map(user => (
-                    <tr key={user.ma_nguoi_dung}>
-                      {/* Cột Tài khoản: avatar tròn + tên + mã */}
-                      <td>
-                        <div className="tk-account-info">
-                          <span
-                            className="tk-avatar-circle"
-                            style={{
-                              background:
-                                user.vai_tro === "ADMIN"
-                                  ? "#1e40af"
-                                  : user.vai_tro === "QUAN_LY_BAN_HANG"
-                                  ? "#7c3aed"
-                                  : user.vai_tro === "QUAN_LY_MUA_HANG"
-                                  ? "#7c3aed"
-                                  : "#2563eb",
-                            }}
-                          >
-                            {user.ho_ten.charAt(0).toUpperCase()}
-                          </span>
-                          <div className="tk-account-text">
-                            <strong className="tk-user-name">{user.ho_ten}</strong>
-                            <span className="tk-user-code">{user.ma_nguoi_dung}</span>
-                          </div>
-                        </div>
-                      </td>
-
-                      {/* Cột Vai trò */}
-                      <td className="tk-role-cell">
-                        {roleLabel(user.vai_tro)}
-                      </td>
-
-                      {/* Cột Thông tin liên hệ */}
-                      <td>
-                        <div className="tk-contact-info">
-                          <span className="tk-contact-email">
-                            {user.email || "—"}
-                          </span>
-                          <span className="tk-contact-phone">
-                            {user.so_dien_thoai || "—"}
-                          </span>
-                        </div>
-                      </td>
-
-                      {/* Cột Trạng thái */}
-                      <td>
-                        <span
-                          className={`tk-status-badge ${
-                            user.trang_thai === "HOAT_DONG" ? "active" : "inactive"
-                          }`}
-                        >
-                          <span className="tk-dot" />
-                          {user.trang_thai === "HOAT_DONG"
-                            ? "Hoạt động"
-                            : "Ngừng hoạt động"}
-                        </span>
-                      </td>
-
-                      {/* Cột Thao tác */}
-                      <td style={{ textAlign: "center" }}>
-                        <div className="tk-action-group">
-                          <button
-                            type="button"
-                            className="tk-action-btn"
-                            title="Xem chi tiết"
-                            aria-label={`Xem ${user.ma_nguoi_dung}`}
-                            disabled={busy}
-                            onClick={() => void openUser("view", user)}
-                          >
-                            <EyeOutlined />
-                          </button>
-                          <button
-                            type="button"
-                            className="tk-action-btn"
-                            title="Cập nhật"
-                            aria-label={`Sửa ${user.ma_nguoi_dung}`}
-                            disabled={busy}
-                            onClick={() => void openUser("edit", user)}
-                          >
-                            <EditOutlined />
-                          </button>
-                          <button
-                            type="button"
-                            className="tk-action-btn danger"
-                            title="Xóa"
-                            aria-label={`Xóa ${user.ma_nguoi_dung}`}
-                            disabled={
-                              busy ||
-                              user.ma_nguoi_dung.toLowerCase() === "admin" ||
-                              user.ma_nguoi_dung === currentId
-                            }
-                            onClick={() => void openUser("delete", user)}
-                          >
-                            <DeleteOutlined />
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  ))
-                )}
-              </tbody>
-            </table>
-          </div>
-
-          {/* Phân trang */}
-          <footer className="tk-pagination">
-            <span className="tk-pagination-text">
-              {filtered.length
-                ? `Hiển thị ${(currentPage - 1) * PAGE_SIZE + 1}–${Math.min(
-                    currentPage * PAGE_SIZE,
-                    filtered.length
-                  )} / ${filtered.length} tài khoản`
-                : "0 tài khoản"}
-            </span>
-            <div className="tk-page-nav">
-              <button
-                type="button"
-                className="tk-page-btn"
-                disabled={currentPage <= 1}
-                onClick={() => setPage(currentPage - 1)}
-              >
-                Trước
-              </button>
-              <span className="tk-page-info">
-                Trang {currentPage}/{totalPages}
-              </span>
-              <button
-                type="button"
-                className="tk-page-btn"
-                disabled={currentPage >= totalPages}
-                onClick={() => setPage(currentPage + 1)}
-              >
-                Sau
-              </button>
-            </div>
-          </footer>
-        </div>
+          <SharedDataTable
+            rows={filtered}
+            columns={[
+              { key: "account", title: "Tài khoản", width: "26%", render: user => <div className="tk-account-info"><span className="tk-avatar-circle" style={{ background: user.vai_tro === "ADMIN" ? "#1e40af" : user.vai_tro === "QUAN_LY_BAN_HANG" || user.vai_tro === "QUAN_LY_MUA_HANG" ? "#7c3aed" : "#2563eb" }}>{user.ho_ten.charAt(0).toUpperCase()}</span><div className="tk-account-text"><strong className="tk-user-name">{user.ho_ten}</strong><span className="tk-user-code">{user.ma_nguoi_dung}</span></div></div> },
+              { key: "role", title: "Vai trò", width: "20%", className: "tk-role-cell", render: user => roleLabel(user.vai_tro) },
+              { key: "contact", title: "Thông tin liên hệ", width: "28%", render: user => <div className="tk-contact-info"><span className="tk-contact-email">{user.email || "—"}</span><span className="tk-contact-phone">{user.so_dien_thoai || "—"}</span></div> },
+              { key: "status", title: "Trạng thái", width: "14%", render: user => <span className={`tk-status-badge ${user.trang_thai === "HOAT_DONG" ? "active" : "inactive"}`}><span className="tk-dot" />{user.trang_thai === "HOAT_DONG" ? "Hoạt động" : "Ngừng hoạt động"}</span> },
+              { key: "actions", title: "Thao tác", width: "12%", align: "center", render: user => <div className="tk-action-group"><button type="button" className="tk-action-btn" title="Xem chi tiết" aria-label={`Xem ${user.ma_nguoi_dung}`} disabled={busy} onClick={() => void openUser("view", user)}><EyeOutlined /></button><button type="button" className="tk-action-btn" title="Cập nhật" aria-label={`Sửa ${user.ma_nguoi_dung}`} disabled={busy} onClick={() => void openUser("edit", user)}><EditOutlined /></button><button type="button" className="tk-action-btn danger" title="Xóa" aria-label={`Xóa ${user.ma_nguoi_dung}`} disabled={busy || user.ma_nguoi_dung.toLowerCase() === "admin" || user.ma_nguoi_dung === currentId} onClick={() => void openUser("delete", user)}><DeleteOutlined /></button></div> },
+            ]}
+            rowKey={user => user.ma_nguoi_dung}
+            total={filtered.length}
+            page={currentPage}
+            pageSize={pageSize}
+            onPageChange={setPage}
+            onPageSizeChange={size => { setPageSize(size); setPage(1); }}
+            loading={loading || busy}
+            loadingMessage={busy ? "Đang xử lý..." : "Đang tải tài khoản..."}
+            emptyMessage="Không có tài khoản phù hợp."
+          />        </div>
       </div>
 
       {modal && (

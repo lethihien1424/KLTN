@@ -61,6 +61,7 @@ import {
 
 
 
+import SharedDataTable from "../../components/common/SharedDataTable";
 import ThemMoiBanHangButton, {
 
   SalesOrderModal,
@@ -69,7 +70,7 @@ import ThemMoiBanHangButton, {
 
 
 
-const PAGE_SIZE = 20;
+
 
 
 
@@ -162,6 +163,7 @@ export default function DuLieuBanHangPage() {
     useState<SalesOrderStatus | "">("");
 
   const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(7);
 
   const [version, setVersion] = useState(0);
 
@@ -175,7 +177,7 @@ export default function DuLieuBanHangPage() {
 
     page: 1,
 
-    page_size: PAGE_SIZE,
+    page_size: 7,
 
   });
 
@@ -241,7 +243,7 @@ export default function DuLieuBanHangPage() {
 
       page,
 
-      PAGE_SIZE,
+      pageSize,
 
       controller.signal,
 
@@ -271,7 +273,7 @@ export default function DuLieuBanHangPage() {
 
           1,
 
-          Math.ceil(result.total / PAGE_SIZE),
+          Math.ceil(result.total / pageSize),
 
         );
 
@@ -326,6 +328,8 @@ export default function DuLieuBanHangPage() {
     status,
 
     page,
+
+    pageSize,
 
     version,
 
@@ -429,9 +433,9 @@ export default function DuLieuBanHangPage() {
 
 
 
-    if (!/\.(xlsx|csv)$/i.test(file.name)) {
+    if (!/\.xlsx$/i.test(file.name)) {
 
-      setError("Chỉ nhận file .xlsx hoặc .csv.");
+      setError("Chỉ nhận file .xlsx theo template bán hàng.");
 
       return;
 
@@ -513,16 +517,6 @@ export default function DuLieuBanHangPage() {
 
 
 
-  const lastPage = Math.max(
-
-    1,
-
-    Math.ceil(data.total / PAGE_SIZE),
-
-  );
-
-
-
   return (
 
     <section className="bh-page bh-card">
@@ -601,7 +595,7 @@ export default function DuLieuBanHangPage() {
 
                 type="file"
 
-                accept=".xlsx,.csv"
+                accept=".xlsx"
 
                 hidden
 
@@ -795,356 +789,42 @@ export default function DuLieuBanHangPage() {
 
 
 
-      <div className="bh-table-wrap" aria-busy={loading}>
-
-        <table className="bh-table">
-
-          <thead>
-
-            <tr>
-
-              <th>Mã đơn hàng</th>
-
-              <th>Sản phẩm</th>
-
-              <th>Ngày bán</th>
-
-              <th>Ngày giao</th>
-
-              <th>Số lượng</th>
-
-              <th>Đơn giá</th>
-
-              <th>CTKM</th>
-
-              <th>Giảm (%)</th>
-
-              <th>Giá sau giảm</th>
-
-              <th>Thành tiền</th>
-
-              <th>Trạng thái</th>
-
-              <th className="bh-action-cell">Thao tác</th>
-
-            </tr>
-
-          </thead>
-
-
-
-          <tbody>
-
-            {loading && (
-
-              <tr>
-
-                <td colSpan={12} className="bh-empty">
-
-                  Đang tải dữ liệu...
-
-                </td>
-
-              </tr>
-
-            )}
-
-
-
-            {!loading && error && (
-
-              <tr>
-
-                <td colSpan={12} className="bh-empty">
-
-                  Không tải được danh sách. Vui lòng thử lại.
-
-                </td>
-
-              </tr>
-
-            )}
-
-
-
-            {!loading && !error && data.items.length === 0 && (
-
-              <tr>
-
-                <td colSpan={12} className="bh-empty">
-
-                  Không có dữ liệu phù hợp.
-
-                </td>
-
-              </tr>
-
-            )}
-
-
-
-            {!loading && !error && data.items.map(row => (
-
-              <tr key={row.ma}>
-
-                <td>{row.ma_don_hang}</td>
-
-
-
-                <td>
-
-                  <strong>{row.ten_san_pham}</strong>
-
-                  <div className="bh-muted">{row.ma_san_pham}</div>
-
-                </td>
-
-
-
-                <td>{formatDate(row.ngay_ban)}</td>
-
-                <td>{formatDate(row.ngay_giao_hang)}</td>
-
-
-
-                <td className="bh-number">
-
-                  {formatSalesMoney(row.so_luong)}
-
-                </td>
-
-                <td className="bh-number">
-
-                  {formatSalesMoney(row.gia_goc)}
-
-                </td>
-
-
-
-                <td>
-
-                  {row.co_khuyen_mai
-
-                    ? row.chuong_trinh_km || "Có khuyến mãi"
-
-                    : "Không"}
-
-                </td>
-
-
-
-                <td className="bh-number">
-
-                  {Number(
-
-                    (Number(row.muc_giam_gia) * 100).toFixed(2),
-
-                  )}
-
-                  %
-
-                </td>
-
-
-
-                <td className="bh-number">
-
-                  {formatSalesMoney(row.gia_ban_sau_giam)}
-
-                </td>
-
-
-
-                <td className="bh-number bh-amount">
-
-                  {formatSalesMoney(row.thanh_tien)}
-
-                </td>
-
-
-
-                <td>
-
-                  <span
-
-                    className={
-
-                      row.trang_thai_don_hang === "CHO_GIAO_HANG"
-
-                        ? "bh-status pending"
-
-                        : "bh-status delivered"
-
-                    }
-
-                  >
-
-                    {row.trang_thai_don_hang === "CHO_GIAO_HANG"
-
-                      ? "Chờ giao hàng"
-
-                      : "Đã giao hàng"}
-
-                  </span>
-
-                </td>
-
-
-
-                <td className="bh-action-cell">
-
-                  <div className="bh-actions">
-
-                    <button
-
-                      type="button"
-
-                      className="bh-icon-btn"
-
-                      title="Xem đơn"
-
-                      aria-label={`Xem đơn ${row.ma_don_hang}`}
-
-                      onClick={() => setModal({
-
-                        row,
-
-                        readOnly: true,
-
-                      })}
-
-                    >
-
-                      <EyeOutlined />
-
-                    </button>
-
-
-
-                    {canEdit && (
-
-                      editBlockReason(row) ? (
-
-                        <button
-
-                          type="button"
-
-                          className="bh-icon-btn locked"
-
-                          title={editBlockReason(row)}
-
-                          aria-label={editBlockReason(row)}
-
-                          disabled
-
-                        >
-
-                          <LockOutlined />
-
-                        </button>
-
-                      ) : (
-
-                        <button
-
-                          type="button"
-
-                          className="bh-icon-btn edit"
-
-                          title="Chỉnh sửa đơn"
-
-                          aria-label={
-
-                            `Chỉnh sửa đơn ${row.ma_don_hang}`
-
-                          }
-
-                          onClick={() => setModal({
-
-                            row,
-
-                            readOnly: false,
-
-                          })}
-
-                        >
-
-                          <EditOutlined />
-
-                        </button>
-
-                      )
-
-                    )}
-
-                  </div>
-
-                </td>
-
-              </tr>
-
-            ))}
-
-          </tbody>
-
-        </table>
-
-      </div>
-
-
-
-      <div className="bh-pagination">
-
-        <span>Tổng {data.total} dòng</span>
-
-
-
-        <div>
-
-          <button
-
-            type="button"
-
-            className="bh-btn"
-
-            disabled={page <= 1 || loading || busy}
-
-            onClick={() => setPage(value => value - 1)}
-
-          >
-
-            Trước
-
-          </button>
-
-
-
-          <span>Trang {page}/{lastPage}</span>
-
-
-
-          <button
-
-            type="button"
-
-            className="bh-btn"
-
-            disabled={page >= lastPage || loading || busy}
-
-            onClick={() => setPage(value => value + 1)}
-
-          >
-
-            Sau
-
-          </button>
-
-        </div>
-
-      </div>
-
-
-
+      <SharedDataTable
+        rows={error ? [] : data.items}
+        columns={[
+          { key: "order", title: "Mã đơn hàng", render: row => row.ma_don_hang },
+          { key: "product", title: "Sản phẩm", render: row => <><strong>{row.ten_san_pham}</strong><div className="bh-muted">{row.ma_san_pham}</div></> },
+          { key: "sale-date", title: "Ngày bán", render: row => formatDate(row.ngay_ban) },
+          { key: "delivery-date", title: "Ngày giao", render: row => formatDate(row.ngay_giao_hang) },
+          { key: "quantity", title: "Số lượng", align: "right", className: "bh-number", render: row => formatSalesMoney(row.so_luong) },
+          { key: "price", title: "Đơn giá", align: "right", className: "bh-number", render: row => formatSalesMoney(row.gia_goc) },
+          { key: "promotion", title: "CTKM", render: row => row.co_khuyen_mai ? row.chuong_trinh_km || "Có khuyến mãi" : "Không" },
+          { key: "discount", title: "Giảm (%)", align: "right", className: "bh-number", render: row => `${Number((Number(row.muc_giam_gia) * 100).toFixed(2))}%` },
+          { key: "discounted-price", title: "Giá sau giảm", align: "right", className: "bh-number", render: row => formatSalesMoney(row.gia_ban_sau_giam) },
+          { key: "amount", title: "Thành tiền", align: "right", className: "bh-number bh-amount", render: row => formatSalesMoney(row.thanh_tien) },
+          { key: "status", title: "Trạng thái", render: row => <span className={row.trang_thai_don_hang === "CHO_GIAO_HANG" ? "bh-status pending" : "bh-status delivered"}>{row.trang_thai_don_hang === "CHO_GIAO_HANG" ? "Chờ giao hàng" : "Đã giao hàng"}</span> },
+          { key: "actions", title: "Thao tác", align: "center", className: "bh-action-cell", render: row => (
+            <div className="bh-actions">
+              <button type="button" className="bh-icon-btn" title="Xem đơn" aria-label={`Xem đơn ${row.ma_don_hang}`} onClick={() => setModal({ row, readOnly: true })}><EyeOutlined /></button>
+              {canEdit && (editBlockReason(row) ? (
+                <button type="button" className="bh-icon-btn locked" title={editBlockReason(row)} aria-label={editBlockReason(row)} disabled><LockOutlined /></button>
+              ) : (
+                <button type="button" className="bh-icon-btn edit" title="Chỉnh sửa đơn" aria-label={`Chỉnh sửa đơn ${row.ma_don_hang}`} onClick={() => setModal({ row, readOnly: false })}><EditOutlined /></button>
+              ))}
+            </div>
+          ) },
+        ]}
+        rowKey={row => row.ma}
+        total={error ? 0 : data.total}
+        page={page}
+        pageSize={pageSize}
+        onPageChange={setPage}
+        onPageSizeChange={size => { setPageSize(size); setPage(1); }}
+        serverSide
+        loading={loading}
+        loadingMessage="Đang tải dữ liệu..."
+        emptyMessage="Không có dữ liệu phù hợp."
+      />
       {modal && (
 
         <SalesOrderModal

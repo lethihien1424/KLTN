@@ -98,6 +98,8 @@ export type SalesRow = {
 
   chuong_trinh_km: string | null;
 
+  ma_ctkm: string | null;
+
   kenh_ban_hang: string | null;
 
   ma_ngay_le: string | null;
@@ -157,47 +159,13 @@ const API_URL = (
 
 
 export function formatSalesMoney(
-
   value: MoneyValue | null | undefined,
-
 ): string {
-
-  if (value === null || value === undefined || value === "") {
-
-    return "—";
-
-  }
-
-
-
-  const match = /^(-?)(\d+)(?:\.(\d+))?$/.exec(String(value));
-
-
-
-  if (!match) return "—";
-
-
-
-  const integer = match[2].replace(
-
-    /\B(?=(\d{3})+(?!\d))/g,
-
-    ",",
-
-  );
-
-
-
-  const decimal = (match[3] || "").replace(/0+$/, "");
-
-
-
-  return `${match[1]}${integer}${decimal ? `.${decimal}` : ""}`;
-
+  if (value === null || value === undefined || value === '') return '—';
+  const number = Number(value);
+  if (!Number.isFinite(number)) return '—';
+  return new Intl.NumberFormat('vi-VN', { maximumFractionDigits: 2 }).format(number);
 }
-
-
-
 export function calculateSalesAmount(
 
   price: string,
@@ -564,18 +532,103 @@ export function getSalesData(
 
 export function importSalesFile(file: File): Promise<ImportResult> {
 
+  return importSalesFileWithErrorReport(file);
+
+}
+
+async function importSalesFileWithErrorReport(file: File): Promise<ImportResult> {
+  const token = getToken();
+  if (!token) throw new Error("Vui lòng đăng nhập lại.");
   const form = new FormData();
-
   form.append("file", file);
+  let response: Response;
+  try {
+    response = await fetch(`${API_URL}/api/imports/don-hang`, {
+      method: "POST",
+      headers: { Authorization: `Bearer ${token}` },
+      body: form,
+      cache: "no-store",
+    });
+  } catch {
+    throw new Error("Không kết nối được máy chủ.");
+  }
+  const body = await response.json().catch(() => null) as any;
+  if (!response.ok) {
+    const detail = body?.detail;
+    if (response.status === 401 || response.status === 403) {
+      throw new Error(readError(body, response.status));
+    }
+    const errors = Array.isArray(detail?.row_errors) ? detail.row_errors : [{
+      row: 2,
+      column: null,
+      message: typeof detail === "string" ? detail : "Dữ liệu không hợp lệ.",
+    }];
+    try {
+      await downloadSalesErrorReport(file, errors);
+    } catch {
+      throw new Error("Upload không thành công và không thể tạo file lỗi. Vui lòng dùng file .xlsx theo template.");
+    }
+    throw new Error(`${typeof detail?.message === "string" ? detail.message : "Upload không thành công."} Đã tải file lỗi có ghi chú.`);
+  }
+  if (!body) throw new Error("Máy chủ trả về dữ liệu không hợp lệ.");
+  return body as ImportResult;
+}
 
-  return request("/api/imports/don-hang", {
+async function downloadSalesErrorReport(
+  file: File,
+  errors: Array<{ row: number; column?: string | null; message: string }>,
+): Promise<void> {
+  const { Workbook } = await import("exceljs");
+  const workbook = new Workbook();
+  await workbook.xlsx.load(await file.arrayBuffer());
+  const sheet = workbook.worksheets[0];
+  if (!sheet) throw new Error("File không có sheet dữ liệu.");
+  const errorColumn = sheet.columnCount + 1;
+  const headerCell = sheet.getRow(1).getCell(errorColumn);
+  headerCell.value = "loi";
+  headerCell.font = { bold: true, color: { argb: "FFFFFFFF" } };
+  headerCell.fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FFB91C1C" } };
+  headerCell.alignment = { vertical: "middle", wrapText: true };
+  sheet.getColumn(errorColumn).width = 60;
 
-    method: "POST",
-
-    body: form,
-
-  });
-
+  const byRow = new Map<number, string[]>();
+  for (const error of errors) {
+    const rowNumber = Math.max(2, Number(error.row) || 2);
+    const messages = byRow.get(rowNumber) ?? [];
+    messages.push(error.message || "Dữ liệu không hợp lệ.");
+    byRow.set(rowNumber, messages);
+    if (!error.column) continue;
+    let columnNumber = 0;
+    sheet.getRow(1).eachCell((cell, index) => {
+      if (String(cell.value ?? "").trim() === error.column) columnNumber = index;
+    });
+    if (columnNumber) {
+      const cell = sheet.getRow(rowNumber).getCell(columnNumber);
+      cell.fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FFFECACA" } };
+      cell.font = { ...cell.font, color: { argb: "FFB91C1C" }, bold: true };
+      cell.note = error.message;
+    }
+  }
+  for (const [rowNumber, messages] of byRow) {
+    const cell = sheet.getRow(rowNumber).getCell(errorColumn);
+    cell.value = [...new Set(messages)].join("; ");
+    cell.font = { color: { argb: "FFB91C1C" }, bold: true };
+    cell.fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FFFEE2E2" } };
+    cell.alignment = { vertical: "top", wrapText: true };
+  }
+  const buffer = await workbook.xlsx.writeBuffer();
+  const blob = new Blob([buffer as BlobPart], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = `${file.name.replace(/\.xlsx$/i, "")}_loi.xlsx`;
+  try {
+    document.body.appendChild(link);
+    link.click();
+  } finally {
+    link.remove();
+    window.setTimeout(() => URL.revokeObjectURL(url), 1000);
+  }
 }
 
 
@@ -601,6 +654,8 @@ const HEADERS = [
 
   "chuong_trinh_km",
 
+  "ma_ctkm",
+
   "kenh_ban_hang",
 
   "ma_ngay_le",
@@ -611,22 +666,20 @@ const HEADERS = [
 
 
 
-function importDate(value: string | null): string {
-
+function excelDate(value: string | null): Date | "" {
   if (!value) return "";
-
-
-
   const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(value);
-
-
-
   if (!match) throw new Error(`Ngày không hợp lệ: ${value}.`);
+  return new Date(Date.UTC(Number(match[1]), Number(match[2]) - 1, Number(match[3])));
+}
 
-
-
-  return `${match[3]}/${match[2]}/${match[1]}`;
-
+function exportMoney(value: MoneyValue | null): string {
+  if (value === null || value === "") return "";
+  const match = /^(-?)(\d+)(?:\.(\d+))?$/.exec(String(value));
+  if (!match) throw new Error(`Số tiền không hợp lệ: ${value}.`);
+  const integer = match[2].replace(/\B(?=(\d{3})+(?!\d))/g, ".");
+  const fraction = (match[3] ?? "").replace(/0+$/, "");
+  return `${match[1]}${integer}${fraction ? `,${fraction}` : ""}`;
 }
 
 
@@ -661,27 +714,29 @@ async function downloadExcel(
 
       row.ma_san_pham,
 
-      importDate(row.ngay_ban),
+      excelDate(row.ngay_ban),
 
       row.so_luong,
 
       row.trang_thai_don_hang,
 
-      row.gia_goc ?? "",
+      exportMoney(row.gia_goc),
 
       row.muc_giam_gia,
 
-      row.gia_ban_sau_giam ?? "",
+      exportMoney(row.gia_ban_sau_giam),
 
       row.co_khuyen_mai ? "TRUE" : "FALSE",
 
       row.chuong_trinh_km ?? "",
 
+      row.ma_ctkm ?? "",
+
       row.kenh_ban_hang ?? "",
 
       row.ma_ngay_le ?? "",
 
-      importDate(row.ngay_giao_hang),
+      excelDate(row.ngay_giao_hang),
 
     ]);
 
@@ -695,13 +750,16 @@ async function downloadExcel(
 
   });
 
+  sheet.getColumn(3).numFmt = "dd/mm/yyyy";
+  sheet.getColumn(14).numFmt = "dd/mm/yyyy";
+
 
 
   sheet.getColumn(10).width = 38;
 
   sheet.views = [{ state: "frozen", ySplit: 1 }];
 
-  sheet.autoFilter = "A1:M1";
+  sheet.autoFilter = `A1:${sheet.getColumn(HEADERS.length).letter}1`;
 
 
   sheet.getRow(1).height = 34;

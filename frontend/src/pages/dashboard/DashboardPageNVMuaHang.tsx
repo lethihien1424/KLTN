@@ -95,6 +95,7 @@ import DashboardBase, {
   type DashboardWorkspace,
 } from "../../components/dashboard/DashboardBase";
 import type { User } from "../../services/authService";
+import UnifiedDashboardPage from "./UnifiedDashboardPage";
 import {
   PieChartOutlined,
   FileTextOutlined,
@@ -171,6 +172,18 @@ const config: DashboardConfig = {
       status: "Chờ xác nhận",
     },
   ],
+};
+
+const renderCustomContent = (activeMenu: string) => {
+  if (activeMenu === "tong-quan") {
+    return <UnifiedDashboardPage />;
+  }
+  return null;
+};
+
+const configWithDashboard: DashboardConfig = {
+  ...config,
+  renderCustomContent,
 };
 
 export default function DashboardPageNVMuaHang({

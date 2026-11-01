@@ -1,6 +1,7 @@
 /// frontend/src/pages/san-pham/SanPhamPage.tsx
 /// frontend/src/pages/san-pham/SanPhamPage.tsx
 /// frontend/src/pages/san-pham/SanPhamPage.tsx
+import SharedDataTable from "../../components/common/SharedDataTable";
 import {
   useEffect,
   useMemo,
@@ -49,7 +50,7 @@ const GROUP_NAMES: Record<string, string> = {
   CA_PHE_BOT: "Cà phê bột",
 };
 
-const PAGE_SIZE = 7;
+
 
 type ProductForm = {
   name: string;
@@ -344,6 +345,7 @@ export default function SanPhamPage() {
   const [group, setGroup] = useState("");
   const [status, setStatus] = useState<ProductStatus | "">("");
   const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(7);
   const [version, setVersion] = useState(0);
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
@@ -376,12 +378,8 @@ export default function SanPhamPage() {
   }), [products, search, group, status]);
 
   const total = filteredProducts.length;
-  const pageCount = Math.max(1, Math.ceil(total / PAGE_SIZE));
+  const pageCount = Math.max(1, Math.ceil(total / pageSize));
   const currentPage = Math.min(page, pageCount);
-  const items = filteredProducts.slice(
-    (currentPage - 1) * PAGE_SIZE,
-    currentPage * PAGE_SIZE,
-  );
 
   useEffect(() => {
     if (!canView || permissionLoading) {
@@ -911,158 +909,33 @@ export default function SanPhamPage() {
             </button>
           </div>
 
-          {/* Bảng Dữ Liệu */}
-          <div className="sp-table-container">
-            <table className="sp-table" aria-label="Danh sách sản phẩm">
-              <thead>
-                <tr>
-                  <th style={{ width: "25%" }}>Sản phẩm</th>
-                  <th style={{ width: "23%" }}>Nhóm sản phẩm</th>
-                  <th style={{ width: "11%", textAlign: "center" }}>Khối lượng</th>
-                  <th style={{ width: "12%", textAlign: "center" }}>Đơn giá</th>
-                  <th style={{ width: "10%", textAlign: "center" }}>Đơn vị tiền tệ</th>
-                  <th style={{ width: "11%" }}>Trạng thái</th>
-                  <th style={{ width: "8%", textAlign: "center" }}>Thao tác</th>
-                </tr>
-              </thead>
-
-              <tbody>
-                {!loading && items.map(product => (
-                  <tr key={product.ma_san_pham}>
-                    <td>
-                      <div className="sp-product-info">
-                        <strong className="sp-product-code">{product.ma_san_pham}</strong>
-                        <span className="sp-product-name">{product.ten_san_pham}</span>
-                      </div>
-                    </td>
-
-                    <td>
-                      <span className="sp-group-badge">
-                        {groupName(product.nhom_san_pham)}
-                      </span>
-                    </td>
-
-                    <td style={{ textAlign: "center" }}>
-                      <span className="sp-weight-text">{money(grams(product))} g</span>
-                    </td>
-
-                    <td style={{ textAlign: "center" }}>
-                      <strong className="sp-price-text">{money(product.don_gia)}</strong>
-                    </td>
-
-                    <td style={{ textAlign: "center" }}>
-                      <span className="sp-currency-text">{product.don_vi_tien_te || "VND"}</span>
-                    </td>
-
-                    <td>
-                      <span
-                        className={`sp-status-badge ${
-                          product.trang_thai === "DANG_KINH_DOANH" ? "active" : "inactive"
-                        }`}
-                      >
-                        <span className="sp-dot" />
-                        {statusName(product.trang_thai)}
-                      </span>
-                    </td>
-
-                    <td style={{ textAlign: "center" }}>
-                      <div className="sp-action-group">
-                        <button
-                          type="button"
-                          className="sp-action-btn"
-                          title="Xem sản phẩm"
-                          aria-label={`Xem ${product.ma_san_pham}`}
-                          disabled={busy}
-                          onClick={() => void openProduct(product, "view")}
-                        >
-                          <EyeOutlined />
-                        </button>
-
-                        {can("san_pham", "SUA") && (
-                          <button
-                            type="button"
-                            className="sp-action-btn"
-                            title="Sửa sản phẩm"
-                            aria-label={`Sửa ${product.ma_san_pham}`}
-                            disabled={busy}
-                            onClick={() =>
-                              void openProduct(product, "edit")
-                            }
-                          >
-                            <EditOutlined />
-                          </button>
-                        )}
-
-                        {canDelete && (
-                          <button
-                            type="button"
-                            className="sp-action-btn danger"
-                            title="Xóa sản phẩm"
-                            aria-label={`Xóa ${product.ma_san_pham}`}
-                            disabled={busy}
-                            onClick={() => {
-                              setDeleteError("");
-                              setDeleteTarget(product);
-                            }}
-                          >
-                            <DeleteOutlined />
-                          </button>
-                        )}
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-
-                {(loading || items.length === 0) && (
-                  <tr>
-                    <td colSpan={7} className="sp-empty">
-                      {loading
-                        ? "Đang tải danh sách sản phẩm..."
-                        : "Không có sản phẩm phù hợp."}
-                    </td>
-                  </tr>
-                )}
-              </tbody>
-            </table>
-          </div>
-
-          {/* Phân trang */}
-          <footer className="sp-pagination">
-            <span className="sp-pagination-text">
-              {loading
-                ? "Đang tải dữ liệu..."
-                : total
-                  ? `Hiển thị ${
-                      (currentPage - 1) * PAGE_SIZE + 1
-                    }–${
-                      Math.min(currentPage * PAGE_SIZE, total)
-                    } / ${total} sản phẩm`
-                  : "0 sản phẩm"}
-            </span>
-
-            <div className="sp-page-nav">
-              <button
-                type="button"
-                className="sp-page-btn"
-                disabled={currentPage <= 1 || loading || busy}
-                onClick={() => setPage(currentPage - 1)}
-              >
-                Trước
-              </button>
-              <span className="sp-page-info">
-                Trang {currentPage} / {pageCount}
-              </span>
-              <button
-                type="button"
-                className="sp-page-btn"
-                disabled={currentPage >= pageCount || loading || busy}
-                onClick={() => setPage(currentPage + 1)}
-              >
-                Sau
-              </button>
-            </div>
-          </footer>
-        </div>
+          <SharedDataTable
+            rows={filteredProducts}
+            columns={[
+              { key: "product", title: "Sản phẩm", width: "25%", render: product => <div className="sp-product-info"><strong className="sp-product-code">{product.ma_san_pham}</strong><span className="sp-product-name">{product.ten_san_pham}</span></div> },
+              { key: "group", title: "Nhóm sản phẩm", width: "23%", render: product => <span className="sp-group-badge">{groupName(product.nhom_san_pham)}</span> },
+              { key: "weight", title: "Khối lượng", align: "center", render: product => <span className="sp-weight-text">{money(grams(product))} g</span> },
+              { key: "price", title: "Đơn giá", align: "right", render: product => <strong className="sp-price-text">{money(product.don_gia)}</strong> },
+              { key: "currency", title: "Đơn vị tiền tệ", align: "center", render: product => <span className="sp-currency-text">{product.don_vi_tien_te || "VND"}</span> },
+              { key: "status", title: "Trạng thái", render: product => <span className={`sp-status-badge ${product.trang_thai === "DANG_KINH_DOANH" ? "active" : "inactive"}`}><span className="sp-dot" />{statusName(product.trang_thai)}</span> },
+              { key: "actions", title: "Thao tác", align: "center", render: product => (
+                <div className="sp-action-group">
+                  <button type="button" className="sp-action-btn" title="Xem sản phẩm" aria-label={`Xem ${product.ma_san_pham}`} disabled={busy} onClick={() => void openProduct(product, "view")}><EyeOutlined /></button>
+                  {can("san_pham", "SUA") && <button type="button" className="sp-action-btn" title="Sửa sản phẩm" aria-label={`Sửa ${product.ma_san_pham}`} disabled={busy} onClick={() => void openProduct(product, "edit")}><EditOutlined /></button>}
+                  {canDelete && <button type="button" className="sp-action-btn danger" title="Xóa sản phẩm" aria-label={`Xóa ${product.ma_san_pham}`} disabled={busy} onClick={() => { setDeleteError(""); setDeleteTarget(product); }}><DeleteOutlined /></button>}
+                </div>
+              ) },
+            ]}
+            rowKey={product => product.ma_san_pham}
+            total={total}
+            page={currentPage}
+            pageSize={pageSize}
+            onPageChange={setPage}
+            onPageSizeChange={size => { setPageSize(size); setPage(1); }}
+            loading={loading}
+            loadingMessage="Đang tải danh sách sản phẩm..."
+            emptyMessage="Không có sản phẩm phù hợp."
+          />        </div>
       </div>
 
       {modal && (

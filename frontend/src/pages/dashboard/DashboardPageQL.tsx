@@ -14,6 +14,7 @@ import DashboardBase, {
 } from "../../components/dashboard/DashboardBase";
 
 import type { User } from "../../services/authService";
+import UnifiedDashboardPage from "./UnifiedDashboardPage";
 
 
 type Props = {
@@ -131,6 +132,13 @@ const config: DashboardConfig = {
   ],
 
   rows: [],
+
+  renderCustomContent: activeMenu => {
+    if (activeMenu === "tong-quan") {
+      return <UnifiedDashboardPage />;
+    }
+    return null;
+  },
 };
 
 

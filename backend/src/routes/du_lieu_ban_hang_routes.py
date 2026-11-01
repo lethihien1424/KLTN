@@ -55,7 +55,7 @@ def get_sales_data(
         "DA_GIAO_HANG",
     ] | None = Query(None),
     page: int = Query(1, ge=1),
-    page_size: int = Query(20, ge=1, le=500),
+    page_size: int = Query(20, ge=1, le=700),
     db: Session = Depends(get_db),
     current_user: User = Depends(
         require_permission("du_lieu_ban_hang", "XEM")

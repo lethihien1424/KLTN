@@ -1,6 +1,6 @@
 //D:\KLTN\KLTN\frontend\src\components\common\DataTable.tsx
 import { useEffect, useState, type ReactNode } from "react";
-import { EmptyState } from "./PurchaseUI";
+import SharedDataTable from "./SharedDataTable";
 
 export type Column<T> = {
   key: string;
@@ -13,7 +13,7 @@ export default function DataTable<T>({
   columns,
   rowKey,
   onRowClick,
-  pageSize = 10,
+  pageSize = 7,
 }: {
   rows: T[];
   columns: Column<T>[];
@@ -22,79 +22,35 @@ export default function DataTable<T>({
   pageSize?: number;
 }) {
   const [page, setPage] = useState(1);
+  const [selectedPageSize, setSelectedPageSize] = useState(pageSize);
   useEffect(() => {
     setPage(1);
   }, [rows.length]);
-  const pages = Math.max(1, Math.ceil(rows.length / pageSize));
-  const current = Math.min(page, pages);
+  const columnsWithActions = columns.map((column, index) => ({
+    key: column.key,
+    title: column.label,
+    align: column.numeric ? "right" as const : "left" as const,
+    render: (row: T) => index === 0 && onRowClick ? (
+      <button
+        className="pm-link"
+        type="button"
+        onClick={() => onRowClick(row)}
+      >
+        {column.render(row)}
+      </button>
+    ) : column.render(row),
+  }));
+
   return (
-    <div className="pm-table-card">
-      <div className="pm-table-scroll">
-        <table className="pm-table">
-          <thead>
-            <tr>
-              {columns.map((column) => (
-                <th
-                  key={column.key}
-                  className={column.numeric ? "numeric" : ""}
-                >
-                  {column.label}
-                </th>
-              ))}
-            </tr>
-          </thead>
-          <tbody>
-            {rows
-              .slice((current - 1) * pageSize, current * pageSize)
-              .map((row) => (
-                <tr key={rowKey(row)}>
-                  {columns.map((column) => (
-                    <td
-                      key={column.key}
-                      className={column.numeric ? "numeric" : ""}
-                    >
-                      {column.key === columns[0]?.key && onRowClick ? (
-                        <button
-                          className="pm-link"
-                          type="button"
-                          onClick={() => onRowClick(row)}
-                        >
-                          {column.render(row)}
-                        </button>
-                      ) : (
-                        column.render(row)
-                      )}
-                    </td>
-                  ))}
-                </tr>
-              ))}
-          </tbody>
-        </table>
-        {rows.length === 0 && <EmptyState />}
-      </div>
-      {rows.length > 0 && (
-        <footer className="pm-pagination">
-          <span>
-            {rows.length} bản ghi · Trang {current}/{pages}
-          </span>
-          <div>
-            <button
-              className="pm-btn"
-              disabled={current <= 1}
-              onClick={() => setPage(current - 1)}
-            >
-              Trước
-            </button>
-            <button
-              className="pm-btn"
-              disabled={current >= pages}
-              onClick={() => setPage(current + 1)}
-            >
-              Sau
-            </button>
-          </div>
-        </footer>
-      )}
-    </div>
+    <SharedDataTable
+      rows={rows}
+      columns={columnsWithActions}
+      rowKey={rowKey}
+      total={rows.length}
+      page={page}
+      pageSize={selectedPageSize}
+      onPageChange={setPage}
+      onPageSizeChange={size => { setSelectedPageSize(size); setPage(1); }}
+    />
   );
 }
